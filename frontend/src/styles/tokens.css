@@ -1,0 +1,65 @@
+:root {
+  /* Brand */
+  --color-brand-primary: #8c1c1c;
+  --color-brand-primary-hover: #6f1616;
+  --color-brand-accent: #d71920;
+
+  /* Surfaces */
+  --color-bg-page: #f8f8fb;
+  --color-bg-surface: #ffffff;
+
+  /* Text */
+  --color-text-primary: #212529;
+  --color-text-secondary: #848484;
+  --color-text-on-brand: #ffffff;
+
+  /* Border / status */
+  --color-border-default: #dfdfdf;
+  --color-danger: #dc3545;
+
+  /* Badge tones */
+  --color-badge-neutral-bg: #f0f0f0;
+  --color-badge-neutral-fg: #212529;
+  --color-badge-info-bg: #e8f1fb;
+  --color-badge-info-fg: #1a4b8c;
+  --color-badge-success-bg: #e6f4ea;
+  --color-badge-success-fg: #1e7a3a;
+  --color-badge-warning-bg: #fff4e5;
+  --color-badge-warning-fg: #8a5a00;
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+
+  /* Radius */
+  --radius-sm: 4px;
+  --radius-input: 5px;
+  --radius-lg: 24px;
+
+  /* Elevation */
+  --shadow-auth-card: 0 8px 24px rgba(0, 0, 0, 0.06);
+
+  /* Type */
+  --font-sans: Inter, system-ui, 'Segoe UI', Roboto, sans-serif;
+  --font-size-display: 32px;
+  --line-height-display: 42px;
+  --font-size-h1: 24px;
+  --line-height-h1: 32px;
+  --font-size-h2: 18px;
+  --line-height-h2: 24px;
+  --font-size-body: 16px;
+  --line-height-body: 24px;
+  --font-size-label: 12px;
+  --line-height-label: 18px;
+  --font-size-tab: 14px;
+  --line-height-tab: 20px;
+
+  /* Control sizes */
+  --control-height-auth: 55px;
+  --control-height-app: 44px;
+}

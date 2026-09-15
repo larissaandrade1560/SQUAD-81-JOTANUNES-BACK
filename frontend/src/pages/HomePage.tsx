@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { PageTitle } from '../components/PageTitle'
+import { PageHeader } from '../components/ui/PageHeader'
 import { getApiStatus } from '../services/healthService'
 import { truncate } from '../utils/format'
 
@@ -30,7 +30,8 @@ export function HomePage() {
 
   return (
     <section>
-      <PageTitle title="JotaNunesForms" subtitle={statusMessage} />
+      <PageHeader title="Formulários" />
+      <p>{statusMessage}</p>
     </section>
   )
 }
