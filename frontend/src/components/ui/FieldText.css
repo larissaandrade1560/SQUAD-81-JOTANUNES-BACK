@@ -1,0 +1,22 @@
+.jn-label {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-label);
+  line-height: var(--line-height-label);
+  color: var(--color-text-secondary);
+}
+
+.jn-helper-text {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--font-size-label);
+  line-height: var(--line-height-label);
+  color: var(--color-text-secondary);
+}
+
+.jn-error-text {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: var(--font-size-label);
+  line-height: var(--line-height-label);
+  color: var(--color-danger);
+}
