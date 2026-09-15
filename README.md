@@ -22,6 +22,9 @@ Sistema web para gerenciamento de formulários.
 └── README.md
 ```
 
+### Organização do frontend
+
+A estrutura interna de pastas (`src/api`, `src/services`, `src/pages`, etc.), convenções de nomes e regras de dependência estão documentadas em [frontend/README.md](frontend/README.md).
 ## Pré-requisitos
 
 - Docker Desktop
