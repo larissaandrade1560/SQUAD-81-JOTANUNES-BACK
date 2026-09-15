@@ -1,0 +1,53 @@
+.jn-login-card {
+  width: 100%;
+  max-width: 548px;
+  background: var(--color-bg-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-auth-card);
+  padding: var(--space-6);
+}
+
+.jn-login-card__logo {
+  display: flex;
+  justify-content: center;
+  margin-bottom: var(--space-5);
+}
+
+.jn-login-card__eyebrow {
+  margin: 0 0 var(--space-2);
+  font-size: var(--font-size-h2);
+  line-height: var(--line-height-h2);
+  color: var(--color-text-secondary);
+}
+
+.jn-login-card__title {
+  margin: 0 0 var(--space-5);
+  font-size: var(--font-size-display);
+  line-height: var(--line-height-display);
+  font-weight: 500;
+  color: var(--color-brand-primary);
+}
+
+.jn-login-card__tabs {
+  display: flex;
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+  border-bottom: 1px solid var(--color-border-default);
+  padding-bottom: var(--space-3);
+}
+
+.jn-login-card__tab--active {
+  font-weight: 500;
+}
+
+.jn-login-card__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.jn-login-card__links {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+}

@@ -1,0 +1,19 @@
+.jn-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+}
+
+.jn-page-header__title {
+  margin: 0;
+  font-size: var(--font-size-h1);
+  line-height: var(--line-height-h1);
+  font-weight: 500;
+}
+
+.jn-page-header__action {
+  display: inline-flex;
+  align-items: center;
+}

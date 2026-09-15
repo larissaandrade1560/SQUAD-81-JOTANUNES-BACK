@@ -1,19 +1,26 @@
 import { createBrowserRouter } from 'react-router'
+import { AppShell } from '../layouts/AppShell'
 import { AuthLayout } from '../layouts/AuthLayout'
 import { AboutPage } from '../pages/AboutPage'
 import { HomePage } from '../pages/HomePage'
+import { LoginPage } from '../pages/LoginPage'
 import { ProtectedRoute } from './ProtectedRoute'
 
 /**
  * Application route tree.
- * AuthLayout is shared by internal routes; ProtectedRoute is a stub for future auth.
+ * AuthLayout wraps public login; AppShell wraps internal routes.
  */
 export const router = createBrowserRouter([
+  {
+    path: '/login',
+    element: <AuthLayout />,
+    children: [{ index: true, element: <LoginPage /> }],
+  },
   {
     element: <ProtectedRoute />,
     children: [
       {
-        element: <AuthLayout />,
+        element: <AppShell />,
         children: [
           { index: true, element: <HomePage /> },
           { path: 'about', element: <AboutPage /> },
