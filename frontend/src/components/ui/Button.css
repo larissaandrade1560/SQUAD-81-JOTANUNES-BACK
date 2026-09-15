@@ -1,0 +1,47 @@
+.jn-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  border: 1px solid transparent;
+  padding: 0 var(--space-5);
+}
+
+.jn-button--auth {
+  height: var(--control-height-auth);
+  font-size: var(--font-size-h2);
+  width: 100%;
+}
+
+.jn-button--app {
+  height: var(--control-height-app);
+  font-size: var(--font-size-body);
+}
+
+.jn-button--primary {
+  background: var(--color-brand-primary);
+  color: var(--color-text-on-brand);
+}
+
+.jn-button--primary:hover:not(:disabled) {
+  background: var(--color-brand-primary-hover);
+}
+
+.jn-button--secondary {
+  background: var(--color-bg-surface);
+  color: var(--color-brand-primary);
+  border-color: var(--color-brand-primary);
+}
+
+.jn-button--ghost {
+  background: transparent;
+  color: var(--color-brand-primary);
+}
+
+.jn-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
