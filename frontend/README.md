@@ -76,7 +76,12 @@ npm install
 npm run dev
 npm run build
 npm run lint
+npm test
 ```
+
+## Deploy
+
+O frontend sobe na **Cloudflare Pages** pelo GitHub Actions. Passos, secrets e URL da API: [README da raiz](../README.md#ci-e-deploy-github-actions--cloudflare).
 
 ## React Compiler / Oxlint
 

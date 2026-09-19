@@ -122,6 +122,43 @@ docker compose exec api dotnet tool run dotnet-ef migrations add NomeDaMigracao 
   --output-dir Persistence/Migrations
 ```
 
+## CI e deploy (GitHub Actions + Cloudflare)
+
+A Cloudflare Pages publica **somente o frontend** (React/Vite). A API ASP.NET Core e o PostgreSQL não rodam na Cloudflare; eles continuam no Docker local (ou em outro host quando existirem).
+
+### O que os workflows fazem
+
+| Workflow | Quando | Função |
+| --- | --- | --- |
+| `.github/workflows/ci.yml` | Push/PR em `main` e `develop` | Testa frontend e backend |
+| `.github/workflows/deploy-cloudflare.yml` | Push/PR em `main` e `develop` | Build do frontend e deploy na Cloudflare Pages |
+
+- Push em `main` → deploy de **produção**
+- Push em `develop` ou PR → deploy de **preview**
+
+Projeto Cloudflare Pages: `jotanunes-forms`.
+
+### Secrets e variáveis no GitHub
+
+No repositório: **Settings → Secrets and variables → Actions**.
+
+| Nome | Tipo | Onde obter |
+| --- | --- | --- |
+| `CLOUDFLARE_API_TOKEN` | Secret | Cloudflare → My Profile → API Tokens → Create Token, template **Edit Cloudflare Workers** (inclui Pages) |
+| `CLOUDFLARE_ACCOUNT_ID` | Secret | Cloudflare dashboard → canto direito da overview da conta |
+| `VITE_API_URL` | Variable (opcional) | URL pública da API, sem barra no final. Ex.: `https://api.exemplo.com` |
+
+Sem `VITE_API_URL`, o frontend chama a API no mesmo domínio da Pages e a Home não consegue falar com o backend.
+
+### Primeiro deploy
+
+1. Crie os secrets acima (e a variável `VITE_API_URL` quando a API estiver publicada).
+2. Faça push da branch `develop` ou `main`.
+3. Em **Actions**, abra **Deploy frontend to Cloudflare Pages** e copie a URL do job.
+4. No painel da Cloudflare: **Workers & Pages → jotanunes-forms**.
+
+Token mínimo recomendado: permissões **Account → Cloudflare Pages → Edit** e **Account → Account Settings → Read**.
+
 ## Fluxo de branches
 
 - `main`: versão estável do projeto.

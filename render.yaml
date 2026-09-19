@@ -1,0 +1,26 @@
+databases:
+  - name: jotanunes-postgres
+    plan: free
+    region: oregon
+    postgresMajorVersion: "16"
+
+services:
+  - type: web
+    name: jotanunes-api
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: Database__ApplyMigrations
+        value: "true"
+      - key: ConnectionStrings__JotaNunesFormsDb
+        fromDatabase:
+          name: jotanunes-postgres
+          property: connectionString
+      - key: Cors__Origins
+        sync: false
