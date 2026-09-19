@@ -59,3 +59,17 @@
   font-weight: 600;
   color: var(--color-text-secondary);
 }
+
+.jn-docs-funcionario__back {
+  margin: 0 0 var(--space-3);
+  font-size: var(--font-size-tab);
+}
+
+.jn-docs-funcionario__back a {
+  color: var(--color-brand-primary);
+  text-decoration: none;
+}
+
+.jn-docs-funcionario__back a:hover {
+  text-decoration: underline;
+}

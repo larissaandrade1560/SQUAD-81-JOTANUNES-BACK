@@ -24,6 +24,8 @@ public sealed class JotaNunesFormsDbContext : DbContext
 
     public DbSet<DocumentoEmpresa> DocumentosEmpresa => Set<DocumentoEmpresa>();
 
+    public DbSet<DocumentoFuncionario> DocumentosFuncionario => Set<DocumentoFuncionario>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(JotaNunesFormsDbContext).Assembly);

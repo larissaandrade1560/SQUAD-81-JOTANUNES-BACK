@@ -37,6 +37,7 @@ public static class DependencyInjection
         services.AddScoped<IFuncionarioRepository, FuncionarioRepository>();
         services.AddScoped<IFuncionarioObraRepository, FuncionarioObraRepository>();
         services.AddScoped<IDocumentoEmpresaRepository, DocumentoEmpresaRepository>();
+        services.AddScoped<IDocumentoFuncionarioRepository, DocumentoFuncionarioRepository>();
         services.Configure<R2StorageOptions>(configuration.GetSection("R2"));
         services.AddSingleton<IObjectStorage, R2ObjectStorage>();
         services.AddSingleton<IPasswordHasher, BcryptPasswordHasher>();

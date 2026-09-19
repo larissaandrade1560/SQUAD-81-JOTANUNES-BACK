@@ -1,3 +1,4 @@
+import { Link } from 'react-router'
 import { useCallback, useEffect, useState } from 'react'
 import { Badge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
@@ -161,8 +162,7 @@ export function FuncionariosPage() {
     }
   }
 
-  const colCount =
-    4 + (showEmpresaColumn ? 1 : 0) + 1 + (canWrite ? 1 : 0)
+  const colCount = 5 + (showEmpresaColumn ? 1 : 0) + 1
 
   return (
     <section className="jn-funcionarios">
@@ -200,7 +200,7 @@ export function FuncionariosPage() {
                 <th scope="col">Cargo</th>
                 <th scope="col">Obras</th>
                 <th scope="col">Status</th>
-                {canWrite && <th scope="col">Ações</th>}
+                <th scope="col">Ações</th>
               </tr>
             </thead>
             <tbody>
@@ -221,13 +221,16 @@ export function FuncionariosPage() {
                         {f.ativo ? 'Ativo' : 'Inativo'}
                       </Badge>
                     </td>
-                    {canWrite && (
-                      <td>
-                        <Button type="button" variant="ghost" onClick={() => openEdit(f)}>
-                          Editar
-                        </Button>
-                      </td>
-                    )}
+                    <td>
+                      <div className="jn-funcionarios__row-actions">
+                        <Link to={`/funcionarios/${f.id}/documentos`}>Documentos</Link>
+                        {canWrite && (
+                          <Button type="button" variant="ghost" onClick={() => openEdit(f)}>
+                            Editar
+                          </Button>
+                        )}
+                      </div>
+                    </td>
                   </tr>
                 ))
               )}

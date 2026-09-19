@@ -34,5 +34,4 @@ Log: `Applying migration '20260919213000_AddDocumentosEmpresa'`.
 
 ## Próximos passos
 
-1. **RF08** — documentos por funcionário (mesmo bucket/prefixo).
-2. **RF09–RF10** — validação e rejeição com motivo.
+1. **RF09–RF10** — validação e rejeição com motivo (RF08 concluído — ver `rf08-documentos-funcionario-implementacao.md`).
