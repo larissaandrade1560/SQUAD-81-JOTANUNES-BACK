@@ -1,0 +1,18 @@
+.jn-link {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-tab);
+  line-height: var(--line-height-tab);
+  text-decoration: none;
+}
+
+.jn-link:hover {
+  text-decoration: underline;
+}
+
+.jn-link--default {
+  color: var(--color-brand-primary);
+}
+
+.jn-link--muted {
+  color: var(--color-text-secondary);
+}

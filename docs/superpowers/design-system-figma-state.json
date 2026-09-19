@@ -1,0 +1,54 @@
+{
+  "runId": "jnf-ds-2026-09-15",
+  "phase": "phase3-complete",
+  "fileKey": "Pu4udm2alIAtdGScbIqLBN",
+  "fileUrl": "https://www.figma.com/design/Pu4udm2alIAtdGScbIqLBN",
+  "entities": {
+    "collections": {
+      "primitives": "VariableCollectionId:1:2",
+      "color": "VariableCollectionId:1:12",
+      "spacing": "VariableCollectionId:1:23"
+    },
+    "pages": {
+      "Foundations": "0:1",
+      "Cover": "4:2",
+      "Button": "4:5",
+      "Input": "4:6",
+      "FormField": "4:7",
+      "Badge": "4:8",
+      "Link": "4:9",
+      "Logo": "4:10",
+      "LoginCard": "4:11",
+      "AuthLayout": "4:12",
+      "AppShell": "4:13",
+      "PageHeader": "4:14",
+      "NavItem": "4:15"
+    },
+    "components": {
+      "Button": "4:41",
+      "Input": "4:49",
+      "FormField": "4:66",
+      "Badge": "4:76",
+      "Link": "4:82",
+      "Logo": "4:97",
+      "LoginCard": "4:99",
+      "AuthLayout": "4:130",
+      "AppShell": "4:134",
+      "PageHeader": "4:156",
+      "NavItem": "4:162"
+    },
+    "variables": {
+      "color/brand/primary": "VariableID:1:13",
+      "color/bg/page": "VariableID:1:16",
+      "radius/lg": "VariableID:1:33"
+    }
+  },
+  "completedSteps": [
+    "phase0",
+    "phase1-variables",
+    "phase1-foundations-doc",
+    "phase2-pages",
+    "phase3-components-v1"
+  ],
+  "pendingValidations": []
+}

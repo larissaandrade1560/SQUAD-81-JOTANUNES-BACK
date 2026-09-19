@@ -1,0 +1,30 @@
+.jn-input {
+  width: 100%;
+  font-family: var(--font-sans);
+  font-size: var(--font-size-label);
+  line-height: var(--line-height-label);
+  color: var(--color-text-primary);
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-input);
+  padding: 15px;
+}
+
+.jn-input::placeholder {
+  color: var(--color-text-secondary);
+}
+
+.jn-input:focus {
+  outline: 2px solid var(--color-brand-primary);
+  outline-offset: 1px;
+}
+
+.jn-input--invalid {
+  border-color: var(--color-danger);
+}
+
+.jn-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}

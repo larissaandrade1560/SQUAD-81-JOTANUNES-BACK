@@ -1,20 +1,11 @@
-import { Link, Outlet } from 'react-router'
+import { Outlet } from 'react-router'
+import './AuthLayout.css'
 
-/**
- * Shared shell for authenticated (internal) areas.
- * Child routes render through `<Outlet />`.
- */
+/** Unauthenticated shell — centers login content on page background. */
 export function AuthLayout() {
   return (
-    <div>
-      <nav aria-label="Área autenticada">
-        <Link to="/">Início</Link>
-        {' · '}
-        <Link to="/about">Sobre</Link>
-      </nav>
-      <main>
-        <Outlet />
-      </main>
+    <div className="jn-auth-layout">
+      <Outlet />
     </div>
   )
 }

@@ -1,0 +1,32 @@
+.jn-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.jn-logo__mark {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+}
+
+.jn-logo__text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.jn-logo__wordmark {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: var(--font-size-h2);
+  color: var(--color-text-primary);
+  text-transform: lowercase;
+}
+
+.jn-logo__subtitle {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-label);
+  letter-spacing: 0.08em;
+  color: var(--color-text-secondary);
+}

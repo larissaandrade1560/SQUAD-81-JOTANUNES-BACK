@@ -10,7 +10,7 @@ React + TypeScript + Vite.
 | `services/` | Acesso remoto por domínio (usa `api/`) | Chamadas HTTP soltas nas páginas |
 | `pages/` | Telas ligadas a rotas | `fetch`/`api` direto; componentes genéricos |
 | `components/` | UI reutilizável em 2+ lugares | Imports de `pages/`; cliente HTTP |
-| `layouts/` | Shells comuns (áreas autenticadas) com `<Outlet />` | Páginas concretas |
+| `layouts/` | Shells comuns (`AuthLayout` para login, `AppShell` autenticado) com `<Outlet />` | Páginas concretas |
 | `routes/` | Árvore de rotas e guards | Regras de negócio de tela |
 | `hooks/` | Hooks React compartilhados | Utilitários puros sem estado React |
 | `store/` | Estado global / autenticação (reservado) | Estado local de uma única página |
@@ -34,7 +34,8 @@ React + TypeScript + Vite.
 |----------------|-------------|
 | Nova tela para uma URL | `pages/` |
 | UI usada em 2+ lugares | `components/` |
-| Chrome autenticado (nav/shell) | `layouts/` |
+| Chrome de login (card centralizado) | `layouts/AuthLayout` |
+| Chrome autenticado (sidebar/shell) | `layouts/AppShell` |
 | Tabela de rotas / proteção | `routes/` |
 | Chamada ao backend de um domínio | `services/` |
 | Base URL / defaults HTTP | `api/` |
@@ -75,7 +76,12 @@ npm install
 npm run dev
 npm run build
 npm run lint
+npm test
 ```
+
+## Deploy
+
+O frontend sobe na **Cloudflare Pages** pelo GitHub Actions. Passos, secrets e URL da API: [README da raiz](../README.md#ci-e-deploy-github-actions--cloudflare).
 
 ## React Compiler / Oxlint
 

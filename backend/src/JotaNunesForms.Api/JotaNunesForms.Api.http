@@ -1,0 +1,9 @@
+@JotaNunesForms_HostAddress = http://localhost:8080
+
+GET {{JotaNunesForms_HostAddress}}/
+Accept: application/json
+
+###
+
+GET {{JotaNunesForms_HostAddress}}/api/formularios
+Accept: application/json
