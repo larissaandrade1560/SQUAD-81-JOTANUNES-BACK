@@ -1,25 +1,34 @@
 import { describe, expect, it, beforeEach } from 'vitest'
-import { getSession, login, logout } from './authSession'
+import { getSession, logout, saveSession } from './authSession'
 
-describe('authSession', () => {
+describe('authStorage (authSession facade)', () => {
   beforeEach(() => {
     sessionStorage.clear()
   })
 
-  it('creates analista session by default', () => {
-    const session = login({ document: '12345678900', password: 'secret' })
-    expect(session.profileLabel).toBe('Analista')
+  it('persists and reads session', () => {
+    saveSession({
+      accessToken: 'token',
+      document: '12345678900',
+      displayName: 'Mariana Souza',
+      profileLabel: 'Analista',
+      role: 'analista',
+      expiresAtUtc: new Date(Date.now() + 60_000).toISOString(),
+    })
+
+    expect(getSession()?.profileLabel).toBe('Analista')
     expect(getSession()?.displayName).toBe('Mariana Souza')
   })
 
-  it('creates admin session when document hints admin', () => {
-    const session = login({ document: 'admin@test', password: 'secret' })
-    expect(session.role).toBe('admin')
-    expect(session.profileLabel).toBe('Administrador')
-  })
-
   it('clears session on logout', () => {
-    login({ document: '123', password: 'x' })
+    saveSession({
+      accessToken: 'token',
+      document: '123',
+      displayName: 'Test',
+      profileLabel: 'Administrador',
+      role: 'admin',
+      expiresAtUtc: new Date(Date.now() + 60_000).toISOString(),
+    })
     logout()
     expect(getSession()).toBeNull()
   })

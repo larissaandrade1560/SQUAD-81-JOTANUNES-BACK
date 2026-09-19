@@ -12,6 +12,8 @@ public sealed class JotaNunesFormsDbContext : DbContext
 
     public DbSet<Formulario> Formularios => Set<Formulario>();
 
+    public DbSet<Usuario> Usuarios => Set<Usuario>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(JotaNunesFormsDbContext).Assembly);

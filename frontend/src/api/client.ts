@@ -1,4 +1,5 @@
 import type { ApiError } from '../types/api'
+import { getAccessToken } from '../store/authStorage'
 
 const baseUrl = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '') ?? ''
 
@@ -24,10 +25,13 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   const { body, headers, ...rest } = options
   const url = path.startsWith('http') ? path : `${baseUrl}${path.startsWith('/') ? path : `/${path}`}`
 
+  const token = getAccessToken()
+
   const response = await fetch(url, {
     ...rest,
     headers: {
       Accept: 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
       ...headers,
     },
@@ -35,8 +39,17 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   })
 
   if (!response.ok) {
+    const payload = await parseJsonSafe(response)
+    const message =
+      typeof payload === 'object' &&
+      payload !== null &&
+      'message' in payload &&
+      typeof (payload as { message: unknown }).message === 'string'
+        ? (payload as { message: string }).message
+        : `Request failed with status ${response.status}`
+
     const error: ApiError = {
-      message: `Request failed with status ${response.status}`,
+      message,
       status: response.status,
     }
     throw error

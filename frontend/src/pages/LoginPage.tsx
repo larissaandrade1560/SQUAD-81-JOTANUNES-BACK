@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Navigate, useNavigate } from 'react-router'
 import { LoginCard } from '../components/auth/LoginCard'
-import { getSession, login } from '../store/authSession'
+import { loginWithApi } from '../services/authService'
+import { getSession } from '../store/authStorage'
 
 export function LoginPage() {
   const navigate = useNavigate()
@@ -14,12 +15,22 @@ export function LoginPage() {
   return (
     <LoginCard
       error={error}
-      onSubmit={(values) => {
+      onSubmit={async (values) => {
         try {
-          login(values)
+          setError(undefined)
+          await loginWithApi(values)
           navigate('/', { replace: true })
         } catch (err) {
-          setError(err instanceof Error ? err.message : 'Não foi possível entrar.')
+          const message =
+            typeof err === 'object' &&
+            err !== null &&
+            'message' in err &&
+            typeof (err as { message: unknown }).message === 'string'
+              ? (err as { message: string }).message
+              : err instanceof Error
+                ? err.message
+                : 'Não foi possível entrar.'
+          setError(message)
         }
       }}
     />

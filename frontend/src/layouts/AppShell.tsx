@@ -2,7 +2,7 @@ import { Outlet, useNavigate } from 'react-router'
 import { navItemsForRole } from '../config/jotanunesNav'
 import { Logo } from '../components/ui/Logo'
 import { NavItem } from '../components/ui/NavItem'
-import { getSession, logout } from '../store/authSession'
+import { getSession, logout } from '../store/authStorage'
 import './AppShell.css'
 
 /** Shell interno Jotanunes (Admin / Analista) — Figma `05 — Shell Jotanunes`. */

@@ -1,5 +1,9 @@
+using System.Text;
 using JotaNunesForms.Application;
 using JotaNunesForms.Infrastructure;
+using JotaNunesForms.Infrastructure.Auth;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,6 +18,29 @@ builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+var jwtSigningKey = builder.Configuration["Jwt:SigningKey"]
+    ?? "dev-local-jwt-signing-key-change-me-32chars";
+var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "JotaNunesForms";
+var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "JotaNunesForms";
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtIssuer,
+            ValidAudience = jwtAudience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSigningKey)),
+            ClockSkew = TimeSpan.FromMinutes(1),
+        };
+    });
+
+builder.Services.AddAuthorization();
 
 var corsOrigins = builder.Configuration["Cors:Origins"]?
     .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
@@ -40,10 +67,13 @@ if (bool.TryParse(app.Configuration["Database:ApplyMigrations"], out var applyMi
     await app.Services.ApplyMigrationsAsync();
 }
 
+await AuthUserSeeder.SeedDefaultUsersAsync(app.Services);
+
 app.UseSwagger();
 app.UseSwaggerUI();
 
 app.UseCors("Frontend");
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 

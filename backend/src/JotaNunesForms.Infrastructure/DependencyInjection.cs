@@ -1,4 +1,5 @@
 using JotaNunesForms.Domain.Ports;
+using JotaNunesForms.Infrastructure.Auth;
 using JotaNunesForms.Infrastructure.Persistence;
 using JotaNunesForms.Infrastructure.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -29,6 +30,9 @@ public static class DependencyInjection
                     .MigrationsAssembly(typeof(JotaNunesFormsDbContext).Assembly.FullName)));
 
         services.AddScoped<IFormularioRepository, FormularioRepository>();
+        services.AddScoped<IUsuarioRepository, UsuarioRepository>();
+        services.AddSingleton<IPasswordHasher, BcryptPasswordHasher>();
+        services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
 
         return services;
     }
