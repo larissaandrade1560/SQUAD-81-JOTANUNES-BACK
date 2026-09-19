@@ -1,11 +1,10 @@
-using JotaNunesForms.Data;
-using Microsoft.EntityFrameworkCore;
+using JotaNunesForms.Application;
+using JotaNunesForms.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddDbContext<JotaNunesFormsDbContext>(options =>
-    options.UseSqlServer(
-        builder.Configuration.GetConnectionString("JotaNunesFormsDb")));
+builder.Services.AddApplication();
+builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -21,6 +20,12 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+if (bool.TryParse(app.Configuration["Database:ApplyMigrations"], out var applyMigrations)
+    && applyMigrations)
+{
+    await app.Services.ApplyMigrationsAsync();
+}
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -28,9 +33,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors("FrontendLocal");
-
 app.UseAuthorization();
-
 app.MapControllers();
 
 app.MapGet("/", () => Results.Ok(new
@@ -39,3 +42,5 @@ app.MapGet("/", () => Results.Ok(new
 }));
 
 app.Run();
+
+public partial class Program;

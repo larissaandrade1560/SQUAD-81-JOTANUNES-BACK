@@ -1,6 +1,0 @@
-@JotaNunesForms_HostAddress = http://localhost:5186
-
-GET {{JotaNunesForms_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###
