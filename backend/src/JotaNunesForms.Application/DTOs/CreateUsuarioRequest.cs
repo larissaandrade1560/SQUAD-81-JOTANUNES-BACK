@@ -6,4 +6,5 @@ public sealed record CreateUsuarioRequest(
     string Documento,
     string NomeExibicao,
     PerfilUsuario Perfil,
-    string Senha);
+    string Senha,
+    Guid? EmpresaId);

@@ -8,7 +8,8 @@ public sealed record UsuarioResponse(
     string NomeExibicao,
     PerfilUsuario Perfil,
     string PerfilRotulo,
-    bool Ativo)
+    bool Ativo,
+    Guid? EmpresaId)
 {
     public static UsuarioResponse FromEntity(Usuario usuario) =>
         new(
@@ -17,5 +18,6 @@ public sealed record UsuarioResponse(
             usuario.NomeExibicao,
             usuario.Perfil,
             usuario.PerfilRotulo,
-            usuario.Ativo);
+            usuario.Ativo,
+            usuario.EmpresaId);
 }

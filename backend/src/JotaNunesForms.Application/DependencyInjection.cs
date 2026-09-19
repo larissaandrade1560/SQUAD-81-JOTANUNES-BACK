@@ -1,6 +1,7 @@
 using JotaNunesForms.Application.UseCases.Auth;
 using JotaNunesForms.Application.UseCases.Formularios;
 using JotaNunesForms.Application.UseCases.Empresas;
+using JotaNunesForms.Application.UseCases.Funcionarios;
 using JotaNunesForms.Application.UseCases.Obras;
 using JotaNunesForms.Application.UseCases.Usuarios;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,6 +27,9 @@ public static class DependencyInjection
         services.AddScoped<GetObraUseCase>();
         services.AddScoped<CreateObraUseCase>();
         services.AddScoped<UpdateObraUseCase>();
+        services.AddScoped<ListFuncionariosUseCase>();
+        services.AddScoped<CreateFuncionarioUseCase>();
+        services.AddScoped<UpdateFuncionarioUseCase>();
         return services;
     }
 }

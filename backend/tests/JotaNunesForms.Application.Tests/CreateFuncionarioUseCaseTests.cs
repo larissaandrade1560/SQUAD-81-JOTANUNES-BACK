@@ -1,0 +1,74 @@
+using JotaNunesForms.Application.DTOs;
+using JotaNunesForms.Application.UseCases.Funcionarios;
+using JotaNunesForms.Domain.Entities;
+using JotaNunesForms.Domain.Ports;
+
+namespace JotaNunesForms.Application.Tests;
+
+public sealed class CreateFuncionarioUseCaseTests
+{
+    [Fact]
+    public async Task ExecuteAsync_CreatesFuncionario_ForMaoDeObraEmpresa()
+    {
+        var empresa = new Empresa("MO Ltda", "12345678000190", TipoEmpresa.MaoDeObra);
+        var repository = new FakeFuncionarioRepository();
+        var useCase = new CreateFuncionarioUseCase(repository, new FakeEmpresaRepository(empresa));
+
+        var result = await useCase.ExecuteAsync(
+            empresa.Id,
+            new CreateFuncionarioRequest("João Silva", "52998224725", "Pedreiro"));
+
+        Assert.Equal("52998224725", result.Cpf);
+        Assert.Single(repository.Added);
+    }
+
+    private sealed class FakeEmpresaRepository(Empresa seed) : IEmpresaRepository
+    {
+        public Task<Empresa?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
+            Task.FromResult(id == seed.Id ? seed : null);
+
+        public Task<IReadOnlyList<Empresa>> ListAsync(CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<Empresa>>([seed]);
+
+        public Task<bool> ExistsCnpjAsync(
+            string cnpj,
+            Guid? excludeEmpresaId = null,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult(false);
+
+        public Task AddAsync(Empresa empresa, CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+
+        public Task UpdateAsync(Empresa empresa, CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+    }
+
+    private sealed class FakeFuncionarioRepository : IFuncionarioRepository
+    {
+        public List<Funcionario> Added { get; } = [];
+
+        public Task<Funcionario?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
+            Task.FromResult<Funcionario?>(null);
+
+        public Task<IReadOnlyList<Funcionario>> ListAsync(
+            Guid? empresaId = null,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<Funcionario>>([]);
+
+        public Task<bool> ExistsCpfInEmpresaAsync(
+            Guid empresaId,
+            string cpf,
+            Guid? excludeFuncionarioId = null,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult(false);
+
+        public Task AddAsync(Funcionario funcionario, CancellationToken cancellationToken = default)
+        {
+            Added.Add(funcionario);
+            return Task.CompletedTask;
+        }
+
+        public Task UpdateAsync(Funcionario funcionario, CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+    }
+}

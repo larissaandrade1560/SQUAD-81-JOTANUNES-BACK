@@ -26,7 +26,9 @@ export function AppShell() {
       <aside className="jn-app-shell__sidebar" aria-label="Navegação principal">
         <div className="jn-app-shell__brand">
           <Logo variant="on-dark" />
-          <p className="jn-app-shell__context">Equipe Jotanunes</p>
+          <p className="jn-app-shell__context">
+            {session.role === 'terceirizado' ? 'Empresa parceira (MO)' : 'Equipe Jotanunes'}
+          </p>
         </div>
         <nav className="jn-app-shell__nav">
           {navItems.map((item) => (
@@ -40,7 +42,9 @@ export function AppShell() {
       </aside>
       <div className="jn-app-shell__main">
         <header className="jn-app-shell__topbar">
-          <span className="jn-app-shell__topbar-label">Área interna</span>
+          <span className="jn-app-shell__topbar-label">
+            {session.role === 'terceirizado' ? 'Portal terceirizado' : 'Área interna'}
+          </span>
           <button type="button" className="jn-app-shell__topbar-link" onClick={handleLogout}>
             Sair
           </button>

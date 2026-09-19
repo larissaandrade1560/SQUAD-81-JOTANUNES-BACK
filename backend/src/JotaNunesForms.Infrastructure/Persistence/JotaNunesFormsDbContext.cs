@@ -18,6 +18,8 @@ public sealed class JotaNunesFormsDbContext : DbContext
 
     public DbSet<Obra> Obras => Set<Obra>();
 
+    public DbSet<Funcionario> Funcionarios => Set<Funcionario>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(JotaNunesFormsDbContext).Assembly);

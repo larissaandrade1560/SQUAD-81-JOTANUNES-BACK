@@ -1,17 +1,18 @@
 import { createBrowserRouter, Navigate } from 'react-router'
 import { AppShell } from '../layouts/AppShell'
 import { AuthLayout } from '../layouts/AuthLayout'
-import { DashboardPage } from '../pages/DashboardPage'
 import { EmpresasPage } from '../pages/EmpresasPage'
+import { FuncionariosPage } from '../pages/FuncionariosPage'
 import { LoginPage } from '../pages/LoginPage'
 import { ModulePlaceholderPage } from '../pages/ModulePlaceholderPage'
 import { ObrasPage } from '../pages/ObrasPage'
 import { UsuariosPage } from '../pages/UsuariosPage'
 import { AdminRoute } from './AdminRoute'
+import { InternalRoute } from './InternalRoute'
 import { ProtectedRoute } from './ProtectedRoute'
+import { RoleHome } from './RoleHome'
 
 const moduleRoutes = [
-  { path: 'funcionarios' },
   { path: 'validacao' },
   { path: 'pagamentos' },
   { path: 'pendencias' },
@@ -34,17 +35,23 @@ export const router = createBrowserRouter([
       {
         element: <AppShell />,
         children: [
-          { index: true, element: <DashboardPage /> },
-          { path: 'empresas', element: <EmpresasPage /> },
-          { path: 'obras', element: <ObrasPage /> },
+          { index: true, element: <RoleHome /> },
+          { path: 'funcionarios', element: <FuncionariosPage /> },
           {
-            element: <AdminRoute />,
-            children: [{ path: 'usuarios', element: <UsuariosPage /> }],
+            element: <InternalRoute />,
+            children: [
+              { path: 'empresas', element: <EmpresasPage /> },
+              { path: 'obras', element: <ObrasPage /> },
+              {
+                element: <AdminRoute />,
+                children: [{ path: 'usuarios', element: <UsuariosPage /> }],
+              },
+              ...moduleRoutes.map(({ path }) => ({
+                path,
+                element: <ModulePlaceholderPage />,
+              })),
+            ],
           },
-          ...moduleRoutes.map(({ path }) => ({
-            path,
-            element: <ModulePlaceholderPage />,
-          })),
         ],
       },
     ],

@@ -10,6 +10,7 @@ import {
   updateUsuario,
   type UsuarioApi,
 } from '../services/usuariosService'
+import { listEmpresas, type EmpresaApi } from '../services/empresasService'
 import './UsuariosPage.css'
 
 type FormMode = 'create' | 'edit'
@@ -17,7 +18,8 @@ type FormMode = 'create' | 'edit'
 const emptyForm = {
   documento: '',
   nomeExibicao: '',
-  perfil: '2' as '1' | '2',
+  perfil: '2' as '1' | '2' | '3',
+  empresaId: '',
   senha: '',
   ativo: true,
 }
@@ -44,6 +46,7 @@ export function UsuariosPage() {
   const [form, setForm] = useState(emptyForm)
   const [formError, setFormError] = useState<string | undefined>()
   const [saving, setSaving] = useState(false)
+  const [empresasMo, setEmpresasMo] = useState<EmpresaApi[]>([])
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -59,6 +62,9 @@ export function UsuariosPage() {
 
   useEffect(() => {
     void load()
+    void listEmpresas()
+      .then((all) => setEmpresasMo(all.filter((e) => e.tipo === 1 && e.ativo)))
+      .catch(() => setEmpresasMo([]))
   }, [load])
 
   function openCreate() {
@@ -74,7 +80,8 @@ export function UsuariosPage() {
     setForm({
       documento: usuario.documento,
       nomeExibicao: usuario.nomeExibicao,
-      perfil: usuario.perfil === 2 ? '2' : '1',
+      perfil: usuario.perfil === 3 ? '3' : usuario.perfil === 2 ? '2' : '1',
+      empresaId: usuario.empresaId ?? '',
       senha: '',
       ativo: usuario.ativo,
     })
@@ -93,18 +100,23 @@ export function UsuariosPage() {
     setSaving(true)
     setFormError(undefined)
     try {
+      const perfil = form.perfil === '3' ? 3 : form.perfil === '2' ? 2 : 1
+      const empresaId =
+        perfil === 3 ? form.empresaId.trim() || null : null
       if (formMode === 'create') {
         await createUsuario({
           documento: form.documento,
           nomeExibicao: form.nomeExibicao,
-          perfil: form.perfil === '2' ? 2 : 1,
+          perfil,
           senha: form.senha,
+          empresaId,
         })
       } else if (formMode === 'edit' && editingId) {
         await updateUsuario(editingId, {
           nomeExibicao: form.nomeExibicao,
-          perfil: form.perfil === '2' ? 2 : 1,
+          perfil,
           ativo: form.ativo,
+          empresaId,
           ...(form.senha.trim() ? { senha: form.senha } : {}),
         })
       }
@@ -121,7 +133,7 @@ export function UsuariosPage() {
     <section className="jn-usuarios">
       <PageHeader
         title="Usuários e acessos"
-        subtitle="Gestão de contas internas Jotanunes (Administrador e Analista). Terceirizados serão tratados em entrega futura."
+        subtitle="Gestão de contas (Administrador, Analista e Terceirizado vinculado a empresa MO)."
         action={
           <Button type="button" variant="primary" onClick={openCreate}>
             Novo usuário
@@ -216,11 +228,40 @@ export function UsuariosPage() {
               id="usuario-perfil"
               className="jn-usuarios__select"
               value={form.perfil}
-              onChange={(e) => setForm((f) => ({ ...f, perfil: e.target.value as '1' | '2' }))}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  perfil: e.target.value as '1' | '2' | '3',
+                  empresaId: e.target.value === '3' ? f.empresaId : '',
+                }))
+              }
             >
               <option value="1">Analista</option>
               <option value="2">Administrador</option>
+              <option value="3">Terceirizado (Mão de Obra)</option>
             </select>
+
+            {form.perfil === '3' && (
+              <>
+                <label className="jn-usuarios__select-label" htmlFor="usuario-empresa">
+                  Empresa (MO)
+                </label>
+                <select
+                  id="usuario-empresa"
+                  className="jn-usuarios__select"
+                  required
+                  value={form.empresaId}
+                  onChange={(e) => setForm((f) => ({ ...f, empresaId: e.target.value }))}
+                >
+                  <option value="">Selecione…</option>
+                  {empresasMo.map((e) => (
+                    <option key={e.id} value={e.id}>
+                      {e.razaoSocial}
+                    </option>
+                  ))}
+                </select>
+              </>
+            )}
 
             <FormField
               id="usuario-senha"

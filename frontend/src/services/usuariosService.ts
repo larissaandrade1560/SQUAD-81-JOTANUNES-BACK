@@ -4,23 +4,26 @@ export type UsuarioApi = {
   id: string
   documento: string
   nomeExibicao: string
-  perfil: 1 | 2
-  perfilRotulo: 'Administrador' | 'Analista'
+  perfil: 1 | 2 | 3
+  perfilRotulo: 'Administrador' | 'Analista' | 'Terceirizado'
   ativo: boolean
+  empresaId: string | null
 }
 
 export type CreateUsuarioPayload = {
   documento: string
   nomeExibicao: string
-  perfil: 1 | 2
+  perfil: 1 | 2 | 3
   senha: string
+  empresaId?: string | null
 }
 
 export type UpdateUsuarioPayload = {
   nomeExibicao: string
-  perfil: 1 | 2
+  perfil: 1 | 2 | 3
   ativo: boolean
   senha?: string
+  empresaId?: string | null
 }
 
 export function listUsuarios(): Promise<UsuarioApi[]> {

@@ -14,6 +14,8 @@ public sealed class Usuario
 
     public bool Ativo { get; private set; }
 
+    public Guid? EmpresaId { get; private set; }
+
     private Usuario()
     {
     }
@@ -22,13 +24,15 @@ public sealed class Usuario
         string documento,
         string passwordHash,
         string nomeExibicao,
-        PerfilUsuario perfil)
+        PerfilUsuario perfil,
+        Guid? empresaId = null)
     {
         Id = Guid.NewGuid();
         Documento = NormalizeDocumento(documento);
         PasswordHash = passwordHash;
         NomeExibicao = nomeExibicao.Trim();
         Perfil = perfil;
+        DefinirVinculoEmpresa(perfil, empresaId);
         Ativo = true;
     }
 
@@ -48,7 +52,7 @@ public sealed class Usuario
         return digits;
     }
 
-    public void AtualizarPerfil(string nomeExibicao, PerfilUsuario perfil)
+    public void AtualizarPerfil(string nomeExibicao, PerfilUsuario perfil, Guid? empresaId = null)
     {
         if (string.IsNullOrWhiteSpace(nomeExibicao))
         {
@@ -57,6 +61,23 @@ public sealed class Usuario
 
         NomeExibicao = nomeExibicao.Trim();
         Perfil = perfil;
+        DefinirVinculoEmpresa(perfil, empresaId);
+    }
+
+    public void DefinirVinculoEmpresa(PerfilUsuario perfil, Guid? empresaId)
+    {
+        if (perfil == PerfilUsuario.Terceirizado)
+        {
+            if (empresaId is null || empresaId == Guid.Empty)
+            {
+                throw new ArgumentException("Empresa é obrigatória para usuário terceirizado.", nameof(empresaId));
+            }
+
+            EmpresaId = empresaId;
+            return;
+        }
+
+        EmpresaId = null;
     }
 
     public void DefinirStatus(bool ativo) => Ativo = ativo;
@@ -72,5 +93,10 @@ public sealed class Usuario
     }
 
     public string PerfilRotulo =>
-        Perfil == PerfilUsuario.Administrador ? "Administrador" : "Analista";
+        Perfil switch
+        {
+            PerfilUsuario.Administrador => "Administrador",
+            PerfilUsuario.Terceirizado => "Terceirizado",
+            _ => "Analista",
+        };
 }

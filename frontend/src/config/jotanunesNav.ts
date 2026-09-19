@@ -6,17 +6,17 @@ export type JotanunesNavItem = {
   roles?: JotanunesRole[]
 }
 
-/** Sidebar Jotanunes — mapa-de-telas §2 (Admin vs Analista). */
+/** Sidebar — equipe interna e portal MO terceirizado. */
 export const JOTANUNES_NAV: JotanunesNavItem[] = [
-  { to: '/', label: 'Dashboard' },
-  { to: '/empresas', label: 'Empresas' },
+  { to: '/', label: 'Dashboard', roles: ['admin', 'analista'] },
+  { to: '/empresas', label: 'Empresas', roles: ['admin', 'analista'] },
   { to: '/usuarios', label: 'Usuários e acessos', roles: ['admin'] },
-  { to: '/obras', label: 'Obras' },
+  { to: '/obras', label: 'Obras', roles: ['admin', 'analista'] },
   { to: '/funcionarios', label: 'Funcionários' },
-  { to: '/validacao', label: 'Validação' },
-  { to: '/pagamentos', label: 'Pagamentos' },
-  { to: '/pendencias', label: 'Pendências' },
-  { to: '/auditoria', label: 'Auditoria' },
+  { to: '/validacao', label: 'Validação', roles: ['admin', 'analista'] },
+  { to: '/pagamentos', label: 'Pagamentos', roles: ['admin', 'analista'] },
+  { to: '/pendencias', label: 'Pendências', roles: ['admin', 'analista'] },
+  { to: '/auditoria', label: 'Auditoria', roles: ['admin', 'analista'] },
 ]
 
 export function navItemsForRole(role: JotanunesRole): JotanunesNavItem[] {

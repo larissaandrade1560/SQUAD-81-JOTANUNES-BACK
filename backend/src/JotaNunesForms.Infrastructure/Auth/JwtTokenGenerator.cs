@@ -34,6 +34,11 @@ public sealed class JwtTokenGenerator : IJwtTokenGenerator
             new("perfil_rotulo", usuario.PerfilRotulo),
         };
 
+        if (usuario.EmpresaId is not null)
+        {
+            claims.Add(new Claim("empresa_id", usuario.EmpresaId.Value.ToString()));
+        }
+
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(signingKey));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 

@@ -6,4 +6,5 @@ public sealed record UpdateUsuarioRequest(
     string NomeExibicao,
     PerfilUsuario Perfil,
     bool Ativo,
-    string? Senha);
+    string? Senha,
+    Guid? EmpresaId);

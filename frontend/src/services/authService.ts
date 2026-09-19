@@ -6,7 +6,7 @@ type LoginApiResponse = {
   accessToken: string
   documento: string
   nomeExibicao: string
-  perfilRotulo: 'Administrador' | 'Analista'
+  perfilRotulo: 'Administrador' | 'Analista' | 'Terceirizado'
   perfil: number
   expiresAtUtc: string
 }
@@ -32,7 +32,12 @@ export async function loginWithApi(credentials: {
     document: response.documento,
     displayName: response.nomeExibicao,
     profileLabel: response.perfilRotulo,
-    role: response.perfilRotulo === 'Administrador' ? 'admin' : 'analista',
+    role:
+      response.perfilRotulo === 'Administrador'
+        ? 'admin'
+        : response.perfilRotulo === 'Terceirizado'
+          ? 'terceirizado'
+          : 'analista',
     expiresAtUtc: response.expiresAtUtc,
   }
 
@@ -51,7 +56,7 @@ export async function fetchCurrentUser(): Promise<AuthSession | null> {
   const me = await apiRequest<{
     documento: string
     nomeExibicao: string
-    perfilRotulo: 'Administrador' | 'Analista'
+    perfilRotulo: 'Administrador' | 'Analista' | 'Terceirizado'
   }>('/api/auth/me')
 
   return {
@@ -59,7 +64,12 @@ export async function fetchCurrentUser(): Promise<AuthSession | null> {
     document: me.documento,
     displayName: me.nomeExibicao,
     profileLabel: me.perfilRotulo,
-    role: me.perfilRotulo === 'Administrador' ? 'admin' : 'analista',
+    role:
+      me.perfilRotulo === 'Administrador'
+        ? 'admin'
+        : me.perfilRotulo === 'Terceirizado'
+          ? 'terceirizado'
+          : 'analista',
     expiresAtUtc: existing?.expiresAtUtc ?? new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString(),
   }
 }

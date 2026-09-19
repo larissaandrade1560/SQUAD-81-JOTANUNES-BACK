@@ -1,4 +1,4 @@
-export type JotanunesRole = 'admin' | 'analista'
+export type JotanunesRole = 'admin' | 'analista' | 'terceirizado'
 
 export type { AuthSession } from './authStorage'
 export {

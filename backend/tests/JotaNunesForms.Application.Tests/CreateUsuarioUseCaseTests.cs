@@ -12,10 +12,10 @@ public sealed class CreateUsuarioUseCaseTests
     public async Task ExecuteAsync_CreatesUser_WhenDocumentIsUnique()
     {
         var repository = new FakeUsuarioRepository();
-        var useCase = new CreateUsuarioUseCase(repository, new FakePasswordHasher());
+        var useCase = new CreateUsuarioUseCase(repository, new FakeEmpresaRepository(), new FakePasswordHasher());
 
         var result = await useCase.ExecuteAsync(
-            new CreateUsuarioRequest("123.456.789-00", "Novo Analista", PerfilUsuario.Analista, "senha123"));
+            new CreateUsuarioRequest("123.456.789-00", "Novo Analista", PerfilUsuario.Analista, "senha123", null));
 
         Assert.Equal("12345678900", result.Documento);
         Assert.Equal("Novo Analista", result.NomeExibicao);
@@ -27,11 +27,11 @@ public sealed class CreateUsuarioUseCaseTests
     public async Task ExecuteAsync_Throws_WhenDocumentAlreadyExists()
     {
         var repository = new FakeUsuarioRepository(existingDocumento: "12345678900");
-        var useCase = new CreateUsuarioUseCase(repository, new FakePasswordHasher());
+        var useCase = new CreateUsuarioUseCase(repository, new FakeEmpresaRepository(), new FakePasswordHasher());
 
         await Assert.ThrowsAsync<UsuarioException>(() =>
             useCase.ExecuteAsync(
-                new CreateUsuarioRequest("12345678900", "Duplicado", PerfilUsuario.Analista, "senha123")));
+                new CreateUsuarioRequest("12345678900", "Duplicado", PerfilUsuario.Analista, "senha123", null)));
     }
 
     private sealed class FakePasswordHasher : IPasswordHasher
@@ -76,6 +76,27 @@ public sealed class CreateUsuarioUseCaseTests
         }
 
         public Task UpdateAsync(Usuario usuario, CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+    }
+
+    private sealed class FakeEmpresaRepository : IEmpresaRepository
+    {
+        public Task<Empresa?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
+            Task.FromResult<Empresa?>(null);
+
+        public Task<IReadOnlyList<Empresa>> ListAsync(CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<Empresa>>([]);
+
+        public Task<bool> ExistsCnpjAsync(
+            string cnpj,
+            Guid? excludeEmpresaId = null,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult(false);
+
+        public Task AddAsync(Empresa empresa, CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+
+        public Task UpdateAsync(Empresa empresa, CancellationToken cancellationToken = default) =>
             Task.CompletedTask;
     }
 }

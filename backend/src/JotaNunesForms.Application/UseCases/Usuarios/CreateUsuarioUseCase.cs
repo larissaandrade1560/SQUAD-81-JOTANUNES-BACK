@@ -8,11 +8,16 @@ namespace JotaNunesForms.Application.UseCases.Usuarios;
 public sealed class CreateUsuarioUseCase
 {
     private readonly IUsuarioRepository _usuarios;
+    private readonly IEmpresaRepository _empresas;
     private readonly IPasswordHasher _passwordHasher;
 
-    public CreateUsuarioUseCase(IUsuarioRepository usuarios, IPasswordHasher passwordHasher)
+    public CreateUsuarioUseCase(
+        IUsuarioRepository usuarios,
+        IEmpresaRepository empresas,
+        IPasswordHasher passwordHasher)
     {
         _usuarios = usuarios;
+        _empresas = empresas;
         _passwordHasher = passwordHasher;
     }
 
@@ -45,13 +50,27 @@ public sealed class CreateUsuarioUseCase
             throw new UsuarioException("Já existe um usuário com este documento.");
         }
 
-        var usuario = new Usuario(
-            documento,
-            _passwordHasher.Hash(request.Senha),
-            request.NomeExibicao,
-            request.Perfil);
+        var empresaId = await UsuarioEmpresaRules.ResolveEmpresaForPerfilAsync(
+            request.Perfil,
+            request.EmpresaId,
+            _empresas,
+            cancellationToken);
 
-        await _usuarios.AddAsync(usuario, cancellationToken);
-        return UsuarioResponse.FromEntity(usuario);
+        try
+        {
+            var usuario = new Usuario(
+                documento,
+                _passwordHasher.Hash(request.Senha),
+                request.NomeExibicao,
+                request.Perfil,
+                empresaId);
+
+            await _usuarios.AddAsync(usuario, cancellationToken);
+            return UsuarioResponse.FromEntity(usuario);
+        }
+        catch (ArgumentException ex)
+        {
+            throw new UsuarioException(ex.Message);
+        }
     }
 }

@@ -42,5 +42,13 @@ public sealed class UsuarioConfiguration : IEntityTypeConfiguration<Usuario>
         builder.Property(u => u.Ativo)
             .HasColumnName("ativo")
             .IsRequired();
+
+        builder.Property(u => u.EmpresaId)
+            .HasColumnName("empresa_id");
+
+        builder.HasOne<Empresa>()
+            .WithMany()
+            .HasForeignKey(u => u.EmpresaId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

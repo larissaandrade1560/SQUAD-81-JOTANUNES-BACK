@@ -7,11 +7,16 @@ namespace JotaNunesForms.Application.UseCases.Usuarios;
 public sealed class UpdateUsuarioUseCase
 {
     private readonly IUsuarioRepository _usuarios;
+    private readonly IEmpresaRepository _empresas;
     private readonly IPasswordHasher _passwordHasher;
 
-    public UpdateUsuarioUseCase(IUsuarioRepository usuarios, IPasswordHasher passwordHasher)
+    public UpdateUsuarioUseCase(
+        IUsuarioRepository usuarios,
+        IEmpresaRepository empresas,
+        IPasswordHasher passwordHasher)
     {
         _usuarios = usuarios;
+        _empresas = empresas;
         _passwordHasher = passwordHasher;
     }
 
@@ -49,7 +54,21 @@ public sealed class UpdateUsuarioUseCase
             usuario.AlterarSenha(_passwordHasher.Hash(request.Senha));
         }
 
-        usuario.AtualizarPerfil(request.NomeExibicao, request.Perfil);
+        var empresaId = await UsuarioEmpresaRules.ResolveEmpresaForPerfilAsync(
+            request.Perfil,
+            request.EmpresaId,
+            _empresas,
+            cancellationToken);
+
+        try
+        {
+            usuario.AtualizarPerfil(request.NomeExibicao, request.Perfil, empresaId);
+        }
+        catch (ArgumentException ex)
+        {
+            throw new UsuarioException(ex.Message);
+        }
+
         usuario.DefinirStatus(request.Ativo);
 
         await _usuarios.UpdateAsync(usuario, cancellationToken);

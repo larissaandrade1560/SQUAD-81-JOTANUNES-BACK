@@ -2,8 +2,8 @@ export type AuthSession = {
   accessToken: string
   document: string
   displayName: string
-  profileLabel: 'Administrador' | 'Analista'
-  role: 'admin' | 'analista'
+  profileLabel: 'Administrador' | 'Analista' | 'Terceirizado'
+  role: 'admin' | 'analista' | 'terceirizado'
   expiresAtUtc: string
 }
 
