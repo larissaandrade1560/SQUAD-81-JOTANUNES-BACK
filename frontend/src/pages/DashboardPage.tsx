@@ -38,7 +38,7 @@ export function DashboardPage() {
     <section className="jn-dashboard">
       <PageHeader
         title="Dashboard"
-        subtitle="Panorama de empresas parceiras, documentação e conformidade de pagamentos."
+        subtitle="Panorama de empresas parceiras, documentação e conformidade de pagamentos. Métricas e filas abaixo são dados demonstrativos (mock) até integração com a API."
       />
 
       <div className="jn-dashboard__metrics">

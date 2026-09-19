@@ -1,16 +1,11 @@
 import { useState } from 'react'
-import { Navigate, useNavigate } from 'react-router'
+import { useNavigate } from 'react-router'
 import { LoginCard } from '../components/auth/LoginCard'
 import { loginWithApi } from '../services/authService'
-import { getSession } from '../store/authStorage'
 
 export function LoginPage() {
   const navigate = useNavigate()
   const [error, setError] = useState<string | undefined>()
-
-  if (getSession()) {
-    return <Navigate to="/" replace />
-  }
 
   return (
     <LoginCard

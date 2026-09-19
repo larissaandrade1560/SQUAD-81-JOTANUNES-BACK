@@ -23,6 +23,10 @@ export async function loginWithApi(credentials: {
     },
   })
 
+  if (!response.accessToken?.trim()) {
+    throw new Error('Resposta de login inválida.')
+  }
+
   const session: AuthSession = {
     accessToken: response.accessToken,
     document: response.documento,
