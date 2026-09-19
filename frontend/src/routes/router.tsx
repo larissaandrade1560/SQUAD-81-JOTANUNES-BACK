@@ -4,11 +4,12 @@ import { AuthLayout } from '../layouts/AuthLayout'
 import { DashboardPage } from '../pages/DashboardPage'
 import { LoginPage } from '../pages/LoginPage'
 import { ModulePlaceholderPage } from '../pages/ModulePlaceholderPage'
+import { UsuariosPage } from '../pages/UsuariosPage'
+import { AdminRoute } from './AdminRoute'
 import { ProtectedRoute } from './ProtectedRoute'
 
 const moduleRoutes = [
   { path: 'empresas' },
-  { path: 'usuarios' },
   { path: 'obras' },
   { path: 'funcionarios' },
   { path: 'validacao' },
@@ -34,6 +35,10 @@ export const router = createBrowserRouter([
         element: <AppShell />,
         children: [
           { index: true, element: <DashboardPage /> },
+          {
+            element: <AdminRoute />,
+            children: [{ path: 'usuarios', element: <UsuariosPage /> }],
+          },
           ...moduleRoutes.map(({ path }) => ({
             path,
             element: <ModulePlaceholderPage />,

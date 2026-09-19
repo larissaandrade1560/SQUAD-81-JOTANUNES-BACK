@@ -77,10 +77,25 @@ public sealed class LoginUseCaseTests
         public Task<Usuario?> GetByDocumentoAsync(string documento, CancellationToken cancellationToken = default) =>
             Task.FromResult(_usuario);
 
+        public Task<Usuario?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
+            Task.FromResult(_usuario);
+
+        public Task<IReadOnlyList<Usuario>> ListAsync(CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<Usuario>>(_usuario is null ? [] : [_usuario]);
+
         public Task<bool> AnyAsync(CancellationToken cancellationToken = default) =>
             Task.FromResult(_usuario is not null);
 
+        public Task<bool> ExistsDocumentoAsync(
+            string documento,
+            Guid? excludeUserId = null,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult(false);
+
         public Task AddAsync(Usuario usuario, CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+
+        public Task UpdateAsync(Usuario usuario, CancellationToken cancellationToken = default) =>
             Task.CompletedTask;
     }
 

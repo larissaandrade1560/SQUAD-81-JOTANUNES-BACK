@@ -39,7 +39,36 @@ public sealed class Usuario
             throw new ArgumentException("Documento é obrigatório.", nameof(documento));
         }
 
-        return documento.Trim();
+        var digits = new string(documento.Where(char.IsDigit).ToArray());
+        if (digits.Length == 0)
+        {
+            throw new ArgumentException("Documento inválido.", nameof(documento));
+        }
+
+        return digits;
+    }
+
+    public void AtualizarPerfil(string nomeExibicao, PerfilUsuario perfil)
+    {
+        if (string.IsNullOrWhiteSpace(nomeExibicao))
+        {
+            throw new ArgumentException("Nome de exibição é obrigatório.", nameof(nomeExibicao));
+        }
+
+        NomeExibicao = nomeExibicao.Trim();
+        Perfil = perfil;
+    }
+
+    public void DefinirStatus(bool ativo) => Ativo = ativo;
+
+    public void AlterarSenha(string passwordHash)
+    {
+        if (string.IsNullOrWhiteSpace(passwordHash))
+        {
+            throw new ArgumentException("Hash de senha é obrigatório.", nameof(passwordHash));
+        }
+
+        PasswordHash = passwordHash;
     }
 
     public string PerfilRotulo =>

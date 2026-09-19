@@ -40,7 +40,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("Administrador", policy =>
+        policy.RequireClaim("perfil", "Administrador"));
+});
 
 var corsOrigins = builder.Configuration["Cors:Origins"]?
     .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
