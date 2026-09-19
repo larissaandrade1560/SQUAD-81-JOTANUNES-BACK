@@ -13,6 +13,7 @@ export const JOTANUNES_NAV: JotanunesNavItem[] = [
   { to: '/usuarios', label: 'Usuários e acessos', roles: ['admin'] },
   { to: '/obras', label: 'Obras', roles: ['admin', 'analista'] },
   { to: '/funcionarios', label: 'Funcionários' },
+  { to: '/documentos', label: 'Documentos' },
   { to: '/validacao', label: 'Validação', roles: ['admin', 'analista'] },
   { to: '/pagamentos', label: 'Pagamentos', roles: ['admin', 'analista'] },
   { to: '/pendencias', label: 'Pendências', roles: ['admin', 'analista'] },

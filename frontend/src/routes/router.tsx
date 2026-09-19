@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate } from 'react-router'
 import { AppShell } from '../layouts/AppShell'
 import { AuthLayout } from '../layouts/AuthLayout'
+import { DocumentosEmpresaPage } from '../pages/DocumentosEmpresaPage'
 import { EmpresasPage } from '../pages/EmpresasPage'
 import { FuncionariosPage } from '../pages/FuncionariosPage'
 import { LoginPage } from '../pages/LoginPage'
@@ -37,6 +38,7 @@ export const router = createBrowserRouter([
         children: [
           { index: true, element: <RoleHome /> },
           { path: 'funcionarios', element: <FuncionariosPage /> },
+          { path: 'documentos', element: <DocumentosEmpresaPage /> },
           {
             element: <InternalRoute />,
             children: [

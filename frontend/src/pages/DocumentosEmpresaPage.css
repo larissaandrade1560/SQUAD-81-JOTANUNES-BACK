@@ -1,0 +1,61 @@
+.jn-docs-empresa__status {
+  margin: 0 0 var(--space-4);
+  color: var(--color-text-secondary);
+}
+
+.jn-docs-empresa__status--error {
+  color: var(--color-danger);
+}
+
+.jn-docs-empresa__upload {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-surface);
+}
+
+.jn-docs-empresa__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-size: var(--font-size-tab);
+}
+
+.jn-docs-empresa__field select,
+.jn-docs-empresa__field input[type='file'] {
+  font: inherit;
+}
+
+.jn-docs-empresa__field--file {
+  min-width: min(100%, 16rem);
+}
+
+.jn-docs-empresa__table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-surface);
+}
+
+.jn-docs-empresa__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-tab);
+}
+
+.jn-docs-empresa__table th,
+.jn-docs-empresa__table td {
+  padding: var(--space-3) var(--space-4);
+  text-align: left;
+  border-bottom: 1px solid var(--color-border-default);
+}
+
+.jn-docs-empresa__table th {
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}

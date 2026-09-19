@@ -1,5 +1,6 @@
 using JotaNunesForms.Application.UseCases.Auth;
 using JotaNunesForms.Application.UseCases.Dashboard;
+using JotaNunesForms.Application.UseCases.Documentos;
 using JotaNunesForms.Application.UseCases.Formularios;
 using JotaNunesForms.Application.UseCases.Empresas;
 using JotaNunesForms.Application.UseCases.Funcionarios;
@@ -33,6 +34,9 @@ public static class DependencyInjection
         services.AddScoped<UpdateFuncionarioUseCase>();
         services.AddScoped<ListObraFuncionariosUseCase>();
         services.AddScoped<GetDashboardResumoUseCase>();
+        services.AddScoped<ListDocumentosEmpresaUseCase>();
+        services.AddScoped<UploadDocumentoEmpresaUseCase>();
+        services.AddScoped<GetDocumentoEmpresaDownloadUseCase>();
         return services;
     }
 }

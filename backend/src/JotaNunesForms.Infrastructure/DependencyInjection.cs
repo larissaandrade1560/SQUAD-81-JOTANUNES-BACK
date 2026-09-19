@@ -2,6 +2,7 @@ using JotaNunesForms.Domain.Ports;
 using JotaNunesForms.Infrastructure.Auth;
 using JotaNunesForms.Infrastructure.Persistence;
 using JotaNunesForms.Infrastructure.Persistence.Repositories;
+using JotaNunesForms.Infrastructure.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -35,6 +36,9 @@ public static class DependencyInjection
         services.AddScoped<IObraRepository, ObraRepository>();
         services.AddScoped<IFuncionarioRepository, FuncionarioRepository>();
         services.AddScoped<IFuncionarioObraRepository, FuncionarioObraRepository>();
+        services.AddScoped<IDocumentoEmpresaRepository, DocumentoEmpresaRepository>();
+        services.Configure<R2StorageOptions>(configuration.GetSection("R2"));
+        services.AddSingleton<IObjectStorage, R2ObjectStorage>();
         services.AddSingleton<IPasswordHasher, BcryptPasswordHasher>();
         services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
 
