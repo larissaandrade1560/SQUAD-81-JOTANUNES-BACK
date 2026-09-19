@@ -5,12 +5,12 @@ import { DashboardPage } from '../pages/DashboardPage'
 import { EmpresasPage } from '../pages/EmpresasPage'
 import { LoginPage } from '../pages/LoginPage'
 import { ModulePlaceholderPage } from '../pages/ModulePlaceholderPage'
+import { ObrasPage } from '../pages/ObrasPage'
 import { UsuariosPage } from '../pages/UsuariosPage'
 import { AdminRoute } from './AdminRoute'
 import { ProtectedRoute } from './ProtectedRoute'
 
 const moduleRoutes = [
-  { path: 'obras' },
   { path: 'funcionarios' },
   { path: 'validacao' },
   { path: 'pagamentos' },
@@ -36,6 +36,7 @@ export const router = createBrowserRouter([
         children: [
           { index: true, element: <DashboardPage /> },
           { path: 'empresas', element: <EmpresasPage /> },
+          { path: 'obras', element: <ObrasPage /> },
           {
             element: <AdminRoute />,
             children: [{ path: 'usuarios', element: <UsuariosPage /> }],
