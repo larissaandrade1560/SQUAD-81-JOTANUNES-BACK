@@ -1,0 +1,39 @@
+.jn-metric-card {
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-sm);
+  padding: var(--space-4);
+  min-height: 112px;
+}
+
+.jn-metric-card__value {
+  margin: 0 0 var(--space-2);
+  font-size: var(--font-size-display);
+  line-height: var(--line-height-display);
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.jn-metric-card__label {
+  margin: 0;
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-body);
+  color: var(--color-text-primary);
+}
+
+.jn-metric-card__hint {
+  margin: var(--space-2) 0 0;
+  font-size: var(--font-size-label);
+  line-height: var(--line-height-label);
+  color: var(--color-text-secondary);
+}
+
+.jn-metric-card--warning {
+  border-color: var(--color-badge-warning-fg);
+  background: var(--color-badge-warning-bg);
+}
+
+.jn-metric-card--danger {
+  border-color: var(--color-badge-danger-fg);
+  background: var(--color-badge-danger-bg);
+}

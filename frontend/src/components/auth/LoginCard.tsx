@@ -26,6 +26,13 @@ export function LoginCard({ onSubmit, error }: LoginCardProps) {
 
       <p className="jn-login-card__eyebrow">Seja bem-vindo</p>
       <h1 className="jn-login-card__title">Acesse o JotaNunesForms</h1>
+
+      <div className="jn-login-card__tabs" role="tablist" aria-label="Acesso">
+        <span className="jn-login-card__tab jn-login-card__tab--active" role="tab" aria-selected="true">
+          Acesse sua conta
+        </span>
+      </div>
+
       <p className="jn-login-card__hint">
         O acesso é fornecido pela Jotanunes às empresas parceiras. Não há cadastro
         público neste portal.

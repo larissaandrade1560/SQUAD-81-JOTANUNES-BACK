@@ -21,11 +21,31 @@
 }
 
 .jn-login-card__title {
-  margin: 0 0 var(--space-3);
+  margin: 0 0 var(--space-4);
   font-size: var(--font-size-display);
   line-height: var(--line-height-display);
   font-weight: 500;
   color: var(--color-brand-primary);
+}
+
+.jn-login-card__tabs {
+  display: flex;
+  gap: var(--space-4);
+  width: 100%;
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--color-border-default);
+  margin-bottom: var(--space-4);
+}
+
+.jn-login-card__tab {
+  font-size: var(--font-size-tab);
+  line-height: var(--line-height-tab);
+  color: var(--color-text-secondary);
+}
+
+.jn-login-card__tab--active {
+  color: var(--color-brand-primary);
+  font-weight: 500;
 }
 
 .jn-login-card__hint {

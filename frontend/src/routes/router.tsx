@@ -1,14 +1,25 @@
-import { createBrowserRouter } from 'react-router'
+import { createBrowserRouter, Navigate } from 'react-router'
 import { AppShell } from '../layouts/AppShell'
 import { AuthLayout } from '../layouts/AuthLayout'
-import { AboutPage } from '../pages/AboutPage'
-import { HomePage } from '../pages/HomePage'
+import { DashboardPage } from '../pages/DashboardPage'
 import { LoginPage } from '../pages/LoginPage'
+import { ModulePlaceholderPage } from '../pages/ModulePlaceholderPage'
 import { ProtectedRoute } from './ProtectedRoute'
+
+const moduleRoutes = [
+  { path: 'empresas' },
+  { path: 'usuarios' },
+  { path: 'obras' },
+  { path: 'funcionarios' },
+  { path: 'validacao' },
+  { path: 'pagamentos' },
+  { path: 'pendencias' },
+  { path: 'auditoria' },
+] as const
 
 /**
  * Application route tree.
- * AuthLayout wraps public login; AppShell wraps internal routes.
+ * AuthLayout wraps public login; AppShell wraps internal Jotanunes routes.
  */
 export const router = createBrowserRouter([
   {
@@ -22,10 +33,14 @@ export const router = createBrowserRouter([
       {
         element: <AppShell />,
         children: [
-          { index: true, element: <HomePage /> },
-          { path: 'about', element: <AboutPage /> },
+          { index: true, element: <DashboardPage /> },
+          ...moduleRoutes.map(({ path }) => ({
+            path,
+            element: <ModulePlaceholderPage />,
+          })),
         ],
       },
     ],
   },
+  { path: '*', element: <Navigate to="/" replace /> },
 ])

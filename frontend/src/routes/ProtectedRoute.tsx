@@ -1,14 +1,12 @@
-import { Navigate, Outlet } from 'react-router'
+import { Navigate, Outlet, useLocation } from 'react-router'
+import { getSession } from '../store/authSession'
 
-/**
- * Placeholder route guard for future authentication.
- * Currently always allows access — replace with real session checks later.
- */
 export function ProtectedRoute() {
-  const isAuthenticated = true
+  const location = useLocation()
+  const session = getSession()
 
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />
+  if (!session) {
+    return <Navigate to="/login" replace state={{ from: location.pathname }} />
   }
 
   return <Outlet />

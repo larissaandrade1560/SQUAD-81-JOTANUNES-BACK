@@ -5,7 +5,7 @@
 }
 
 .jn-app-shell__sidebar {
-  width: 240px;
+  width: 260px;
   flex-shrink: 0;
   background: var(--color-bg-surface);
   border-right: 1px solid var(--color-border-default);
@@ -15,14 +15,66 @@
   gap: var(--space-5);
 }
 
+.jn-app-shell--jotanunes .jn-app-shell__sidebar {
+  background: var(--color-bg-sidebar);
+  border-right: none;
+}
+
 .jn-app-shell__brand {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
   padding: var(--space-2);
+}
+
+.jn-app-shell__context {
+  margin: 0;
+  font-size: var(--font-size-label);
+  line-height: var(--line-height-label);
+  color: var(--color-text-muted-on-sidebar);
 }
 
 .jn-app-shell__nav {
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
+  flex: 1;
+}
+
+.jn-app-shell--jotanunes .jn-nav-item {
+  color: var(--color-text-on-sidebar);
+  border-left-color: transparent;
+}
+
+.jn-app-shell--jotanunes .jn-nav-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.jn-app-shell--jotanunes .jn-nav-item--active {
+  color: var(--color-text-on-brand);
+  background: rgba(255, 255, 255, 0.08);
+  border-left-color: var(--color-brand-accent);
+}
+
+.jn-app-shell__user {
+  margin-top: auto;
+  padding: var(--space-3) var(--space-2);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.jn-app-shell__user-name {
+  margin: 0;
+  font-size: var(--font-size-tab);
+  line-height: var(--line-height-tab);
+  font-weight: 500;
+  color: var(--color-text-on-sidebar);
+}
+
+.jn-app-shell__user-role {
+  margin: var(--space-1) 0 0;
+  font-size: var(--font-size-label);
+  line-height: var(--line-height-label);
+  color: var(--color-text-muted-on-sidebar);
 }
 
 .jn-app-shell__main {
@@ -51,6 +103,11 @@
   color: var(--color-brand-primary);
   text-decoration: none;
   font-size: var(--font-size-tab);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
 }
 
 .jn-app-shell__topbar-link:hover {

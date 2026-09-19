@@ -30,3 +30,11 @@
   letter-spacing: 0.08em;
   color: var(--color-text-secondary);
 }
+
+.jn-logo--on-dark .jn-logo__wordmark {
+  color: var(--color-text-on-sidebar);
+}
+
+.jn-logo--on-dark .jn-logo__subtitle {
+  color: var(--color-text-muted-on-sidebar);
+}
