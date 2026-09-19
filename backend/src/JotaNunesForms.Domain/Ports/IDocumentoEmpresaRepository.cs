@@ -10,5 +10,10 @@ public interface IDocumentoEmpresaRepository
         Guid? empresaId = null,
         CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<DocumentoEmpresa>> ListPendentesAsync(
+        CancellationToken cancellationToken = default);
+
     Task AddAsync(DocumentoEmpresa documento, CancellationToken cancellationToken = default);
+
+    Task UpdateAsync(DocumentoEmpresa documento, CancellationToken cancellationToken = default);
 }

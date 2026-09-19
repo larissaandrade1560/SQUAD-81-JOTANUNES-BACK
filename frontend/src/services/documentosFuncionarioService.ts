@@ -15,6 +15,7 @@ export type DocumentoFuncionarioApi = {
   tamanhoBytes: number
   status: number
   statusRotulo: string
+  motivoRejeicao?: string | null
   enviadoEm: string
 }
 

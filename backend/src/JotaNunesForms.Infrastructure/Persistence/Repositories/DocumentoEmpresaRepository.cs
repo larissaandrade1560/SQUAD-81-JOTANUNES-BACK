@@ -29,9 +29,23 @@ public sealed class DocumentoEmpresaRepository : IDocumentoEmpresaRepository
         return await query.OrderByDescending(d => d.EnviadoEm).ToListAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyList<DocumentoEmpresa>> ListPendentesAsync(
+        CancellationToken cancellationToken = default) =>
+        await _dbContext.DocumentosEmpresa
+            .AsNoTracking()
+            .Where(d => d.Status == StatusDocumento.Pendente || d.Status == StatusDocumento.EmAnalise)
+            .OrderBy(d => d.EnviadoEm)
+            .ToListAsync(cancellationToken);
+
     public async Task AddAsync(DocumentoEmpresa documento, CancellationToken cancellationToken = default)
     {
         await _dbContext.DocumentosEmpresa.AddAsync(documento, cancellationToken);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task UpdateAsync(DocumentoEmpresa documento, CancellationToken cancellationToken = default)
+    {
+        _dbContext.DocumentosEmpresa.Update(documento);
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 }

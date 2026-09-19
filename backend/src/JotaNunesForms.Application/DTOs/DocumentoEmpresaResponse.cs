@@ -12,6 +12,7 @@ public sealed record DocumentoEmpresaResponse(
     long TamanhoBytes,
     StatusDocumento Status,
     string StatusRotulo,
+    string? MotivoRejeicao,
     DateTime EnviadoEm)
 {
     public static string TipoLabel(TipoDocumentoEmpresarial tipo) => tipo switch
@@ -43,6 +44,7 @@ public sealed record DocumentoEmpresaResponse(
             doc.TamanhoBytes,
             doc.Status,
             StatusLabel(doc.Status),
+            doc.MotivoRejeicao,
             doc.EnviadoEm);
 }
 

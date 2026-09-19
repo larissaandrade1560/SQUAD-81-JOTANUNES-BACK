@@ -20,6 +20,39 @@ public sealed class DocumentoEmpresa
 
     public DateTime EnviadoEm { get; private set; }
 
+    public string? MotivoRejeicao { get; private set; }
+
+    public DateTime? AnalisadoEm { get; private set; }
+
+    public void Aprovar()
+    {
+        if (Status is not StatusDocumento.Pendente and not StatusDocumento.EmAnalise)
+        {
+            throw new InvalidOperationException("Somente documentos pendentes podem ser aprovados.");
+        }
+
+        Status = StatusDocumento.Aprovado;
+        MotivoRejeicao = null;
+        AnalisadoEm = DateTime.UtcNow;
+    }
+
+    public void Rejeitar(string motivo)
+    {
+        if (string.IsNullOrWhiteSpace(motivo))
+        {
+            throw new ArgumentException("Motivo da rejeição é obrigatório.", nameof(motivo));
+        }
+
+        if (Status is not StatusDocumento.Pendente and not StatusDocumento.EmAnalise)
+        {
+            throw new InvalidOperationException("Somente documentos pendentes podem ser rejeitados.");
+        }
+
+        Status = StatusDocumento.Rejeitado;
+        MotivoRejeicao = motivo.Trim();
+        AnalisadoEm = DateTime.UtcNow;
+    }
+
     private DocumentoEmpresa()
     {
     }

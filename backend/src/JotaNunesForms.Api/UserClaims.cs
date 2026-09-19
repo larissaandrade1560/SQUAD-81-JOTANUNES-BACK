@@ -18,4 +18,10 @@ internal static class UserClaims
 
     public static bool IsAdministrador(ClaimsPrincipal user) =>
         GetPerfil(user) == "Administrador";
+
+    public static bool IsEquipeInterna(ClaimsPrincipal user)
+    {
+        var perfil = GetPerfil(user);
+        return perfil is "Administrador" or "Analista";
+    }
 }

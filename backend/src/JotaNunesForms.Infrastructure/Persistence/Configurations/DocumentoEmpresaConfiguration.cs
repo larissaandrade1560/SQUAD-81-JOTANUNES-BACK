@@ -54,5 +54,12 @@ public sealed class DocumentoEmpresaConfiguration : IEntityTypeConfiguration<Doc
         builder.Property(d => d.EnviadoEm)
             .HasColumnName("enviado_em")
             .IsRequired();
+
+        builder.Property(d => d.MotivoRejeicao)
+            .HasColumnName("motivo_rejeicao")
+            .HasMaxLength(2000);
+
+        builder.Property(d => d.AnalisadoEm)
+            .HasColumnName("analisado_em");
     }
 }

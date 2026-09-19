@@ -6,6 +6,7 @@ using JotaNunesForms.Application.UseCases.Empresas;
 using JotaNunesForms.Application.UseCases.Funcionarios;
 using JotaNunesForms.Application.UseCases.Obras;
 using JotaNunesForms.Application.UseCases.Usuarios;
+using JotaNunesForms.Application.UseCases.Validacao;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace JotaNunesForms.Application;
@@ -40,6 +41,11 @@ public static class DependencyInjection
         services.AddScoped<ListDocumentosFuncionarioUseCase>();
         services.AddScoped<UploadDocumentoFuncionarioUseCase>();
         services.AddScoped<GetDocumentoFuncionarioDownloadUseCase>();
+        services.AddScoped<ListValidacaoFilaUseCase>();
+        services.AddScoped<AprovarDocumentoEmpresaValidacaoUseCase>();
+        services.AddScoped<RejeitarDocumentoEmpresaValidacaoUseCase>();
+        services.AddScoped<AprovarDocumentoFuncionarioValidacaoUseCase>();
+        services.AddScoped<RejeitarDocumentoFuncionarioValidacaoUseCase>();
         return services;
     }
 }

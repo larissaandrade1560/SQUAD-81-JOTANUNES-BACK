@@ -30,10 +30,10 @@ function apiErrorMessage(err: unknown): string {
 
 function statusTone(status: number): 'success' | 'warning' | 'neutral' | 'danger' | 'info' {
   if (status === 2) return 'success'
-  if (status === 1) return 'info'
   if (status === 3) return 'danger'
+  if (status === 1) return 'info'
   if (status === 4) return 'warning'
-  return 'neutral'
+  return 'info'
 }
 
 /** RF08 — Documentos do funcionário (PDF no R2). */
@@ -168,13 +168,14 @@ export function FuncionarioDocumentosPage() {
                 <th scope="col">Tamanho</th>
                 <th scope="col">Enviado em</th>
                 <th scope="col">Status</th>
+                <th scope="col">Motivo rejeição</th>
                 <th scope="col">Ações</th>
               </tr>
             </thead>
             <tbody>
               {documentos.length === 0 ? (
                 <tr>
-                  <td colSpan={showEmpresaColumn ? 7 : 6}>Nenhum documento enviado.</td>
+                  <td colSpan={showEmpresaColumn ? 8 : 7}>Nenhum documento enviado.</td>
                 </tr>
               ) : (
                 documentos.map((d) => (
@@ -187,6 +188,7 @@ export function FuncionarioDocumentosPage() {
                     <td>
                       <Badge tone={statusTone(d.status)}>{d.statusRotulo}</Badge>
                     </td>
+                    <td>{d.motivoRejeicao ?? '—'}</td>
                     <td>
                       <Button type="button" variant="ghost" onClick={() => void handleDownload(d.id)}>
                         Baixar

@@ -10,5 +10,10 @@ public interface IDocumentoFuncionarioRepository
         Guid funcionarioId,
         CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<DocumentoFuncionario>> ListPendentesAsync(
+        CancellationToken cancellationToken = default);
+
     Task AddAsync(DocumentoFuncionario documento, CancellationToken cancellationToken = default);
+
+    Task UpdateAsync(DocumentoFuncionario documento, CancellationToken cancellationToken = default);
 }
