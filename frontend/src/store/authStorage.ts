@@ -40,6 +40,9 @@ export function clearSession(): void {
   sessionStorage.removeItem(STORAGE_KEY)
 }
 
+/** Alias for UI code that expects a `logout` name. */
+export const logout = clearSession
+
 export function isAuthenticated(): boolean {
   return getSession() !== null
 }
