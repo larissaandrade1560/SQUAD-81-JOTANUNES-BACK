@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate } from 'react-router'
 import { AppShell } from '../layouts/AppShell'
 import { AuthLayout } from '../layouts/AuthLayout'
 import { DashboardPage } from '../pages/DashboardPage'
+import { EmpresasPage } from '../pages/EmpresasPage'
 import { LoginPage } from '../pages/LoginPage'
 import { ModulePlaceholderPage } from '../pages/ModulePlaceholderPage'
 import { UsuariosPage } from '../pages/UsuariosPage'
@@ -9,7 +10,6 @@ import { AdminRoute } from './AdminRoute'
 import { ProtectedRoute } from './ProtectedRoute'
 
 const moduleRoutes = [
-  { path: 'empresas' },
   { path: 'obras' },
   { path: 'funcionarios' },
   { path: 'validacao' },
@@ -35,6 +35,7 @@ export const router = createBrowserRouter([
         element: <AppShell />,
         children: [
           { index: true, element: <DashboardPage /> },
+          { path: 'empresas', element: <EmpresasPage /> },
           {
             element: <AdminRoute />,
             children: [{ path: 'usuarios', element: <UsuariosPage /> }],

@@ -1,5 +1,6 @@
 using JotaNunesForms.Application.UseCases.Auth;
 using JotaNunesForms.Application.UseCases.Formularios;
+using JotaNunesForms.Application.UseCases.Empresas;
 using JotaNunesForms.Application.UseCases.Usuarios;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -16,6 +17,10 @@ public static class DependencyInjection
         services.AddScoped<GetUsuarioUseCase>();
         services.AddScoped<CreateUsuarioUseCase>();
         services.AddScoped<UpdateUsuarioUseCase>();
+        services.AddScoped<ListEmpresasUseCase>();
+        services.AddScoped<GetEmpresaUseCase>();
+        services.AddScoped<CreateEmpresaUseCase>();
+        services.AddScoped<UpdateEmpresaUseCase>();
         return services;
     }
 }
