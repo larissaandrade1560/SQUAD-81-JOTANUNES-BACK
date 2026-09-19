@@ -13,7 +13,7 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        var connectionString = NormalizeConnectionString(
+        var connectionString = ConnectionStringNormalizer.Normalize(
             configuration.GetConnectionString("JotaNunesFormsDb")
             ?? configuration["DATABASE_URL"]);
 
@@ -40,27 +40,5 @@ public static class DependencyInjection
         using var scope = services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<JotaNunesFormsDbContext>();
         await dbContext.Database.MigrateAsync(cancellationToken);
-    }
-
-    private static string? NormalizeConnectionString(string? connectionString)
-    {
-        if (string.IsNullOrWhiteSpace(connectionString))
-        {
-            return connectionString;
-        }
-
-        if (!connectionString.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase)
-            && !connectionString.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase))
-        {
-            return connectionString;
-        }
-
-        var uri = new Uri(connectionString);
-        var userInfo = uri.UserInfo.Split(':', 2);
-        var username = Uri.UnescapeDataString(userInfo[0]);
-        var password = userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : string.Empty;
-        var database = uri.AbsolutePath.Trim('/');
-
-        return $"Host={uri.Host};Port={uri.Port};Database={database};Username={username};Password={password};SSL Mode=Require;Trust Server Certificate=true";
     }
 }

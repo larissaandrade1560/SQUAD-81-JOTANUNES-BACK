@@ -21,6 +21,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JotaNunesForms.Application.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JotaNunesForms.Api.Tests", "tests\JotaNunesForms.Api.Tests\JotaNunesForms.Api.Tests.csproj", "{B7FE66A0-87FC-4AC4-A00B-3896D03973EF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JotaNunesForms.Infrastructure.Tests", "tests\JotaNunesForms.Infrastructure.Tests\JotaNunesForms.Infrastructure.Tests.csproj", "{C4E8A1B2-3D5F-4A6B-9C0D-1E2F3A4B5C6D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -58,6 +60,10 @@ Global
 		{B7FE66A0-87FC-4AC4-A00B-3896D03973EF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B7FE66A0-87FC-4AC4-A00B-3896D03973EF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B7FE66A0-87FC-4AC4-A00B-3896D03973EF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C4E8A1B2-3D5F-4A6B-9C0D-1E2F3A4B5C6D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C4E8A1B2-3D5F-4A6B-9C0D-1E2F3A4B5C6D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C4E8A1B2-3D5F-4A6B-9C0D-1E2F3A4B5C6D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C4E8A1B2-3D5F-4A6B-9C0D-1E2F3A4B5C6D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{3F9EA7ED-98D4-4D12-855F-1DC367A1C280} = {3F4643E0-89B3-47C8-98B7-2AD27F0CADCB}
@@ -67,5 +73,6 @@ Global
 		{7A968C93-6AC2-49A9-AE44-69ADEFADCB2E} = {1B7FC6E5-9A7C-4F29-A683-EBD69D6A06EB}
 		{7B7D959A-73F2-4B50-91B2-0DC7B234B4ED} = {1B7FC6E5-9A7C-4F29-A683-EBD69D6A06EB}
 		{B7FE66A0-87FC-4AC4-A00B-3896D03973EF} = {1B7FC6E5-9A7C-4F29-A683-EBD69D6A06EB}
+		{C4E8A1B2-3D5F-4A6B-9C0D-1E2F3A4B5C6D} = {1B7FC6E5-9A7C-4F29-A683-EBD69D6A06EB}
 	EndGlobalSection
 EndGlobal
