@@ -45,6 +45,8 @@ export function FuncionariosPage() {
   const showEmpresaColumn = session?.role !== 'terceirizado'
   const [funcionarios, setFuncionarios] = useState<FuncionarioApi[]>([])
   const [obrasAtivas, setObrasAtivas] = useState<ObraApi[]>([])
+  const [obrasLoading, setObrasLoading] = useState(false)
+  const [obrasError, setObrasError] = useState<string | undefined>()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | undefined>()
   const [formMode, setFormMode] = useState<FormMode | null>(null)
@@ -69,17 +71,29 @@ export function FuncionariosPage() {
     void load()
   }, [load])
 
-  async function loadObrasForForm() {
+  const loadObras = useCallback(async () => {
+    setObrasLoading(true)
+    setObrasError(undefined)
     try {
       const obras = await listObras()
       setObrasAtivas(obras.filter((o) => o.ativo))
-    } catch {
-      setObrasAtivas([])
+    } catch (err) {
+      setObrasError(apiErrorMessage(err))
+    } finally {
+      setObrasLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    if (canWrite) {
+      void loadObras()
+    }
+  }, [canWrite, loadObras])
 
   function openCreate() {
-    void loadObrasForForm()
+    if (!obrasLoading && obrasAtivas.length === 0 && !obrasError) {
+      void loadObras()
+    }
     setFormMode('create')
     setEditingId(null)
     setForm(emptyForm)
@@ -87,7 +101,9 @@ export function FuncionariosPage() {
   }
 
   function openEdit(funcionario: FuncionarioApi) {
-    void loadObrasForForm()
+    if (!obrasLoading && obrasAtivas.length === 0 && !obrasError) {
+      void loadObras()
+    }
     setFormMode('edit')
     setEditingId(funcionario.id)
     setForm({
@@ -268,10 +284,23 @@ export function FuncionariosPage() {
               }}
             />
 
-            <fieldset className="jn-funcionarios__obras">
+            <fieldset className="jn-funcionarios__obras" aria-busy={obrasLoading}>
               <legend>Obras (RF06)</legend>
-              {obrasAtivas.length === 0 ? (
-                <p className="jn-funcionarios__readonly">Nenhuma obra ativa disponível para vínculo.</p>
+              {obrasLoading ? (
+                <p className="jn-funcionarios__obras-hint">Carregando obras disponíveis…</p>
+              ) : obrasError ? (
+                <div className="jn-funcionarios__obras-error">
+                  <p className="jn-funcionarios__status jn-funcionarios__status--error" role="alert">
+                    {obrasError}
+                  </p>
+                  <Button type="button" variant="ghost" onClick={() => void loadObras()}>
+                    Tentar novamente
+                  </Button>
+                </div>
+              ) : obrasAtivas.length === 0 ? (
+                <p className="jn-funcionarios__obras-hint">
+                  Nenhuma obra ativa disponível para vínculo. Peça à Jotanunes o cadastro da obra.
+                </p>
               ) : (
                 <ul className="jn-funcionarios__obras-list">
                   {obrasAtivas.map((obra) => (

@@ -17,8 +17,9 @@
 ## Frontend
 
 - `FuncionariosPage`: fieldset checkboxes Obras (RF06); coluna Obras na tabela.
+- **UX:** prefetch de obras ao entrar (terceirizado); estados *Carregando…*, erro com *Tentar novamente*, mensagem vazia só após carga.
 - `ObrasPage`: botão **Ver MO** → modal de alocações.
-- `DashboardPage`: métricas empresas/obras/funcionários via API.
+- `DashboardPage`: métricas com loading/erro e **Atualizar métricas**.
 
 ## Deploy
 

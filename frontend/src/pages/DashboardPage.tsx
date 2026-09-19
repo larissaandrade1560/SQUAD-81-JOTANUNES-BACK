@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { Badge } from '../components/ui/Badge'
 import '../components/ui/Link.css'
 import { PageHeader } from '../components/ui/PageHeader'
+import { Button } from '../components/ui/Button'
 import { MetricCard } from '../components/dashboard/MetricCard'
 import { getDashboardResumo, type DashboardResumoApi } from '../services/dashboardService'
 import './DashboardPage.css'
@@ -37,23 +38,49 @@ const alerts = [
 /** JN-01 — Dashboard gerencial (Admin / Analista). */
 export function DashboardPage() {
   const [resumo, setResumo] = useState<DashboardResumoApi | null>(null)
+  const [resumoLoading, setResumoLoading] = useState(true)
+  const [resumoError, setResumoError] = useState(false)
 
-  useEffect(() => {
+  const loadResumo = useCallback(() => {
+    setResumoLoading(true)
+    setResumoError(false)
     void getDashboardResumo()
       .then(setResumo)
-      .catch(() => setResumo(null))
+      .catch(() => {
+        setResumo(null)
+        setResumoError(true)
+      })
+      .finally(() => setResumoLoading(false))
   }, [])
 
-  const empresasAtivas = resumo ? String(resumo.empresasAtivas) : '…'
-  const empresasHint = resumo
-    ? `De ${resumo.empresasTotal} empresas cadastradas`
-    : 'Carregando cadastros…'
-  const obrasAtivas = resumo ? String(resumo.obrasAtivas) : '…'
-  const obrasHint = resumo ? `De ${resumo.obrasTotal} obras cadastradas` : 'Carregando cadastros…'
-  const funcionariosAtivos = resumo ? String(resumo.funcionariosAtivos) : '…'
-  const funcionariosHint = resumo
-    ? `De ${resumo.funcionariosTotal} funcionários MO`
-    : 'Carregando cadastros…'
+  useEffect(() => {
+    loadResumo()
+  }, [loadResumo])
+
+  const metricValue = (value: number | undefined) => {
+    if (resumoLoading) return '…'
+    if (resumoError || value === undefined) return '—'
+    return String(value)
+  }
+
+  const empresasAtivas = metricValue(resumo?.empresasAtivas)
+  const empresasHint = resumoLoading
+    ? 'Carregando cadastros…'
+    : resumoError
+      ? 'Falha ao carregar. Use “Atualizar métricas”.'
+      : `De ${resumo?.empresasTotal ?? 0} empresas cadastradas`
+  const obrasAtivas = metricValue(resumo?.obrasAtivas)
+  const obrasHint = resumoLoading
+    ? 'Carregando cadastros…'
+    : resumoError
+      ? 'Falha ao carregar.'
+      : `De ${resumo?.obrasTotal ?? 0} obras cadastradas`
+  const funcionariosAtivos = metricValue(resumo?.funcionariosAtivos)
+  const funcionariosHint = resumoLoading
+    ? 'Carregando cadastros…'
+    : resumoError
+      ? 'Falha ao carregar.'
+      : `De ${resumo?.funcionariosTotal ?? 0} funcionários MO`
 
   return (
     <section className="jn-dashboard">
@@ -61,6 +88,15 @@ export function DashboardPage() {
         title="Dashboard"
         subtitle="Contagens de empresas, obras e funcionários vêm da API. Filas de validação e alertas abaixo permanecem demonstrativos até RF07+."
       />
+
+      {resumoError && (
+        <p className="jn-dashboard__resumo-error" role="alert">
+          Não foi possível carregar as métricas de cadastro.{' '}
+          <Button type="button" variant="ghost" onClick={loadResumo}>
+            Atualizar métricas
+          </Button>
+        </p>
+      )}
 
       <div className="jn-dashboard__metrics">
         <MetricCard label="Empresas parceiras ativas" value={empresasAtivas} hint={empresasHint} />
