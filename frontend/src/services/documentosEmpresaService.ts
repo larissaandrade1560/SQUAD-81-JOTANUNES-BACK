@@ -41,11 +41,20 @@ export async function uploadDocumentoEmpresa(
 
   const token = getAccessToken()
   const url = `${getApiBaseUrl()}/api/documentos-empresa`
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-    body: form,
-  })
+  let response: Response
+  try {
+    response = await fetch(url, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: form,
+    })
+  } catch {
+    const error: ApiError = {
+      message: 'Falha de conexão com a API. Aguarde e tente novamente.',
+      status: 0,
+    }
+    throw error
+  }
 
   const text = await response.text()
   let payload: unknown

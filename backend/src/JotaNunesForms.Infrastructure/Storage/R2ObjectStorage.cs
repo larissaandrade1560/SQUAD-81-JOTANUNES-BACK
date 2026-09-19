@@ -35,6 +35,9 @@ public sealed class R2ObjectStorage : IObjectStorage, IDisposable
                 Key = key,
                 InputStream = content,
                 ContentType = contentType,
+                // R2 does not support AWS chunked/streaming payload signing.
+                DisablePayloadSigning = true,
+                DisableDefaultChecksumValidation = true,
             },
             cancellationToken);
     }

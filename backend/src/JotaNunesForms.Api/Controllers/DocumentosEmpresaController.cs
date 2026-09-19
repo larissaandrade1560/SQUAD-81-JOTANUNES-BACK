@@ -75,6 +75,10 @@ public sealed class DocumentosEmpresaController : ControllerBase
         {
             return BadRequest(new { message = ex.Message });
         }
+        catch (Exception)
+        {
+            return StatusCode(502, new { message = "Falha ao enviar arquivo para o storage. Tente novamente." });
+        }
     }
 
     [HttpGet("{id:guid}/download")]
