@@ -1,7 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { Button } from '../ui/Button'
 import { FormField } from '../forms/FormField'
-import { Link } from '../ui/Link'
 import { Logo } from '../ui/Logo'
 import './LoginCard.css'
 
@@ -27,15 +26,10 @@ export function LoginCard({ onSubmit, error }: LoginCardProps) {
 
       <p className="jn-login-card__eyebrow">Seja bem-vindo</p>
       <h1 className="jn-login-card__title">Acesse o JotaNunesForms</h1>
-
-      <div className="jn-login-card__tabs" role="tablist" aria-label="Acesso">
-        <Link href="#conta" tone="default" className="jn-login-card__tab jn-login-card__tab--active">
-          Acesse sua conta
-        </Link>
-        <Link href="#cadastro" tone="muted" className="jn-login-card__tab">
-          Cadastre-se
-        </Link>
-      </div>
+      <p className="jn-login-card__hint">
+        O acesso é fornecido pela Jotanunes às empresas parceiras. Não há cadastro
+        público neste portal.
+      </p>
 
       <form className="jn-login-card__form" onSubmit={handleSubmit}>
         <FormField
@@ -64,15 +58,6 @@ export function LoginCard({ onSubmit, error }: LoginCardProps) {
             onChange: (e) => setPassword(e.target.value),
           }}
         />
-
-        <div className="jn-login-card__links">
-          <Link href="#primeiro-acesso" tone="muted">
-            Primeiro acesso!
-          </Link>
-          <Link href="#esqueceu" tone="muted">
-            Esqueceu a senha?
-          </Link>
-        </div>
 
         <Button type="submit" variant="primary" size="auth">
           Acessar

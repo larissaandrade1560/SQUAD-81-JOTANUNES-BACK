@@ -21,33 +21,22 @@
 }
 
 .jn-login-card__title {
-  margin: 0 0 var(--space-5);
+  margin: 0 0 var(--space-3);
   font-size: var(--font-size-display);
   line-height: var(--line-height-display);
   font-weight: 500;
   color: var(--color-brand-primary);
 }
 
-.jn-login-card__tabs {
-  display: flex;
-  gap: var(--space-4);
-  margin-bottom: var(--space-5);
-  border-bottom: 1px solid var(--color-border-default);
-  padding-bottom: var(--space-3);
-}
-
-.jn-login-card__tab--active {
-  font-weight: 500;
+.jn-login-card__hint {
+  margin: 0 0 var(--space-5);
+  font-size: var(--font-size-tab);
+  line-height: var(--line-height-tab);
+  color: var(--color-text-secondary);
 }
 
 .jn-login-card__form {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
-}
-
-.jn-login-card__links {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--space-3);
 }

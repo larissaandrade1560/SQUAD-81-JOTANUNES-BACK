@@ -26,6 +26,14 @@
   --color-badge-success-fg: #1e7a3a;
   --color-badge-warning-bg: #fff4e5;
   --color-badge-warning-fg: #8a5a00;
+  --color-badge-danger-bg: #fdecec;
+  --color-badge-danger-fg: #a01b1b;
+
+  /* Shell */
+  --color-bg-sidebar: #141a23;
+  --color-text-on-sidebar: #d9dde3;
+  --color-text-muted-on-sidebar: #8d949e;
+  --color-bg-readonly: #f4f4f6;
 
   /* Spacing */
   --space-1: 4px;
