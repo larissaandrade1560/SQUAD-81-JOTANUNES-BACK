@@ -27,6 +27,6 @@ Push `develop` → conferir `Applying migration '20260919205500_AddTerceirizadoF
 
 ## Próximos passos
 
-1. **RF06** — vínculo funcionário ↔ obra.
-2. Shell MO completo (Figma `09`) e convite (`AUTH-02`).
-3. Dashboard — contagens reais de empresas/obras ativas.
+1. **RF07** — upload PDF documentos empresariais.
+2. Shell MO Figma / AUTH-02 convite.
+3. Dashboard — filas reais (validação) após RF09.

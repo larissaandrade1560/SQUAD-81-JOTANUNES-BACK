@@ -12,7 +12,11 @@ public sealed class CreateFuncionarioUseCaseTests
     {
         var empresa = new Empresa("MO Ltda", "12345678000190", TipoEmpresa.MaoDeObra);
         var repository = new FakeFuncionarioRepository();
-        var useCase = new CreateFuncionarioUseCase(repository, new FakeEmpresaRepository(empresa));
+        var useCase = new CreateFuncionarioUseCase(
+            repository,
+            new FakeEmpresaRepository(empresa),
+            new FakeObraRepository(),
+            new FakeFuncionarioObraRepository());
 
         var result = await useCase.ExecuteAsync(
             empresa.Id,
@@ -70,5 +74,46 @@ public sealed class CreateFuncionarioUseCaseTests
 
         public Task UpdateAsync(Funcionario funcionario, CancellationToken cancellationToken = default) =>
             Task.CompletedTask;
+    }
+
+    private sealed class FakeObraRepository : IObraRepository
+    {
+        public Task<Obra?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
+            Task.FromResult<Obra?>(null);
+
+        public Task<IReadOnlyList<Obra>> ListAsync(CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<Obra>>([]);
+
+        public Task<bool> ExistsCodigoAsync(
+            string codigo,
+            Guid? excludeObraId = null,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult(false);
+
+        public Task AddAsync(Obra obra, CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+
+        public Task UpdateAsync(Obra obra, CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+    }
+
+    private sealed class FakeFuncionarioObraRepository : IFuncionarioObraRepository
+    {
+        public Task<IReadOnlyDictionary<Guid, IReadOnlyList<Obra>>> ListObrasByFuncionarioIdsAsync(
+            IReadOnlyCollection<Guid> funcionarioIds,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyDictionary<Guid, IReadOnlyList<Obra>>>(
+                new Dictionary<Guid, IReadOnlyList<Obra>>());
+
+        public Task ReplaceForFuncionarioAsync(
+            Guid funcionarioId,
+            IReadOnlyList<Guid> obraIds,
+            CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+
+        public Task<IReadOnlyList<Funcionario>> ListFuncionariosByObraIdAsync(
+            Guid obraId,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<Funcionario>>([]);
     }
 }

@@ -46,3 +46,16 @@ export function formatLocalObra(obra: ObraApi): string {
   if (obra.cidade && obra.uf) return `${obra.cidade}/${obra.uf}`
   return obra.cidade ?? obra.uf ?? '—'
 }
+
+export type ObraFuncionarioAlocacaoApi = {
+  funcionarioId: string
+  nome: string
+  cpf: string
+  cargo: string
+  ativo: boolean
+  empresaRazaoSocial: string
+}
+
+export function listObraFuncionarios(obraId: string): Promise<ObraFuncionarioAlocacaoApi[]> {
+  return apiRequest<ObraFuncionarioAlocacaoApi[]>(`/api/obras/${obraId}/funcionarios`)
+}

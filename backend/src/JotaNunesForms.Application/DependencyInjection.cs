@@ -30,6 +30,8 @@ public static class DependencyInjection
         services.AddScoped<ListFuncionariosUseCase>();
         services.AddScoped<CreateFuncionarioUseCase>();
         services.AddScoped<UpdateFuncionarioUseCase>();
+        services.AddScoped<ListObraFuncionariosUseCase>();
+        services.AddScoped<GetDashboardResumoUseCase>();
         return services;
     }
 }

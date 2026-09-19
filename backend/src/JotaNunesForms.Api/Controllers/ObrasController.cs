@@ -15,17 +15,20 @@ public sealed class ObrasController : ControllerBase
     private readonly GetObraUseCase _get;
     private readonly CreateObraUseCase _create;
     private readonly UpdateObraUseCase _update;
+    private readonly ListObraFuncionariosUseCase _listFuncionarios;
 
     public ObrasController(
         ListObrasUseCase list,
         GetObraUseCase get,
         CreateObraUseCase create,
-        UpdateObraUseCase update)
+        UpdateObraUseCase update,
+        ListObraFuncionariosUseCase listFuncionarios)
     {
         _list = list;
         _get = get;
         _create = create;
         _update = update;
+        _listFuncionarios = listFuncionarios;
     }
 
     [HttpGet]
@@ -61,6 +64,21 @@ public sealed class ObrasController : ControllerBase
         catch (ObraException ex)
         {
             return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpGet("{id:guid}/funcionarios")]
+    public async Task<ActionResult<IReadOnlyList<ObraFuncionarioAlocacaoResponse>>> ListFuncionarios(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return Ok(await _listFuncionarios.ExecuteAsync(id, cancellationToken));
+        }
+        catch (ObraException ex)
+        {
+            return NotFound(new { message = ex.Message });
         }
     }
 

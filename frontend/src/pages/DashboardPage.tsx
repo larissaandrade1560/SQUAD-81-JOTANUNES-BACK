@@ -1,8 +1,10 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { Badge } from '../components/ui/Badge'
 import '../components/ui/Link.css'
 import { PageHeader } from '../components/ui/PageHeader'
 import { MetricCard } from '../components/dashboard/MetricCard'
+import { getDashboardResumo, type DashboardResumoApi } from '../services/dashboardService'
 import './DashboardPage.css'
 
 const validationQueue = [
@@ -34,26 +36,44 @@ const alerts = [
 
 /** JN-01 — Dashboard gerencial (Admin / Analista). */
 export function DashboardPage() {
+  const [resumo, setResumo] = useState<DashboardResumoApi | null>(null)
+
+  useEffect(() => {
+    void getDashboardResumo()
+      .then(setResumo)
+      .catch(() => setResumo(null))
+  }, [])
+
+  const empresasAtivas = resumo ? String(resumo.empresasAtivas) : '…'
+  const empresasHint = resumo
+    ? `De ${resumo.empresasTotal} empresas cadastradas`
+    : 'Carregando cadastros…'
+  const obrasAtivas = resumo ? String(resumo.obrasAtivas) : '…'
+  const obrasHint = resumo ? `De ${resumo.obrasTotal} obras cadastradas` : 'Carregando cadastros…'
+  const funcionariosAtivos = resumo ? String(resumo.funcionariosAtivos) : '…'
+  const funcionariosHint = resumo
+    ? `De ${resumo.funcionariosTotal} funcionários MO`
+    : 'Carregando cadastros…'
+
   return (
     <section className="jn-dashboard">
       <PageHeader
         title="Dashboard"
-        subtitle="Panorama de empresas parceiras, documentação e conformidade de pagamentos. Métricas e filas abaixo são dados demonstrativos (mock) até integração com a API."
+        subtitle="Contagens de empresas, obras e funcionários vêm da API. Filas de validação e alertas abaixo permanecem demonstrativos até RF07+."
       />
 
       <div className="jn-dashboard__metrics">
-        <MetricCard label="Empresas parceiras regulares" value="18" hint="De 24 empresas ativas" />
-        <MetricCard label="Documentos em análise" value="7" hint="Fila de validação" tone="warning" />
+        <MetricCard label="Empresas parceiras ativas" value={empresasAtivas} hint={empresasHint} />
+        <MetricCard label="Obras ativas" value={obrasAtivas} hint={obrasHint} />
         <MetricCard
-          label="Pendências críticas"
-          value="5"
-          hint="Empresas ou funcionários irregulares"
-          tone="warning"
+          label="Funcionários MO ativos"
+          value={funcionariosAtivos}
+          hint={funcionariosHint}
         />
         <MetricCard
           label="Comprovantes em atraso"
           value="3"
-          hint="Prazo de envio excedido"
+          hint="Prazo de envio excedido (mock)"
           tone="danger"
         />
       </div>

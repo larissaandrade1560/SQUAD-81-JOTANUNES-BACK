@@ -8,11 +8,19 @@ public sealed class UpdateFuncionarioUseCase
 {
     private readonly IFuncionarioRepository _funcionarios;
     private readonly IEmpresaRepository _empresas;
+    private readonly IObraRepository _obras;
+    private readonly IFuncionarioObraRepository _vinculos;
 
-    public UpdateFuncionarioUseCase(IFuncionarioRepository funcionarios, IEmpresaRepository empresas)
+    public UpdateFuncionarioUseCase(
+        IFuncionarioRepository funcionarios,
+        IEmpresaRepository empresas,
+        IObraRepository obras,
+        IFuncionarioObraRepository vinculos)
     {
         _funcionarios = funcionarios;
         _empresas = empresas;
+        _obras = obras;
+        _vinculos = vinculos;
     }
 
     public async Task<FuncionarioResponse> ExecuteAsync(
@@ -38,12 +46,30 @@ public sealed class UpdateFuncionarioUseCase
             throw new FuncionarioException("Empresa não encontrada.");
         }
 
+        if (request.ObraIds is not null)
+        {
+            await FuncionarioObraRules.ValidateObraIdsAsync(_obras, request.ObraIds, cancellationToken);
+        }
+
         try
         {
             funcionario.Atualizar(request.Nome, request.Cargo);
             funcionario.DefinirStatus(request.Ativo);
             await _funcionarios.UpdateAsync(funcionario, cancellationToken);
-            return FuncionarioResponse.FromEntity(funcionario, empresa.RazaoSocial);
+
+            if (request.ObraIds is not null)
+            {
+                await _vinculos.ReplaceForFuncionarioAsync(funcionario.Id, request.ObraIds, cancellationToken);
+            }
+
+            var obras = (await _vinculos.ListObrasByFuncionarioIdsAsync(
+                new[] { funcionario.Id },
+                cancellationToken)).GetValueOrDefault(funcionario.Id, Array.Empty<Domain.Entities.Obra>());
+
+            return FuncionarioResponse.FromEntity(
+                funcionario,
+                empresa.RazaoSocial,
+                FuncionarioResponse.MapObras(obras));
         }
         catch (ArgumentException ex)
         {

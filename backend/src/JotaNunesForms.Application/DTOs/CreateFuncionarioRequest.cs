@@ -3,4 +3,5 @@ namespace JotaNunesForms.Application.DTOs;
 public sealed record CreateFuncionarioRequest(
     string Nome,
     string Cpf,
-    string Cargo);
+    string Cargo,
+    IReadOnlyList<Guid>? ObraIds = null);

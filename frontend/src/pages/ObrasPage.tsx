@@ -7,10 +7,13 @@ import type { ApiError } from '../types/api'
 import {
   createObra,
   formatLocalObra,
+  listObraFuncionarios,
   listObras,
   updateObra,
   type ObraApi,
+  type ObraFuncionarioAlocacaoApi,
 } from '../services/obrasService'
+import { formatCpf } from '../services/funcionariosService'
 import { getSession } from '../store/authStorage'
 import './ObrasPage.css'
 
@@ -36,7 +39,7 @@ function apiErrorMessage(err: unknown): string {
   return 'Não foi possível concluir a operação.'
 }
 
-/** RF04 — Cadastro de obras ativas da construtora. */
+/** RF04 + RF06 — Obras e consulta de alocações (Jotanunes). */
 export function ObrasPage() {
   const isAdmin = getSession()?.role === 'admin'
   const [obras, setObras] = useState<ObraApi[]>([])
@@ -47,6 +50,10 @@ export function ObrasPage() {
   const [form, setForm] = useState(emptyForm)
   const [formError, setFormError] = useState<string | undefined>()
   const [saving, setSaving] = useState(false)
+  const [alocacaoObra, setAlocacaoObra] = useState<ObraApi | null>(null)
+  const [alocacoes, setAlocacoes] = useState<ObraFuncionarioAlocacaoApi[]>([])
+  const [alocacoesLoading, setAlocacoesLoading] = useState(false)
+  const [alocacoesError, setAlocacoesError] = useState<string | undefined>()
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -91,6 +98,26 @@ export function ObrasPage() {
     setFormError(undefined)
   }
 
+  async function openAlocacoes(obra: ObraApi) {
+    setAlocacaoObra(obra)
+    setAlocacoesLoading(true)
+    setAlocacoesError(undefined)
+    try {
+      setAlocacoes(await listObraFuncionarios(obra.id))
+    } catch (err) {
+      setAlocacoesError(apiErrorMessage(err))
+      setAlocacoes([])
+    } finally {
+      setAlocacoesLoading(false)
+    }
+  }
+
+  function closeAlocacoes() {
+    setAlocacaoObra(null)
+    setAlocacoes([])
+    setAlocacoesError(undefined)
+  }
+
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
     setSaving(true)
@@ -126,7 +153,7 @@ export function ObrasPage() {
     <section className="jn-obras">
       <PageHeader
         title="Obras"
-        subtitle="Criação e gestão das obras ativas da construtora (RF04). Analistas consultam; administradores cadastram e editam."
+        subtitle="Criação e gestão das obras ativas da construtora (RF04). Alocações de MO por obra (RF06)."
         action={
           isAdmin ? (
             <Button type="button" variant="primary" onClick={openCreate}>
@@ -152,13 +179,14 @@ export function ObrasPage() {
                 <th scope="col">Código</th>
                 <th scope="col">Local</th>
                 <th scope="col">Status</th>
+                <th scope="col">Alocações</th>
                 {isAdmin && <th scope="col">Ações</th>}
               </tr>
             </thead>
             <tbody>
               {obras.length === 0 ? (
                 <tr>
-                  <td colSpan={isAdmin ? 5 : 4}>Nenhuma obra cadastrada.</td>
+                  <td colSpan={isAdmin ? 6 : 5}>Nenhuma obra cadastrada.</td>
                 </tr>
               ) : (
                 obras.map((obra) => (
@@ -170,6 +198,11 @@ export function ObrasPage() {
                       <Badge tone={obra.ativo ? 'success' : 'neutral'}>
                         {obra.ativo ? 'Ativa' : 'Inativa'}
                       </Badge>
+                    </td>
+                    <td>
+                      <Button type="button" variant="ghost" onClick={() => void openAlocacoes(obra)}>
+                        Ver MO
+                      </Button>
                     </td>
                     {isAdmin && (
                       <td>
@@ -183,6 +216,64 @@ export function ObrasPage() {
               )}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {alocacaoObra && (
+        <div className="jn-obras__dialog" role="dialog" aria-modal="true">
+          <div className="jn-obras__form">
+            <h2 className="jn-obras__form-title">
+              Alocações — {alocacaoObra.codigo}
+            </h2>
+            <p className="jn-obras__readonly">{alocacaoObra.nome}</p>
+            {alocacoesLoading && <p className="jn-obras__status">Carregando…</p>}
+            {alocacoesError && (
+              <p className="jn-obras__status jn-obras__status--error" role="alert">
+                {alocacoesError}
+              </p>
+            )}
+            {!alocacoesLoading && !alocacoesError && (
+              <div className="jn-obras__table-wrap">
+                <table className="jn-obras__table">
+                  <thead>
+                    <tr>
+                      <th scope="col">Nome</th>
+                      <th scope="col">Empresa MO</th>
+                      <th scope="col">CPF</th>
+                      <th scope="col">Cargo</th>
+                      <th scope="col">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {alocacoes.length === 0 ? (
+                      <tr>
+                        <td colSpan={5}>Nenhum funcionário vinculado a esta obra.</td>
+                      </tr>
+                    ) : (
+                      alocacoes.map((a) => (
+                        <tr key={a.funcionarioId}>
+                          <td>{a.nome}</td>
+                          <td>{a.empresaRazaoSocial}</td>
+                          <td>{formatCpf(a.cpf)}</td>
+                          <td>{a.cargo}</td>
+                          <td>
+                            <Badge tone={a.ativo ? 'success' : 'neutral'}>
+                              {a.ativo ? 'Ativo' : 'Inativo'}
+                            </Badge>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            <div className="jn-obras__form-actions">
+              <Button type="button" variant="primary" onClick={closeAlocacoes}>
+                Fechar
+              </Button>
+            </div>
+          </div>
         </div>
       )}
 

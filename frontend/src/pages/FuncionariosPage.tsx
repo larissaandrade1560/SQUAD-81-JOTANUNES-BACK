@@ -4,9 +4,11 @@ import { Button } from '../components/ui/Button'
 import { FormField } from '../components/forms/FormField'
 import { PageHeader } from '../components/ui/PageHeader'
 import type { ApiError } from '../types/api'
+import { listObras, type ObraApi } from '../services/obrasService'
 import {
   createFuncionario,
   formatCpf,
+  formatObrasResumo,
   listFuncionarios,
   updateFuncionario,
   type FuncionarioApi,
@@ -21,6 +23,7 @@ const emptyForm = {
   cpf: '',
   cargo: '',
   ativo: true,
+  obraIds: [] as string[],
 }
 
 function apiErrorMessage(err: unknown): string {
@@ -35,12 +38,13 @@ function apiErrorMessage(err: unknown): string {
   return 'Não foi possível concluir a operação.'
 }
 
-/** RF05 — Funcionários MO (cadastro terceirizado; consulta Jotanunes). */
+/** RF05 + RF06 — Funcionários MO e vínculo com obras. */
 export function FuncionariosPage() {
   const session = getSession()
   const canWrite = session?.role === 'terceirizado'
   const showEmpresaColumn = session?.role !== 'terceirizado'
   const [funcionarios, setFuncionarios] = useState<FuncionarioApi[]>([])
+  const [obrasAtivas, setObrasAtivas] = useState<ObraApi[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | undefined>()
   const [formMode, setFormMode] = useState<FormMode | null>(null)
@@ -65,7 +69,17 @@ export function FuncionariosPage() {
     void load()
   }, [load])
 
+  async function loadObrasForForm() {
+    try {
+      const obras = await listObras()
+      setObrasAtivas(obras.filter((o) => o.ativo))
+    } catch {
+      setObrasAtivas([])
+    }
+  }
+
   function openCreate() {
+    void loadObrasForForm()
     setFormMode('create')
     setEditingId(null)
     setForm(emptyForm)
@@ -73,6 +87,7 @@ export function FuncionariosPage() {
   }
 
   function openEdit(funcionario: FuncionarioApi) {
+    void loadObrasForForm()
     setFormMode('edit')
     setEditingId(funcionario.id)
     setForm({
@@ -80,6 +95,7 @@ export function FuncionariosPage() {
       cpf: funcionario.cpf,
       cargo: funcionario.cargo,
       ativo: funcionario.ativo,
+      obraIds: funcionario.obras.map((o) => o.id),
     })
     setFormError(undefined)
   }
@@ -89,6 +105,15 @@ export function FuncionariosPage() {
     setEditingId(null)
     setForm(emptyForm)
     setFormError(undefined)
+  }
+
+  function toggleObra(obraId: string) {
+    setForm((f) => ({
+      ...f,
+      obraIds: f.obraIds.includes(obraId)
+        ? f.obraIds.filter((id) => id !== obraId)
+        : [...f.obraIds, obraId],
+    }))
   }
 
   async function handleSubmit(event: React.FormEvent) {
@@ -101,12 +126,14 @@ export function FuncionariosPage() {
           nome: form.nome,
           cpf: form.cpf,
           cargo: form.cargo,
+          obraIds: form.obraIds,
         })
       } else if (formMode === 'edit' && editingId) {
         await updateFuncionario(editingId, {
           nome: form.nome,
           cargo: form.cargo,
           ativo: form.ativo,
+          obraIds: form.obraIds,
         })
       }
       closeForm()
@@ -118,14 +145,17 @@ export function FuncionariosPage() {
     }
   }
 
+  const colCount =
+    4 + (showEmpresaColumn ? 1 : 0) + 1 + (canWrite ? 1 : 0)
+
   return (
     <section className="jn-funcionarios">
       <PageHeader
         title="Funcionários"
         subtitle={
           canWrite
-            ? 'Cadastro dos trabalhadores da sua empresa de Mão de Obra (RF05).'
-            : 'Consulta de trabalhadores enviados pelas empresas parceiras de Mão de Obra (RF05).'
+            ? 'Cadastro dos trabalhadores da sua empresa de Mão de Obra e vínculo com obras (RF05/RF06).'
+            : 'Consulta de trabalhadores enviados pelas empresas parceiras de Mão de Obra (RF05/RF06).'
         }
         action={
           canWrite ? (
@@ -152,6 +182,7 @@ export function FuncionariosPage() {
                 {showEmpresaColumn && <th scope="col">Empresa</th>}
                 <th scope="col">CPF</th>
                 <th scope="col">Cargo</th>
+                <th scope="col">Obras</th>
                 <th scope="col">Status</th>
                 {canWrite && <th scope="col">Ações</th>}
               </tr>
@@ -159,9 +190,7 @@ export function FuncionariosPage() {
             <tbody>
               {funcionarios.length === 0 ? (
                 <tr>
-                  <td colSpan={showEmpresaColumn ? (canWrite ? 6 : 5) : canWrite ? 5 : 4}>
-                    Nenhum funcionário cadastrado.
-                  </td>
+                  <td colSpan={colCount}>Nenhum funcionário cadastrado.</td>
                 </tr>
               ) : (
                 funcionarios.map((f) => (
@@ -170,6 +199,7 @@ export function FuncionariosPage() {
                     {showEmpresaColumn && <td>{f.empresaRazaoSocial}</td>}
                     <td>{formatCpf(f.cpf)}</td>
                     <td>{f.cargo}</td>
+                    <td>{formatObrasResumo(f.obras ?? [])}</td>
                     <td>
                       <Badge tone={f.ativo ? 'success' : 'neutral'}>
                         {f.ativo ? 'Ativo' : 'Inativo'}
@@ -238,6 +268,34 @@ export function FuncionariosPage() {
               }}
             />
 
+            <fieldset className="jn-funcionarios__obras">
+              <legend>Obras (RF06)</legend>
+              {obrasAtivas.length === 0 ? (
+                <p className="jn-funcionarios__readonly">Nenhuma obra ativa disponível para vínculo.</p>
+              ) : (
+                <ul className="jn-funcionarios__obras-list">
+                  {obrasAtivas.map((obra) => (
+                    <li key={obra.id}>
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={form.obraIds.includes(obra.id)}
+                          onChange={() => toggleObra(obra.id)}
+                        />
+                        {obra.codigo} — {obra.nome}
+                      </label>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </fieldset>
+
+            {formError && (
+              <p className="jn-funcionarios__status jn-funcionarios__status--error" role="alert">
+                {formError}
+              </p>
+            )}
+
             {formMode === 'edit' && (
               <label className="jn-funcionarios__checkbox">
                 <input
@@ -247,12 +305,6 @@ export function FuncionariosPage() {
                 />
                 Funcionário ativo
               </label>
-            )}
-
-            {formError && formMode === 'edit' && (
-              <p className="jn-funcionarios__status jn-funcionarios__status--error" role="alert">
-                {formError}
-              </p>
             )}
 
             <div className="jn-funcionarios__form-actions">

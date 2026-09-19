@@ -9,11 +9,19 @@ public sealed class CreateFuncionarioUseCase
 {
     private readonly IFuncionarioRepository _funcionarios;
     private readonly IEmpresaRepository _empresas;
+    private readonly IObraRepository _obras;
+    private readonly IFuncionarioObraRepository _vinculos;
 
-    public CreateFuncionarioUseCase(IFuncionarioRepository funcionarios, IEmpresaRepository empresas)
+    public CreateFuncionarioUseCase(
+        IFuncionarioRepository funcionarios,
+        IEmpresaRepository empresas,
+        IObraRepository obras,
+        IFuncionarioObraRepository vinculos)
     {
         _funcionarios = funcionarios;
         _empresas = empresas;
+        _obras = obras;
+        _vinculos = vinculos;
     }
 
     public async Task<FuncionarioResponse> ExecuteAsync(
@@ -47,11 +55,29 @@ public sealed class CreateFuncionarioUseCase
             throw new FuncionarioException("Já existe um funcionário com este CPF nesta empresa.");
         }
 
+        var obraIds = request.ObraIds ?? Array.Empty<Guid>();
+        await FuncionarioObraRules.ValidateObraIdsAsync(_obras, obraIds, cancellationToken);
+
         try
         {
             var funcionario = new Funcionario(empresaId, request.Nome, cpf, request.Cargo);
             await _funcionarios.AddAsync(funcionario, cancellationToken);
-            return FuncionarioResponse.FromEntity(funcionario, empresa.RazaoSocial);
+
+            if (obraIds.Count > 0)
+            {
+                await _vinculos.ReplaceForFuncionarioAsync(funcionario.Id, obraIds, cancellationToken);
+            }
+
+            var obras = obraIds.Count > 0
+                ? (await _vinculos.ListObrasByFuncionarioIdsAsync(
+                    new[] { funcionario.Id },
+                    cancellationToken)).GetValueOrDefault(funcionario.Id, Array.Empty<Obra>())
+                : Array.Empty<Obra>();
+
+            return FuncionarioResponse.FromEntity(
+                funcionario,
+                empresa.RazaoSocial,
+                FuncionarioResponse.MapObras(obras));
         }
         catch (ArgumentException ex)
         {
