@@ -1,4 +1,5 @@
 using JotaNunesForms.Application.UseCases.Auth;
+using JotaNunesForms.Application.UseCases.Dashboard;
 using JotaNunesForms.Application.UseCases.Formularios;
 using JotaNunesForms.Application.UseCases.Empresas;
 using JotaNunesForms.Application.UseCases.Funcionarios;
