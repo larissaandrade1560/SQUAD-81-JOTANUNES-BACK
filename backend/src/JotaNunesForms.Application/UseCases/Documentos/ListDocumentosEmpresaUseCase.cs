@@ -23,6 +23,18 @@ public sealed class ListDocumentosEmpresaUseCase
         CancellationToken cancellationToken = default)
     {
         var list = await _documentos.ListAsync(scopeEmpresaId, cancellationToken);
+        var utcNow = DateTime.UtcNow;
+
+        foreach (var documento in list)
+        {
+            var statusAnterior = documento.Status;
+            documento.AtualizarVencimentoSeExpirado(utcNow);
+            if (documento.Status != statusAnterior)
+            {
+                await _documentos.UpdateAsync(documento, cancellationToken);
+            }
+        }
+
         var empresas = await _empresas.ListAsync(cancellationToken);
         var nomes = empresas.ToDictionary(e => e.Id, e => e.RazaoSocial);
 

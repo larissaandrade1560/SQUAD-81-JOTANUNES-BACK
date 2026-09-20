@@ -20,7 +20,7 @@ public sealed class DocumentoEmpresaRepository : IDocumentoEmpresaRepository
         Guid? empresaId = null,
         CancellationToken cancellationToken = default)
     {
-        var query = _dbContext.DocumentosEmpresa.AsNoTracking();
+        var query = _dbContext.DocumentosEmpresa.AsQueryable();
         if (empresaId is not null)
         {
             query = query.Where(d => d.EmpresaId == empresaId.Value);
@@ -32,7 +32,6 @@ public sealed class DocumentoEmpresaRepository : IDocumentoEmpresaRepository
     public async Task<IReadOnlyList<DocumentoEmpresa>> ListPendentesAsync(
         CancellationToken cancellationToken = default) =>
         await _dbContext.DocumentosEmpresa
-            .AsNoTracking()
             .Where(d => d.Status == StatusDocumento.Pendente || d.Status == StatusDocumento.EmAnalise)
             .OrderBy(d => d.EnviadoEm)
             .ToListAsync(cancellationToken);

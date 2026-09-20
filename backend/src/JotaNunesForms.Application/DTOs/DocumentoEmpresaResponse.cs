@@ -13,6 +13,7 @@ public sealed record DocumentoEmpresaResponse(
     StatusDocumento Status,
     string StatusRotulo,
     string? MotivoRejeicao,
+    DateTime? ValidoAte,
     DateTime EnviadoEm)
 {
     public static string TipoLabel(TipoDocumentoEmpresarial tipo) => tipo switch
@@ -45,6 +46,7 @@ public sealed record DocumentoEmpresaResponse(
             doc.Status,
             StatusLabel(doc.Status),
             doc.MotivoRejeicao,
+            doc.ValidoAte,
             doc.EnviadoEm);
 }
 

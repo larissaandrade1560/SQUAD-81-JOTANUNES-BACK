@@ -13,6 +13,7 @@ export type DocumentoEmpresaApi = {
   status: number
   statusRotulo: string
   motivoRejeicao?: string | null
+  validoAte?: string | null
   enviadoEm: string
 }
 

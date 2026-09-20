@@ -20,7 +20,6 @@ public sealed class DocumentoFuncionarioRepository : IDocumentoFuncionarioReposi
         Guid funcionarioId,
         CancellationToken cancellationToken = default) =>
         await _dbContext.DocumentosFuncionario
-            .AsNoTracking()
             .Where(d => d.FuncionarioId == funcionarioId)
             .OrderByDescending(d => d.EnviadoEm)
             .ToListAsync(cancellationToken);
@@ -28,7 +27,6 @@ public sealed class DocumentoFuncionarioRepository : IDocumentoFuncionarioReposi
     public async Task<IReadOnlyList<DocumentoFuncionario>> ListPendentesAsync(
         CancellationToken cancellationToken = default) =>
         await _dbContext.DocumentosFuncionario
-            .AsNoTracking()
             .Where(d => d.Status == StatusDocumento.Pendente || d.Status == StatusDocumento.EmAnalise)
             .OrderBy(d => d.EnviadoEm)
             .ToListAsync(cancellationToken);

@@ -10,6 +10,8 @@ export type ValidacaoDocumentoItem = {
   tipoRotulo: string
   nomeArquivo: string
   tamanhoBytes: number
+  status: number
+  statusRotulo: string
   enviadoEm: string
 }
 

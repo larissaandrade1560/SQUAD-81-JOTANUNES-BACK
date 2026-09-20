@@ -28,7 +28,15 @@ function escopoLabel(escopo: string): string {
   return escopo === 'funcionario' ? 'Funcionário' : 'Empresa'
 }
 
-/** RF09 / RF10 — Fila de validação documental. */
+function statusTone(status: number): 'success' | 'warning' | 'neutral' | 'danger' | 'info' {
+  if (status === 2) return 'success'
+  if (status === 3) return 'danger'
+  if (status === 1) return 'info'
+  if (status === 4) return 'warning'
+  return 'info'
+}
+
+/** RF09 / RF10 / RF12 — Fila de validação documental. */
 export function ValidacaoPage() {
   const [fila, setFila] = useState<ValidacaoDocumentoItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -97,7 +105,7 @@ export function ValidacaoPage() {
     <section className="jn-validacao">
       <PageHeader
         title="Validação documental"
-        subtitle="RF09 — Aprove ou rejeite documentos pendentes. RF10 — Rejeição exige motivo visível ao terceirizado."
+        subtitle="RF09 — Aprove ou rejeite documentos pendentes. RF10 — Rejeição exige motivo. RF12 — Ao abrir a fila, documentos passam para Em análise."
         action={
           <Button type="button" variant="ghost" onClick={() => void load()} disabled={loading}>
             Atualizar fila
@@ -124,13 +132,14 @@ export function ValidacaoPage() {
                 <th scope="col">Arquivo</th>
                 <th scope="col">Tamanho</th>
                 <th scope="col">Enviado em</th>
+                <th scope="col">Status</th>
                 <th scope="col">Ações</th>
               </tr>
             </thead>
             <tbody>
               {fila.length === 0 ? (
                 <tr>
-                  <td colSpan={8}>Nenhum documento pendente de validação.</td>
+                  <td colSpan={9}>Nenhum documento pendente de validação.</td>
                 </tr>
               ) : (
                 fila.map((item) => (
@@ -144,6 +153,9 @@ export function ValidacaoPage() {
                     <td>{item.nomeArquivo}</td>
                     <td>{formatFileSize(item.tamanhoBytes)}</td>
                     <td>{new Date(item.enviadoEm).toLocaleString('pt-BR')}</td>
+                    <td>
+                      <Badge tone={statusTone(item.status)}>{item.statusRotulo}</Badge>
+                    </td>
                     <td>
                       <div className="jn-validacao__actions">
                         <Button

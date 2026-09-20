@@ -62,6 +62,9 @@ public sealed class DocumentoFuncionarioConfiguration : IEntityTypeConfiguration
         builder.Property(d => d.AnalisadoEm)
             .HasColumnName("analisado_em");
 
+        builder.Property(d => d.ValidoAte)
+            .HasColumnName("valido_ate");
+
         builder.HasOne<Funcionario>()
             .WithMany()
             .HasForeignKey(d => d.FuncionarioId)

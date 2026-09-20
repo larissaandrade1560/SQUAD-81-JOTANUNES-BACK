@@ -1,3 +1,5 @@
+using JotaNunesForms.Domain.Entities;
+
 namespace JotaNunesForms.Application.DTOs;
 
 public sealed record ValidacaoDocumentoItemResponse(
@@ -10,6 +12,8 @@ public sealed record ValidacaoDocumentoItemResponse(
     string TipoRotulo,
     string NomeArquivo,
     long TamanhoBytes,
+    StatusDocumento Status,
+    string StatusRotulo,
     DateTime EnviadoEm);
 
 public sealed record RejeitarDocumentoRequest(string Motivo);

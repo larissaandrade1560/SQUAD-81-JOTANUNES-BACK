@@ -1,5 +1,6 @@
 using JotaNunesForms.Application.DTOs;
 using JotaNunesForms.Application.Validacao;
+using JotaNunesForms.Domain.Entities;
 using JotaNunesForms.Domain.Ports;
 
 namespace JotaNunesForms.Application.UseCases.Validacao;
@@ -36,6 +37,12 @@ public sealed class ListValidacaoFilaUseCase
 
         foreach (var doc in empresaDocs)
         {
+            if (doc.Status == StatusDocumento.Pendente)
+            {
+                doc.IniciarAnalise();
+                await _documentosEmpresa.UpdateAsync(doc, cancellationToken);
+            }
+
             items.Add(new ValidacaoDocumentoItemResponse(
                 "empresa",
                 doc.Id,
@@ -46,6 +53,8 @@ public sealed class ListValidacaoFilaUseCase
                 DocumentoEmpresaResponse.TipoLabel(doc.Tipo),
                 doc.NomeArquivo,
                 doc.TamanhoBytes,
+                doc.Status,
+                DocumentoEmpresaResponse.StatusLabel(doc.Status),
                 doc.EnviadoEm));
         }
 
@@ -55,6 +64,12 @@ public sealed class ListValidacaoFilaUseCase
             if (funcionario is null)
             {
                 continue;
+            }
+
+            if (doc.Status == StatusDocumento.Pendente)
+            {
+                doc.IniciarAnalise();
+                await _documentosFuncionario.UpdateAsync(doc, cancellationToken);
             }
 
             items.Add(new ValidacaoDocumentoItemResponse(
@@ -67,6 +82,8 @@ public sealed class ListValidacaoFilaUseCase
                 DocumentoFuncionarioResponse.TipoLabel(doc.Tipo),
                 doc.NomeArquivo,
                 doc.TamanhoBytes,
+                doc.Status,
+                DocumentoFuncionarioResponse.StatusLabel(doc.Status),
                 doc.EnviadoEm));
         }
 

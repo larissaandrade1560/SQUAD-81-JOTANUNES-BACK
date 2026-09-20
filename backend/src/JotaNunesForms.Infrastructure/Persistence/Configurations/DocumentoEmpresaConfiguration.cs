@@ -61,5 +61,8 @@ public sealed class DocumentoEmpresaConfiguration : IEntityTypeConfiguration<Doc
 
         builder.Property(d => d.AnalisadoEm)
             .HasColumnName("analisado_em");
+
+        builder.Property(d => d.ValidoAte)
+            .HasColumnName("valido_ate");
     }
 }

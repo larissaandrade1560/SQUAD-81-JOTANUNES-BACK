@@ -40,6 +40,18 @@ public sealed class ListDocumentosFuncionarioUseCase
         var empresaNome = empresa?.RazaoSocial ?? "—";
 
         var list = await _documentos.ListByFuncionarioAsync(funcionarioId, cancellationToken);
+        var utcNow = DateTime.UtcNow;
+
+        foreach (var documento in list)
+        {
+            var statusAnterior = documento.Status;
+            documento.AtualizarVencimentoSeExpirado(utcNow);
+            if (documento.Status != statusAnterior)
+            {
+                await _documentos.UpdateAsync(documento, cancellationToken);
+            }
+        }
+
         return list
             .Select(d => DocumentoFuncionarioResponse.FromEntity(d, funcionario, empresaNome))
             .ToList();

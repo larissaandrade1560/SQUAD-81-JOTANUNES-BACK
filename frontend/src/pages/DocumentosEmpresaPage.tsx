@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Badge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
 import { PageHeader } from '../components/ui/PageHeader'
@@ -36,8 +36,23 @@ function statusTone(status: number): 'success' | 'warning' | 'neutral' | 'danger
 }
 
 const STATUS_REJEITADO = 3
+const STATUS_VENCIDO = 4
 
-/** RF07 / RF11 — Documentos empresariais (PDF no R2) com reenvio após rejeição. */
+const FILTRO_STATUS = [
+  { value: 'todos', label: 'Todos os status' },
+  { value: '0', label: 'Pendente' },
+  { value: '1', label: 'Em análise' },
+  { value: '2', label: 'Aprovado' },
+  { value: '3', label: 'Rejeitado' },
+  { value: '4', label: 'Vencido' },
+] as const
+
+function formatValidoAte(value?: string | null): string {
+  if (!value) return '—'
+  return new Date(value).toLocaleDateString('pt-BR')
+}
+
+/** RF07 / RF11 / RF12 — Documentos empresariais com reenvio e vencimento. */
 export function DocumentosEmpresaPage() {
   const session = getSession()
   const canUpload = session?.role === 'terceirizado'
@@ -45,12 +60,19 @@ export function DocumentosEmpresaPage() {
   const [documentos, setDocumentos] = useState<DocumentoEmpresaApi[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | undefined>()
+  const [filtroStatus, setFiltroStatus] = useState<string>('todos')
   const [tipo, setTipo] = useState<number>(1)
   const [file, setFile] = useState<File | null>(null)
   const [uploadError, setUploadError] = useState<string | undefined>()
   const [uploading, setUploading] = useState(false)
   const [reenviandoId, setReenviandoId] = useState<string | null>(null)
   const reenvioInputRef = useRef<HTMLInputElement>(null)
+
+  const documentosFiltrados = useMemo(() => {
+    if (filtroStatus === 'todos') return documentos
+    const status = Number(filtroStatus)
+    return documentos.filter((d) => d.status === status)
+  }, [documentos, filtroStatus])
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -179,6 +201,17 @@ export function DocumentosEmpresaPage() {
         </>
       )}
 
+      <label className="jn-docs-empresa__field jn-docs-empresa__filtro">
+        <span>Filtrar por status</span>
+        <select value={filtroStatus} onChange={(e) => setFiltroStatus(e.target.value)}>
+          {FILTRO_STATUS.map((f) => (
+            <option key={f.value} value={f.value}>
+              {f.label}
+            </option>
+          ))}
+        </select>
+      </label>
+
       {loading && <p className="jn-docs-empresa__status">Carregando…</p>}
       {error && (
         <p className="jn-docs-empresa__status jn-docs-empresa__status--error" role="alert">
@@ -196,24 +229,26 @@ export function DocumentosEmpresaPage() {
                 <th scope="col">Arquivo</th>
                 <th scope="col">Tamanho</th>
                 <th scope="col">Enviado em</th>
+                <th scope="col">Válido até</th>
                 <th scope="col">Status</th>
                 <th scope="col">Motivo rejeição</th>
                 <th scope="col">Ações</th>
               </tr>
             </thead>
             <tbody>
-              {documentos.length === 0 ? (
+              {documentosFiltrados.length === 0 ? (
                 <tr>
-                  <td colSpan={showEmpresaColumn ? 8 : 7}>Nenhum documento enviado.</td>
+                  <td colSpan={showEmpresaColumn ? 9 : 8}>Nenhum documento encontrado.</td>
                 </tr>
               ) : (
-                documentos.map((d) => (
+                documentosFiltrados.map((d) => (
                   <tr key={d.id}>
                     {showEmpresaColumn && <td>{d.empresaRazaoSocial}</td>}
                     <td>{d.tipoRotulo}</td>
                     <td>{d.nomeArquivo}</td>
                     <td>{formatFileSize(d.tamanhoBytes)}</td>
                     <td>{new Date(d.enviadoEm).toLocaleString('pt-BR')}</td>
+                    <td>{formatValidoAte(d.validoAte)}</td>
                     <td>
                       <Badge tone={statusTone(d.status)}>{d.statusRotulo}</Badge>
                     </td>
@@ -231,6 +266,16 @@ export function DocumentosEmpresaPage() {
                             onClick={() => handleReenviarClick(d.id)}
                           >
                             {uploading && reenviandoId === d.id ? 'Reenviando…' : 'Reenviar'}
+                          </Button>
+                        )}
+                        {canUpload && d.status === STATUS_VENCIDO && (
+                          <Button
+                            type="button"
+                            variant="primary"
+                            disabled={uploading && reenviandoId === d.id}
+                            onClick={() => handleReenviarClick(d.id)}
+                          >
+                            {uploading && reenviandoId === d.id ? 'Enviando…' : 'Nova versão'}
                           </Button>
                         )}
                       </div>

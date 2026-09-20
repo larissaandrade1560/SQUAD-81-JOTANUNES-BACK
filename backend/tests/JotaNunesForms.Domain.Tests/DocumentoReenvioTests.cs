@@ -46,7 +46,7 @@ public sealed class DocumentoReenvioTests
         var ex = Assert.Throws<InvalidOperationException>(() =>
             documento.Reenviar("alvara-novo.pdf", "empresas/x/documentos/alvara-novo.pdf", "application/pdf", 600));
 
-        Assert.Contains("rejeitados", ex.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("rejeitados ou vencidos", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

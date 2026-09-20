@@ -24,6 +24,18 @@ public sealed class DocumentoFuncionario
 
     public DateTime? AnalisadoEm { get; private set; }
 
+    public DateTime? ValidoAte { get; private set; }
+
+    public void IniciarAnalise()
+    {
+        if (Status is not StatusDocumento.Pendente)
+        {
+            return;
+        }
+
+        Status = StatusDocumento.EmAnalise;
+    }
+
     public void Aprovar()
     {
         if (Status is not StatusDocumento.Pendente and not StatusDocumento.EmAnalise)
@@ -31,9 +43,11 @@ public sealed class DocumentoFuncionario
             throw new InvalidOperationException("Somente documentos pendentes podem ser aprovados.");
         }
 
+        var agora = DateTime.UtcNow;
         Status = StatusDocumento.Aprovado;
         MotivoRejeicao = null;
-        AnalisadoEm = DateTime.UtcNow;
+        AnalisadoEm = agora;
+        ValidoAte = CalcularValidoAte(agora);
     }
 
     public void Rejeitar(string motivo)
@@ -51,15 +65,35 @@ public sealed class DocumentoFuncionario
         Status = StatusDocumento.Rejeitado;
         MotivoRejeicao = motivo.Trim();
         AnalisadoEm = DateTime.UtcNow;
+        ValidoAte = null;
     }
 
     public void Reenviar(string nomeArquivo, string storageKey, string contentType, long tamanhoBytes)
     {
-        if (Status is not StatusDocumento.Rejeitado)
+        if (Status is not StatusDocumento.Rejeitado and not StatusDocumento.Vencido)
         {
-            throw new InvalidOperationException("Somente documentos rejeitados podem ser reenviados.");
+            throw new InvalidOperationException(
+                "Somente documentos rejeitados ou vencidos podem ser substituídos.");
         }
 
+        SubstituirArquivo(nomeArquivo, storageKey, contentType, tamanhoBytes);
+    }
+
+    public void AtualizarVencimentoSeExpirado(DateTime utcNow)
+    {
+        if (Status is not StatusDocumento.Aprovado || ValidoAte is null)
+        {
+            return;
+        }
+
+        if (ValidoAte.Value <= utcNow)
+        {
+            Status = StatusDocumento.Vencido;
+        }
+    }
+
+    private void SubstituirArquivo(string nomeArquivo, string storageKey, string contentType, long tamanhoBytes)
+    {
         if (tamanhoBytes <= 0)
         {
             throw new ArgumentException("Arquivo inválido.", nameof(tamanhoBytes));
@@ -72,8 +106,16 @@ public sealed class DocumentoFuncionario
         Status = StatusDocumento.Pendente;
         MotivoRejeicao = null;
         AnalisadoEm = null;
+        ValidoAte = null;
         EnviadoEm = DateTime.UtcNow;
     }
+
+    private DateTime CalcularValidoAte(DateTime aprovadoEm) =>
+        Tipo switch
+        {
+            TipoDocumentoFuncionario.Aso => aprovadoEm.AddDays(365),
+            _ => aprovadoEm.AddDays(365),
+        };
 
     private DocumentoFuncionario()
     {
