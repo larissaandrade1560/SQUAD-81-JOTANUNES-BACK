@@ -18,7 +18,17 @@ public sealed class PagamentoFuncionario
 
     public DateTime? ComprovanteEnviadoEm { get; private set; }
 
+    public string? ComprovanteNomeArquivo { get; private set; }
+
+    public string? ComprovanteStorageKey { get; private set; }
+
+    public string? ComprovanteContentType { get; private set; }
+
+    public long? ComprovanteTamanhoBytes { get; private set; }
+
     public DateTime CriadoEm { get; private set; }
+
+    public bool PossuiComprovante => !string.IsNullOrEmpty(ComprovanteStorageKey);
 
     private PagamentoFuncionario()
     {
@@ -70,5 +80,38 @@ public sealed class PagamentoFuncionario
         return enviado <= PrazoComprovante
             ? SituacaoComprovante.NoPrazo
             : SituacaoComprovante.EnviadoEmAtraso;
+    }
+
+    public void RegistrarComprovante(
+        string nomeArquivo,
+        string storageKey,
+        string contentType,
+        long tamanhoBytes)
+    {
+        if (string.IsNullOrWhiteSpace(nomeArquivo))
+        {
+            throw new ArgumentException("Nome do arquivo é obrigatório.", nameof(nomeArquivo));
+        }
+
+        if (string.IsNullOrWhiteSpace(storageKey))
+        {
+            throw new ArgumentException("Chave de armazenamento é obrigatória.", nameof(storageKey));
+        }
+
+        if (string.IsNullOrWhiteSpace(contentType))
+        {
+            throw new ArgumentException("Tipo do arquivo é obrigatório.", nameof(contentType));
+        }
+
+        if (tamanhoBytes <= 0)
+        {
+            throw new ArgumentException("Tamanho do arquivo inválido.", nameof(tamanhoBytes));
+        }
+
+        ComprovanteNomeArquivo = nomeArquivo.Trim();
+        ComprovanteStorageKey = storageKey;
+        ComprovanteContentType = contentType;
+        ComprovanteTamanhoBytes = tamanhoBytes;
+        ComprovanteEnviadoEm = DateTime.UtcNow;
     }
 }

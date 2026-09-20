@@ -25,6 +25,33 @@ public sealed class PagamentoFuncionarioTests
         Assert.Equal(SituacaoComprovante.EmAtraso, pagamento.ObterSituacaoComprovante(new DateOnly(2026, 9, 14)));
     }
 
+    [Fact]
+    public void ObterSituacao_WithComprovanteBeforePrazo_IsNoPrazo()
+    {
+        var pagamento = CriarPagamento(new DateOnly(2026, 9, 10));
+        pagamento.RegistrarComprovante("recibo.pdf", "key", "application/pdf", 1024);
+        DefinirComprovanteEnviadoEm(pagamento, new DateTime(2026, 9, 12, 15, 0, 0, DateTimeKind.Utc));
+        Assert.Equal(SituacaoComprovante.NoPrazo, pagamento.ObterSituacaoComprovante(new DateOnly(2026, 9, 13)));
+    }
+
+    [Fact]
+    public void ObterSituacao_WithComprovanteAfterPrazo_IsEnviadoEmAtraso()
+    {
+        var pagamento = CriarPagamento(new DateOnly(2026, 9, 10));
+        pagamento.RegistrarComprovante("recibo.pdf", "key", "application/pdf", 1024);
+        DefinirComprovanteEnviadoEm(pagamento, new DateTime(2026, 9, 14, 10, 0, 0, DateTimeKind.Utc));
+        Assert.Equal(
+            SituacaoComprovante.EnviadoEmAtraso,
+            pagamento.ObterSituacaoComprovante(new DateOnly(2026, 9, 20)));
+    }
+
+    private static void DefinirComprovanteEnviadoEm(PagamentoFuncionario pagamento, DateTime enviadoEm)
+    {
+        var property = typeof(PagamentoFuncionario).GetProperty(nameof(PagamentoFuncionario.ComprovanteEnviadoEm));
+        Assert.NotNull(property);
+        property.SetValue(pagamento, enviadoEm);
+    }
+
     private static PagamentoFuncionario CriarPagamento(DateOnly dataPagamento) =>
         new(
             Guid.NewGuid(),

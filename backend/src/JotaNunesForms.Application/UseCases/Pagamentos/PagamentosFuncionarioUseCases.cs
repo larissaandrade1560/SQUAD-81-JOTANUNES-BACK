@@ -33,23 +33,35 @@ public sealed class ListPagamentosFuncionarioUseCase
         var hoje = DateOnly.FromDateTime(DateTime.UtcNow);
 
         return list
-            .Select(p =>
-            {
-                var situacao = p.ObterSituacaoComprovante(hoje);
-                return new PagamentoFuncionarioResponse(
-                    p.Id,
-                    p.FuncionarioId,
-                    nomesFunc.GetValueOrDefault(p.FuncionarioId, "—"),
-                    p.EmpresaId,
-                    nomesEmpresa.GetValueOrDefault(p.EmpresaId, "—"),
-                    p.Competencia,
-                    p.DataPagamento,
-                    p.PrazoComprovante,
-                    p.ComprovanteEnviadoEm,
-                    (int)situacao,
-                    RotuloSituacao(situacao));
-            })
+            .Select(p => ToResponse(
+                p,
+                nomesFunc.GetValueOrDefault(p.FuncionarioId, "—"),
+                nomesEmpresa.GetValueOrDefault(p.EmpresaId, "—"),
+                hoje))
             .ToList();
+    }
+
+    internal static PagamentoFuncionarioResponse ToResponse(
+        PagamentoFuncionario pagamento,
+        string funcionarioNome,
+        string empresaRazao,
+        DateOnly referenciaUtc)
+    {
+        var situacao = pagamento.ObterSituacaoComprovante(referenciaUtc);
+        return new PagamentoFuncionarioResponse(
+            pagamento.Id,
+            pagamento.FuncionarioId,
+            funcionarioNome,
+            pagamento.EmpresaId,
+            empresaRazao,
+            pagamento.Competencia,
+            pagamento.DataPagamento,
+            pagamento.PrazoComprovante,
+            pagamento.ComprovanteEnviadoEm,
+            pagamento.ComprovanteNomeArquivo,
+            pagamento.PossuiComprovante,
+            (int)situacao,
+            RotuloSituacao(situacao));
     }
 
     internal static string RotuloSituacao(SituacaoComprovante situacao) =>
@@ -114,20 +126,12 @@ public sealed class RegistrarPagamentoFuncionarioUseCase
         var empresas = await _empresas.ListAsync(cancellationToken);
         var razao = empresas.FirstOrDefault(e => e.Id == empresaId)?.RazaoSocial ?? "—";
         var hoje = DateOnly.FromDateTime(DateTime.UtcNow);
-        var situacao = pagamento.ObterSituacaoComprovante(hoje);
 
-        return new PagamentoFuncionarioResponse(
-            pagamento.Id,
-            pagamento.FuncionarioId,
+        return ListPagamentosFuncionarioUseCase.ToResponse(
+            pagamento,
             funcionario.Nome,
-            pagamento.EmpresaId,
             razao,
-            pagamento.Competencia,
-            pagamento.DataPagamento,
-            pagamento.PrazoComprovante,
-            pagamento.ComprovanteEnviadoEm,
-            (int)situacao,
-            ListPagamentosFuncionarioUseCase.RotuloSituacao(situacao));
+            hoje);
     }
 
     private static DateOnly NormalizeCompetencia(DateOnly competencia)

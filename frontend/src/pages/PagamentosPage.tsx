@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Badge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
 import { Label } from '../components/ui/Label'
@@ -9,9 +9,12 @@ import {
   calcularPrazoComprovante,
   formatCompetenciaBr,
   formatDateBr,
+  formatDateTimeBr,
+  getComprovanteDownloadUrl,
   listPagamentos,
   registrarPagamento,
   situacaoTone,
+  uploadComprovantePagamento,
   type PagamentoApi,
 } from '../services/pagamentosService'
 import { getSession } from '../store/authStorage'
@@ -29,11 +32,17 @@ function apiErrorMessage(err: unknown): string {
   return 'Não foi possível concluir a operação.'
 }
 
-/** RF13 + RF15 — Registro de pagamentos e prazo do comprovante. */
+/** RF13 + RF14 + RF15 — Pagamentos, comprovante e prazo. */
 export function PagamentosPage() {
   const session = getSession()
   const canRegister = session?.role === 'terceirizado'
+  const canUploadComprovante = session?.role === 'terceirizado'
   const showEmpresaColumn = session?.role !== 'terceirizado'
+
+  const comprovanteInputRef = useRef<HTMLInputElement>(null)
+  const [uploadPagamentoId, setUploadPagamentoId] = useState<string | null>(null)
+  const [uploadError, setUploadError] = useState<string | undefined>()
+  const [uploading, setUploading] = useState(false)
 
   const [pagamentos, setPagamentos] = useState<PagamentoApi[]>([])
   const [funcionarios, setFuncionarios] = useState<FuncionarioApi[]>([])
@@ -125,14 +134,56 @@ export function PagamentosPage() {
     }
   }
 
+  function handleEnviarComprovanteClick(pagamentoId: string) {
+    setUploadPagamentoId(pagamentoId)
+    setUploadError(undefined)
+    comprovanteInputRef.current?.click()
+  }
+
+  async function handleComprovanteFile(event: React.ChangeEvent<HTMLInputElement>) {
+    const selected = event.target.files?.[0]
+    event.target.value = ''
+    if (!selected || !uploadPagamentoId) {
+      setUploadPagamentoId(null)
+      return
+    }
+
+    setUploading(true)
+    setUploadError(undefined)
+    try {
+      await uploadComprovantePagamento(uploadPagamentoId, selected)
+      await load()
+    } catch (err) {
+      setUploadError(apiErrorMessage(err))
+    } finally {
+      setUploading(false)
+      setUploadPagamentoId(null)
+    }
+  }
+
+  async function handleVisualizarComprovante(pagamentoId: string) {
+    setUploadError(undefined)
+    try {
+      const { url } = await getComprovanteDownloadUrl(pagamentoId)
+      window.open(url, '_blank', 'noopener,noreferrer')
+    } catch (err) {
+      setUploadError(apiErrorMessage(err))
+    }
+  }
+
+  function labelEnviarComprovante(p: PagamentoApi): string {
+    if (p.situacao === 1) return 'Enviar comprovante em atraso'
+    return 'Enviar comprovante'
+  }
+
   return (
     <section className="jn-pagamentos">
       <PageHeader
         title="Pagamentos e comprovantes"
         subtitle={
           canRegister
-            ? 'RF13 — Registre a data de pagamento dos funcionários. RF15 — Prazo do comprovante: pagamento + 3 dias corridos.'
-            : 'Consulta de pagamentos registrados pelas empresas parceiras (RF13).'
+            ? 'RF13 — Registre pagamentos. RF14 — Envie o comprovante PDF após o registro. RF15 — Prazo: pagamento + 3 dias corridos.'
+            : 'Consulta de pagamentos e comprovantes (RF13/RF14).'
         }
         action={
           canRegister ? (
@@ -154,6 +205,24 @@ export function PagamentosPage() {
         <p className="jn-pagamentos__status">Nenhum pagamento registrado.</p>
       )}
 
+      {uploadError && (
+        <p className="jn-pagamentos__status jn-pagamentos__status--error" role="alert">
+          {uploadError}
+        </p>
+      )}
+
+      {canUploadComprovante ? (
+        <input
+          ref={comprovanteInputRef}
+          type="file"
+          accept="application/pdf,.pdf"
+          className="jn-pagamentos__file-input"
+          aria-hidden="true"
+          tabIndex={-1}
+          onChange={(e) => void handleComprovanteFile(e)}
+        />
+      ) : null}
+
       {!loading && !error && pagamentos.length > 0 && (
         <div className="jn-pagamentos__table-wrap">
           <table className="jn-pagamentos__table">
@@ -164,7 +233,9 @@ export function PagamentosPage() {
                 <th>Competência</th>
                 <th>Pagamento</th>
                 <th>Prazo comprovante</th>
+                <th>Enviado em</th>
                 <th>Situação</th>
+                <th>Ações</th>
               </tr>
             </thead>
             <tbody>
@@ -176,7 +247,47 @@ export function PagamentosPage() {
                   <td>{formatDateBr(p.dataPagamento)}</td>
                   <td>{formatDateBr(p.prazoComprovante)}</td>
                   <td>
+                    {p.comprovanteEnviadoEm ? formatDateTimeBr(p.comprovanteEnviadoEm) : '—'}
+                  </td>
+                  <td>
                     <Badge tone={situacaoTone(p.situacao)}>{p.situacaoRotulo}</Badge>
+                  </td>
+                  <td className="jn-pagamentos__actions">
+                    {p.temComprovante ? (
+                      <Button
+                        type="button"
+                        size="app"
+                        variant="secondary"
+                        onClick={() => void handleVisualizarComprovante(p.id)}
+                      >
+                        Visualizar
+                      </Button>
+                    ) : canUploadComprovante ? (
+                      <Button
+                        type="button"
+                        size="app"
+                        variant="primary"
+                        disabled={uploading && uploadPagamentoId === p.id}
+                        onClick={() => handleEnviarComprovanteClick(p.id)}
+                      >
+                        {uploading && uploadPagamentoId === p.id
+                          ? 'Enviando…'
+                          : labelEnviarComprovante(p)}
+                      </Button>
+                    ) : (
+                      '—'
+                    )}
+                    {canUploadComprovante && p.temComprovante ? (
+                      <Button
+                        type="button"
+                        size="app"
+                        variant="secondary"
+                        disabled={uploading && uploadPagamentoId === p.id}
+                        onClick={() => handleEnviarComprovanteClick(p.id)}
+                      >
+                        Substituir PDF
+                      </Button>
+                    ) : null}
                   </td>
                 </tr>
               ))}

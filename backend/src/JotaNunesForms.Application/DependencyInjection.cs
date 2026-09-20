@@ -51,6 +51,8 @@ public static class DependencyInjection
         services.AddScoped<RejeitarDocumentoFuncionarioValidacaoUseCase>();
         services.AddScoped<ListPagamentosFuncionarioUseCase>();
         services.AddScoped<RegistrarPagamentoFuncionarioUseCase>();
+        services.AddScoped<UploadComprovantePagamentoUseCase>();
+        services.AddScoped<GetComprovantePagamentoDownloadUseCase>();
         return services;
     }
 }

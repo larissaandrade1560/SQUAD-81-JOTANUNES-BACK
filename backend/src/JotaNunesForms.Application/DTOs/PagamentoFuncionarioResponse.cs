@@ -15,5 +15,7 @@ public sealed record PagamentoFuncionarioResponse(
     DateOnly DataPagamento,
     DateOnly PrazoComprovante,
     DateTime? ComprovanteEnviadoEm,
+    string? ComprovanteNomeArquivo,
+    bool TemComprovante,
     int Situacao,
     string SituacaoRotulo);

@@ -14,4 +14,8 @@ public interface IPagamentoFuncionarioRepository
         CancellationToken cancellationToken = default);
 
     Task AddAsync(PagamentoFuncionario pagamento, CancellationToken cancellationToken = default);
+
+    Task<PagamentoFuncionario?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+
+    Task UpdateAsync(PagamentoFuncionario pagamento, CancellationToken cancellationToken = default);
 }

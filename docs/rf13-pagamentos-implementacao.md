@@ -25,5 +25,5 @@ Terceirizado (MO) registra **data de pagamento** por funcionário e competência
 
 ## Próximo
 
-- **RF14** — upload de comprovante vinculado ao pagamento
+- **RF14** — upload de comprovante vinculado ao pagamento (ver `docs/rf14-comprovante-implementacao.md`)
 - **RF16** — alertas/dashboard com situação real

@@ -43,4 +43,13 @@ public sealed class PagamentoFuncionarioRepository : IPagamentoFuncionarioReposi
         await _dbContext.PagamentosFuncionario.AddAsync(pagamento, cancellationToken);
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
+
+    public Task<PagamentoFuncionario?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
+        _dbContext.PagamentosFuncionario.FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
+
+    public async Task UpdateAsync(PagamentoFuncionario pagamento, CancellationToken cancellationToken = default)
+    {
+        _dbContext.PagamentosFuncionario.Update(pagamento);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+    }
 }

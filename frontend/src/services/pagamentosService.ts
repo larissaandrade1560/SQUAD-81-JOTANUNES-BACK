@@ -1,4 +1,6 @@
-import { apiRequest } from '../api/client'
+import { apiRequest, getApiBaseUrl } from '../api/client'
+import { getAccessToken } from '../store/authStorage'
+import type { ApiError } from '../types/api'
 
 export type PagamentoApi = {
   id: string
@@ -10,6 +12,8 @@ export type PagamentoApi = {
   dataPagamento: string
   prazoComprovante: string
   comprovanteEnviadoEm: string | null
+  comprovanteNomeArquivo: string | null
+  temComprovante: boolean
   situacao: number
   situacaoRotulo: string
 }
@@ -31,6 +35,58 @@ export function registrarPagamento(payload: RegistrarPagamentoPayload): Promise<
   })
 }
 
+export async function uploadComprovantePagamento(
+  pagamentoId: string,
+  file: File,
+): Promise<PagamentoApi> {
+  const form = new FormData()
+  form.append('arquivo', file)
+
+  const token = getAccessToken()
+  const url = `${getApiBaseUrl()}/api/pagamentos/${pagamentoId}/comprovante`
+  let response: Response
+  try {
+    response = await fetch(url, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: form,
+    })
+  } catch {
+    const error: ApiError = {
+      message: 'Falha de conexão com a API. Aguarde e tente novamente.',
+      status: 0,
+    }
+    throw error
+  }
+
+  const text = await response.text()
+  let payload: unknown
+  try {
+    payload = text ? JSON.parse(text) : undefined
+  } catch {
+    payload = undefined
+  }
+  if (!response.ok) {
+    const message =
+      typeof payload === 'object' &&
+      payload !== null &&
+      'message' in payload &&
+      typeof (payload as { message: unknown }).message === 'string'
+        ? (payload as { message: string }).message
+        : `Upload falhou (${response.status})`
+    const error: ApiError = { message, status: response.status }
+    throw error
+  }
+
+  return payload as PagamentoApi
+}
+
+export function getComprovanteDownloadUrl(pagamentoId: string): Promise<{ url: string; expiresAtUtc: string }> {
+  return apiRequest<{ url: string; expiresAtUtc: string }>(
+    `/api/pagamentos/${pagamentoId}/comprovante/download`,
+  )
+}
+
 /** RF15 — preview client-side (autoritativo no backend). */
 export function calcularPrazoComprovante(dataPagamentoIso: string): string | undefined {
   if (!dataPagamentoIso) return undefined
@@ -45,6 +101,12 @@ export function formatDateBr(isoDate: string): string {
   const [y, m, d] = isoDate.split('-')
   if (!y || !m || !d) return isoDate
   return `${d}/${m}/${y}`
+}
+
+export function formatDateTimeBr(isoUtc: string): string {
+  const date = new Date(isoUtc)
+  if (Number.isNaN(date.getTime())) return isoUtc
+  return date.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
 }
 
 export function formatCompetenciaBr(isoDate: string): string {
