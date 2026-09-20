@@ -21,3 +21,10 @@
 ## Deploy
 
 Requer deploy **API** (endpoint novo) e **Pages** (rota real).
+
+### Build Render (20/09)
+
+Correções pós `build_failed`:
+
+- `DependencyInjection`: `using JotaNunesForms.Application.UseCases.Pendencias;`
+- `IDocumentoFuncionarioRepository.ListAsync` + implementação no repositório (RF18 lista todos os docs MO).

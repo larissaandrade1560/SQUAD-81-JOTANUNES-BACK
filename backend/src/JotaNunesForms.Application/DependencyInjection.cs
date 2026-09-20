@@ -6,6 +6,7 @@ using JotaNunesForms.Application.UseCases.Empresas;
 using JotaNunesForms.Application.UseCases.Funcionarios;
 using JotaNunesForms.Application.UseCases.Obras;
 using JotaNunesForms.Application.UseCases.Pagamentos;
+using JotaNunesForms.Application.UseCases.Pendencias;
 using JotaNunesForms.Application.UseCases.Usuarios;
 using JotaNunesForms.Application.UseCases.Validacao;
 using Microsoft.Extensions.DependencyInjection;

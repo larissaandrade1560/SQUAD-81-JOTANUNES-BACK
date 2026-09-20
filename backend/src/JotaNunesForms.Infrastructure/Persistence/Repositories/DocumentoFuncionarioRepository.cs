@@ -24,6 +24,12 @@ public sealed class DocumentoFuncionarioRepository : IDocumentoFuncionarioReposi
             .OrderByDescending(d => d.EnviadoEm)
             .ToListAsync(cancellationToken);
 
+    public async Task<IReadOnlyList<DocumentoFuncionario>> ListAsync(
+        CancellationToken cancellationToken = default) =>
+        await _dbContext.DocumentosFuncionario
+            .OrderByDescending(d => d.EnviadoEm)
+            .ToListAsync(cancellationToken);
+
     public async Task<IReadOnlyList<DocumentoFuncionario>> ListPendentesAsync(
         CancellationToken cancellationToken = default) =>
         await _dbContext.DocumentosFuncionario
