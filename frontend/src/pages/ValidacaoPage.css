@@ -91,3 +91,29 @@
   justify-content: flex-end;
   gap: var(--space-3);
 }
+
+@media (max-width: 767px) {
+  .jn-validacao__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .jn-validacao__dialog {
+    padding: var(--space-3);
+    align-items: flex-end;
+  }
+
+  .jn-validacao__dialog-form {
+    width: 100%;
+    max-height: min(90dvh, 100%);
+  }
+
+  .jn-validacao__dialog-actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .jn-validacao__dialog-actions .jn-button {
+    width: 100%;
+  }
+}

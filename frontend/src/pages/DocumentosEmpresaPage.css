@@ -83,3 +83,21 @@
 .jn-docs-funcionario__back a:hover {
   text-decoration: underline;
 }
+
+@media (max-width: 767px) {
+  .jn-docs-empresa__upload {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .jn-docs-empresa__field,
+  .jn-docs-empresa__field--file {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .jn-docs-empresa__table th,
+  .jn-docs-empresa__table td {
+    padding: var(--space-2) var(--space-3);
+  }
+}

@@ -90,4 +90,9 @@
   .jn-dashboard__metrics {
     grid-template-columns: 1fr;
   }
+
+  .jn-dashboard__panel-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }

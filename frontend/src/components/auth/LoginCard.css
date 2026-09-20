@@ -60,3 +60,16 @@
   flex-direction: column;
   gap: var(--space-4);
 }
+
+@media (max-width: 767px) {
+  .jn-login-card {
+    padding: var(--space-5);
+    border-radius: var(--radius-sm);
+    box-shadow: none;
+  }
+
+  .jn-login-card__title {
+    font-size: var(--font-size-h1);
+    line-height: var(--line-height-h1);
+  }
+}

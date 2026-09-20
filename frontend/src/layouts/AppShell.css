@@ -89,6 +89,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: var(--space-3);
   padding: 0 var(--space-5);
   background: var(--color-bg-surface);
   border-bottom: 1px solid var(--color-border-default);
@@ -117,4 +118,109 @@
 .jn-app-shell__content {
   flex: 1;
   padding: var(--space-5);
+  min-width: 0;
+}
+
+.jn-app-shell__topbar-start {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.jn-app-shell__menu-btn {
+  display: none;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-page);
+  color: var(--color-text-primary);
+  font: inherit;
+  font-size: var(--font-size-tab);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.jn-app-shell__menu-icon {
+  display: block;
+  width: 1.125rem;
+  height: 2px;
+  background: currentColor;
+  border-radius: 1px;
+  box-shadow:
+    0 -5px 0 currentColor,
+    0 5px 0 currentColor;
+}
+
+.jn-app-shell__backdrop {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .jn-app-shell {
+    flex-direction: column;
+  }
+
+  .jn-app-shell__menu-btn {
+    display: inline-flex;
+  }
+
+  .jn-app-shell__backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 90;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: rgb(15 23 42 / 50%);
+    cursor: pointer;
+  }
+
+  .jn-app-shell__sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 100;
+    width: min(17.5rem, 88vw);
+    max-width: 100%;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease-out;
+    padding-top: max(var(--space-4), env(safe-area-inset-top));
+    padding-bottom: max(var(--space-4), env(safe-area-inset-bottom));
+    padding-left: max(var(--space-4), env(safe-area-inset-left));
+  }
+
+  .jn-app-shell__sidebar--open {
+    transform: translateX(0);
+    box-shadow: 8px 0 32px rgb(0 0 0 / 28%);
+  }
+
+  .jn-app-shell__main {
+    width: 100%;
+  }
+
+  .jn-app-shell__topbar {
+    height: auto;
+    min-height: 56px;
+    padding: var(--space-2) var(--space-3);
+    padding-top: max(var(--space-2), env(safe-area-inset-top));
+    padding-left: max(var(--space-3), env(safe-area-inset-left));
+    padding-right: max(var(--space-3), env(safe-area-inset-right));
+    gap: var(--space-2);
+  }
+
+  .jn-app-shell__topbar-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .jn-app-shell__content {
+    padding: var(--space-3);
+    padding-bottom: max(var(--space-3), env(safe-area-inset-bottom));
+  }
 }
