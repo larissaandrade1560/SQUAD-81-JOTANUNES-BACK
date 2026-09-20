@@ -19,6 +19,6 @@ describe('DashboardPage', () => {
     expect(screen.getByText(/empresas parceiras ativas/i)).toBeInTheDocument()
     expect(screen.getByText(/obras ativas/i)).toBeInTheDocument()
     expect(screen.getByText(/funcionários mo ativos/i)).toBeInTheDocument()
-    expect(screen.getByText(/comprovantes em atraso/i)).toBeInTheDocument()
+    expect(screen.getByText(/alertas de comprovante/i)).toBeInTheDocument()
   })
 })

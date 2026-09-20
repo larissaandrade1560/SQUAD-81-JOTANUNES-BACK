@@ -5,6 +5,7 @@ import { Label } from '../components/ui/Label'
 import { PageHeader } from '../components/ui/PageHeader'
 import type { ApiError } from '../types/api'
 import { listFuncionarios, type FuncionarioApi } from '../services/funcionariosService'
+import { MetricCard } from '../components/dashboard/MetricCard'
 import {
   calcularPrazoComprovante,
   formatCompetenciaBr,
@@ -13,6 +14,7 @@ import {
   getComprovanteDownloadUrl,
   listPagamentos,
   registrarPagamento,
+  resumirComprovantes,
   situacaoTone,
   uploadComprovantePagamento,
   type PagamentoApi,
@@ -32,7 +34,7 @@ function apiErrorMessage(err: unknown): string {
   return 'Não foi possível concluir a operação.'
 }
 
-/** RF13 + RF14 + RF15 — Pagamentos, comprovante e prazo. */
+/** RF13 + RF14 + RF15 + RF16 — Pagamentos, comprovante, prazo e alertas. */
 export function PagamentosPage() {
   const session = getSession()
   const canRegister = session?.role === 'terceirizado'
@@ -64,6 +66,8 @@ export function PagamentosPage() {
     () => funcionarios.filter((f) => f.ativo),
     [funcionarios],
   )
+
+  const resumoComprovantes = useMemo(() => resumirComprovantes(pagamentos), [pagamentos])
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -182,8 +186,8 @@ export function PagamentosPage() {
         title="Pagamentos e comprovantes"
         subtitle={
           canRegister
-            ? 'RF13 — Registre pagamentos. RF14 — Envie o comprovante PDF após o registro. RF15 — Prazo: pagamento + 3 dias corridos.'
-            : 'Consulta de pagamentos e comprovantes (RF13/RF14).'
+            ? 'RF13–RF15: registre pagamentos e envie o comprovante PDF. RF16: cards alinhados à situação na tabela.'
+            : 'Consulta de pagamentos e comprovantes (RF13/RF14). RF16: resumo por situação.'
         }
         action={
           canRegister ? (
@@ -222,6 +226,34 @@ export function PagamentosPage() {
           onChange={(e) => void handleComprovanteFile(e)}
         />
       ) : null}
+
+      {!loading && !error && (
+        <div className="jn-pagamentos__metrics">
+          <MetricCard
+            label="Pagamentos"
+            value={String(resumoComprovantes.total)}
+            hint="Registros nesta visão"
+          />
+          <MetricCard
+            label="Aguardando comprovante"
+            value={String(resumoComprovantes.pendentes)}
+            hint="Dentro do prazo (RF15)"
+            tone={resumoComprovantes.pendentes > 0 ? 'warning' : 'default'}
+          />
+          <MetricCard
+            label="Comprovante em atraso"
+            value={String(resumoComprovantes.emAtraso)}
+            hint="Prazo vencido, sem arquivo"
+            tone={resumoComprovantes.emAtraso > 0 ? 'danger' : 'default'}
+          />
+          <MetricCard
+            label="Enviados no prazo"
+            value={String(resumoComprovantes.noPrazo)}
+            hint={`${resumoComprovantes.enviadosEmAtraso} enviado(s) em atraso`}
+            tone="default"
+          />
+        </div>
+      )}
 
       {!loading && !error && pagamentos.length > 0 && (
         <div className="jn-pagamentos__table-wrap">

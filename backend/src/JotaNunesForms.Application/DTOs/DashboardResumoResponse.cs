@@ -6,4 +6,9 @@ public sealed record DashboardResumoResponse(
     int ObrasAtivas,
     int ObrasTotal,
     int FuncionariosAtivos,
-    int FuncionariosTotal);
+    int FuncionariosTotal,
+    int PagamentosTotal,
+    int ComprovantesPendentes,
+    int ComprovantesEmAtraso,
+    int ComprovantesNoPrazo,
+    int ComprovantesEnviadosEmAtraso);

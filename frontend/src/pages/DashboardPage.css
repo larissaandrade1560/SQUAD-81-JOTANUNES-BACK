@@ -76,6 +76,12 @@
   gap: var(--space-3);
 }
 
+.jn-dashboard__alerts-empty {
+  margin: 0 0 var(--space-4);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-tab);
+}
+
 @media (max-width: 1100px) {
   .jn-dashboard__metrics {
     grid-template-columns: repeat(2, minmax(0, 1fr));

@@ -121,3 +121,38 @@ export function situacaoTone(situacao: number): 'success' | 'warning' | 'neutral
   if (situacao === 1) return 'danger'
   return 'info'
 }
+
+/** RF16 — alinhado a `SituacaoComprovante` no backend. */
+export const SITUACAO_COMPROVANTE = {
+  pendente: 0,
+  emAtraso: 1,
+  noPrazo: 2,
+  enviadoEmAtraso: 3,
+} as const
+
+export type ComprovantesResumo = {
+  total: number
+  pendentes: number
+  emAtraso: number
+  noPrazo: number
+  enviadosEmAtraso: number
+}
+
+export function resumirComprovantes(pagamentos: PagamentoApi[]): ComprovantesResumo {
+  const resumo: ComprovantesResumo = {
+    total: pagamentos.length,
+    pendentes: 0,
+    emAtraso: 0,
+    noPrazo: 0,
+    enviadosEmAtraso: 0,
+  }
+
+  for (const p of pagamentos) {
+    if (p.situacao === SITUACAO_COMPROVANTE.pendente) resumo.pendentes++
+    else if (p.situacao === SITUACAO_COMPROVANTE.emAtraso) resumo.emAtraso++
+    else if (p.situacao === SITUACAO_COMPROVANTE.noPrazo) resumo.noPrazo++
+    else if (p.situacao === SITUACAO_COMPROVANTE.enviadoEmAtraso) resumo.enviadosEmAtraso++
+  }
+
+  return resumo
+}

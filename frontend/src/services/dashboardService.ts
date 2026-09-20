@@ -7,6 +7,11 @@ export type DashboardResumoApi = {
   obrasTotal: number
   funcionariosAtivos: number
   funcionariosTotal: number
+  pagamentosTotal: number
+  comprovantesPendentes: number
+  comprovantesEmAtraso: number
+  comprovantesNoPrazo: number
+  comprovantesEnviadosEmAtraso: number
 }
 
 export function getDashboardResumo(): Promise<DashboardResumoApi> {

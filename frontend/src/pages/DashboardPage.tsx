@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { Badge } from '../components/ui/Badge'
 import '../components/ui/Link.css'
@@ -29,13 +29,7 @@ const validationQueue = [
   },
 ]
 
-const alerts = [
-  '3 comprovantes de pagamento com prazo vencendo em 3 dias.',
-  '2 empresas de materiais com documentação irregular.',
-  '1 funcionário bloqueado aguardando renovação de ASO.',
-]
-
-/** JN-01 — Dashboard gerencial (Admin / Analista). */
+/** JN-01 — Dashboard gerencial (Admin / Analista). RF16 — alertas de comprovante via API. */
 export function DashboardPage() {
   const [resumo, setResumo] = useState<DashboardResumoApi | null>(null)
   const [resumoLoading, setResumoLoading] = useState(true)
@@ -82,16 +76,48 @@ export function DashboardPage() {
       ? 'Falha ao carregar.'
       : `De ${resumo?.funcionariosTotal ?? 0} funcionários MO`
 
+  const comprovantesEmAtraso = metricValue(resumo?.comprovantesEmAtraso)
+  const comprovantesHint = resumoLoading
+    ? 'Carregando pagamentos…'
+    : resumoError
+      ? 'Falha ao carregar.'
+      : `${resumo?.comprovantesPendentes ?? 0} aguardando (no prazo) · ${resumo?.comprovantesNoPrazo ?? 0} no prazo · ${resumo?.comprovantesEnviadosEmAtraso ?? 0} enviados em atraso`
+
+  const comprovanteAlerts = useMemo(() => {
+    if (resumoLoading || resumoError || !resumo) {
+      return []
+    }
+
+    const items: string[] = []
+    if (resumo.comprovantesEmAtraso > 0) {
+      items.push(
+        `${resumo.comprovantesEmAtraso} comprovante(s) de pagamento com prazo de envio vencido (sem arquivo).`,
+      )
+    }
+    if (resumo.comprovantesPendentes > 0) {
+      items.push(
+        `${resumo.comprovantesPendentes} comprovante(s) aguardando envio (ainda dentro do prazo de 3 dias).`,
+      )
+    }
+    if (resumo.comprovantesEnviadosEmAtraso > 0) {
+      items.push(
+        `${resumo.comprovantesEnviadosEmAtraso} comprovante(s) registrados como enviados após o prazo.`,
+      )
+    }
+
+    return items
+  }, [resumo, resumoError, resumoLoading])
+
   return (
     <section className="jn-dashboard">
       <PageHeader
         title="Dashboard"
-        subtitle="Contagens de empresas, obras e funcionários vêm da API. Filas de validação e alertas abaixo permanecem demonstrativos até RF07+."
+        subtitle="Cadastros e comprovantes (RF16) vêm da API. A fila de validação abaixo permanece demonstrativa até integração RF20."
       />
 
       {resumoError && (
         <p className="jn-dashboard__resumo-error" role="alert">
-          Não foi possível carregar as métricas de cadastro.{' '}
+          Não foi possível carregar as métricas.{' '}
           <Button type="button" variant="ghost" onClick={loadResumo}>
             Atualizar métricas
           </Button>
@@ -108,9 +134,13 @@ export function DashboardPage() {
         />
         <MetricCard
           label="Comprovantes em atraso"
-          value="3"
-          hint="Prazo de envio excedido (mock)"
-          tone="danger"
+          value={comprovantesEmAtraso}
+          hint={comprovantesHint}
+          tone={
+            !resumoLoading && !resumoError && (resumo?.comprovantesEmAtraso ?? 0) > 0
+              ? 'danger'
+              : 'default'
+          }
         />
       </div>
 
@@ -158,15 +188,23 @@ export function DashboardPage() {
 
         <section className="jn-dashboard__panel" aria-labelledby="jn-dashboard-alerts">
           <h2 id="jn-dashboard-alerts" className="jn-dashboard__panel-title">
-            Alertas e pendências
+            Alertas de comprovante (RF16)
           </h2>
-          <ul className="jn-dashboard__alerts">
-            {alerts.map((text) => (
-              <li key={text}>{text}</li>
-            ))}
-          </ul>
-          <Link to="/pendencias" className="jn-link">
-            Ir para pendências
+          {comprovanteAlerts.length === 0 ? (
+            <p className="jn-dashboard__alerts-empty">
+              {resumoLoading
+                ? 'Carregando alertas…'
+                : 'Nenhum alerta de comprovante no momento.'}
+            </p>
+          ) : (
+            <ul className="jn-dashboard__alerts">
+              {comprovanteAlerts.map((text) => (
+                <li key={text}>{text}</li>
+              ))}
+            </ul>
+          )}
+          <Link to="/pagamentos" className="jn-link">
+            Ver pagamentos e comprovantes
           </Link>
         </section>
       </div>
