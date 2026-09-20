@@ -6,34 +6,50 @@ import { PageHeader } from '../components/ui/PageHeader'
 import { Button } from '../components/ui/Button'
 import { MetricCard } from '../components/dashboard/MetricCard'
 import { getDashboardResumo, type DashboardResumoApi } from '../services/dashboardService'
+import { listValidacaoFila, type ValidacaoDocumentoItem } from '../services/validacaoService'
 import './DashboardPage.css'
 
-const validationQueue = [
-  {
-    document: 'ASO — João Silva',
-    origin: 'Alpha Serviços · Mão de Obra',
-    sentAt: '18/09/2026',
-    status: 'Em Análise' as const,
-  },
-  {
-    document: 'Certidão Negativa',
-    origin: 'Alpha Materiais',
-    sentAt: '17/09/2026',
-    status: 'Em Análise' as const,
-  },
-  {
-    document: 'Contrato Social',
-    origin: 'Beta Engenharia',
-    sentAt: '16/09/2026',
-    status: 'Em Análise' as const,
-  },
-]
+const FILA_PREVIEW_LIMIT = 5
 
-/** JN-01 — Dashboard gerencial (Admin / Analista). RF16 — alertas de comprovante via API. */
+function formatDateTimeBr(isoUtc: string): string {
+  const date = new Date(isoUtc)
+  if (Number.isNaN(date.getTime())) return isoUtc
+  return date.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
+}
+
+function documentoLabel(item: ValidacaoDocumentoItem): string {
+  return `${item.tipoRotulo} — ${item.nomeArquivo}`
+}
+
+function origemLabel(item: ValidacaoDocumentoItem): string {
+  if (item.funcionarioNome) {
+    return `${item.empresaRazaoSocial} · ${item.funcionarioNome}`
+  }
+  return item.empresaRazaoSocial
+}
+
+function statusTone(status: number): 'success' | 'warning' | 'neutral' | 'danger' | 'info' {
+  if (status === 2) return 'success'
+  if (status === 3) return 'danger'
+  if (status === 1) return 'info'
+  if (status === 4) return 'warning'
+  return 'info'
+}
+
+function countOrZero(resumo: DashboardResumoApi | null, key: keyof DashboardResumoApi): number {
+  if (!resumo) return 0
+  const value = resumo[key]
+  return typeof value === 'number' ? value : 0
+}
+
+/** JN-01 — Dashboard gerencial. RF16 comprovantes + RF20 fila de validação (preview). */
 export function DashboardPage() {
   const [resumo, setResumo] = useState<DashboardResumoApi | null>(null)
   const [resumoLoading, setResumoLoading] = useState(true)
   const [resumoError, setResumoError] = useState(false)
+  const [fila, setFila] = useState<ValidacaoDocumentoItem[]>([])
+  const [filaLoading, setFilaLoading] = useState(true)
+  const [filaError, setFilaError] = useState(false)
 
   const loadResumo = useCallback(() => {
     setResumoLoading(true)
@@ -47,15 +63,30 @@ export function DashboardPage() {
       .finally(() => setResumoLoading(false))
   }, [])
 
+  const loadFila = useCallback(() => {
+    setFilaLoading(true)
+    setFilaError(false)
+    void listValidacaoFila()
+      .then(setFila)
+      .catch(() => {
+        setFila([])
+        setFilaError(true)
+      })
+      .finally(() => setFilaLoading(false))
+  }, [])
+
   useEffect(() => {
     loadResumo()
-  }, [loadResumo])
+    loadFila()
+  }, [loadResumo, loadFila])
 
   const metricValue = (value: number | undefined) => {
     if (resumoLoading) return '…'
     if (resumoError || value === undefined) return '—'
     return String(value)
   }
+
+  const resumoOk = !resumoLoading && !resumoError && resumo !== null
 
   const empresasAtivas = metricValue(resumo?.empresasAtivas)
   const empresasHint = resumoLoading
@@ -76,12 +107,18 @@ export function DashboardPage() {
       ? 'Falha ao carregar.'
       : `De ${resumo?.funcionariosTotal ?? 0} funcionários MO`
 
-  const comprovantesEmAtraso = metricValue(resumo?.comprovantesEmAtraso)
+  const comprovantesEmAtraso = resumoOk
+    ? String(countOrZero(resumo, 'comprovantesEmAtraso'))
+    : metricValue(resumo?.comprovantesEmAtraso)
   const comprovantesHint = resumoLoading
     ? 'Carregando pagamentos…'
     : resumoError
       ? 'Falha ao carregar.'
-      : `${resumo?.comprovantesPendentes ?? 0} aguardando (no prazo) · ${resumo?.comprovantesNoPrazo ?? 0} no prazo · ${resumo?.comprovantesEnviadosEmAtraso ?? 0} enviados em atraso`
+      : `${countOrZero(resumo, 'comprovantesPendentes')} aguardando (no prazo) · ${countOrZero(resumo, 'comprovantesNoPrazo')} no prazo · ${countOrZero(resumo, 'comprovantesEnviadosEmAtraso')} enviados em atraso`
+
+  const documentosFila = resumoOk
+    ? String(countOrZero(resumo, 'documentosValidacaoFila'))
+    : metricValue(resumo?.documentosValidacaoFila)
 
   const comprovanteAlerts = useMemo(() => {
     if (resumoLoading || resumoError || !resumo) {
@@ -89,30 +126,36 @@ export function DashboardPage() {
     }
 
     const items: string[] = []
-    if (resumo.comprovantesEmAtraso > 0) {
+    const emAtraso = countOrZero(resumo, 'comprovantesEmAtraso')
+    const pendentes = countOrZero(resumo, 'comprovantesPendentes')
+    const enviadosEmAtraso = countOrZero(resumo, 'comprovantesEnviadosEmAtraso')
+
+    if (emAtraso > 0) {
       items.push(
-        `${resumo.comprovantesEmAtraso} comprovante(s) de pagamento com prazo de envio vencido (sem arquivo).`,
+        `${emAtraso} comprovante(s) de pagamento com prazo de envio vencido (sem arquivo).`,
       )
     }
-    if (resumo.comprovantesPendentes > 0) {
+    if (pendentes > 0) {
       items.push(
-        `${resumo.comprovantesPendentes} comprovante(s) aguardando envio (ainda dentro do prazo de 3 dias).`,
+        `${pendentes} comprovante(s) aguardando envio (ainda dentro do prazo de 3 dias).`,
       )
     }
-    if (resumo.comprovantesEnviadosEmAtraso > 0) {
+    if (enviadosEmAtraso > 0) {
       items.push(
-        `${resumo.comprovantesEnviadosEmAtraso} comprovante(s) registrados como enviados após o prazo.`,
+        `${enviadosEmAtraso} comprovante(s) registrados como enviados após o prazo.`,
       )
     }
 
     return items
   }, [resumo, resumoError, resumoLoading])
 
+  const filaPreview = useMemo(() => fila.slice(0, FILA_PREVIEW_LIMIT), [fila])
+
   return (
     <section className="jn-dashboard">
       <PageHeader
         title="Dashboard"
-        subtitle="Cadastros e comprovantes (RF16) vêm da API. A fila de validação abaixo permanece demonstrativa até integração RF20."
+        subtitle="RF16/RF20 — métricas e fila de validação vêm da API. Pendências agregadas (RF18) ainda em placeholder."
       />
 
       {resumoError && (
@@ -124,7 +167,7 @@ export function DashboardPage() {
         </p>
       )}
 
-      <div className="jn-dashboard__metrics">
+      <div className="jn-dashboard__metrics jn-dashboard__metrics--five">
         <MetricCard label="Empresas parceiras ativas" value={empresasAtivas} hint={empresasHint} />
         <MetricCard label="Obras ativas" value={obrasAtivas} hint={obrasHint} />
         <MetricCard
@@ -133,14 +176,16 @@ export function DashboardPage() {
           hint={funcionariosHint}
         />
         <MetricCard
+          label="Documentos em análise"
+          value={documentosFila}
+          hint="Na fila de validação (RF09)"
+          tone={resumoOk && countOrZero(resumo, 'documentosValidacaoFila') > 0 ? 'warning' : 'default'}
+        />
+        <MetricCard
           label="Comprovantes em atraso"
           value={comprovantesEmAtraso}
           hint={comprovantesHint}
-          tone={
-            !resumoLoading && !resumoError && (resumo?.comprovantesEmAtraso ?? 0) > 0
-              ? 'danger'
-              : 'default'
-          }
+          tone={resumoOk && countOrZero(resumo, 'comprovantesEmAtraso') > 0 ? 'danger' : 'default'}
         />
       </div>
 
@@ -154,36 +199,50 @@ export function DashboardPage() {
               Ver fila completa
             </Link>
           </div>
-          <div className="jn-dashboard__table-wrap">
-            <table className="jn-dashboard__table">
-              <thead>
-                <tr>
-                  <th scope="col">Documento</th>
-                  <th scope="col">Origem</th>
-                  <th scope="col">Enviado em</th>
-                  <th scope="col">Status</th>
-                  <th scope="col">Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {validationQueue.map((row) => (
-                  <tr key={`${row.document}-${row.sentAt}`}>
-                    <td>{row.document}</td>
-                    <td>{row.origin}</td>
-                    <td>{row.sentAt}</td>
-                    <td>
-                      <Badge tone="info">{row.status}</Badge>
-                    </td>
-                    <td>
-                      <Link to="/validacao" className="jn-link">
-                        Analisar
-                      </Link>
-                    </td>
+          {filaLoading && <p className="jn-dashboard__panel-status">Carregando fila…</p>}
+          {filaError && (
+            <p className="jn-dashboard__panel-status jn-dashboard__panel-status--error" role="alert">
+              Não foi possível carregar a fila.{' '}
+              <Button type="button" variant="ghost" onClick={loadFila}>
+                Tentar novamente
+              </Button>
+            </p>
+          )}
+          {!filaLoading && !filaError && filaPreview.length === 0 && (
+            <p className="jn-dashboard__panel-status">Nenhum documento aguardando validação.</p>
+          )}
+          {!filaLoading && !filaError && filaPreview.length > 0 && (
+            <div className="jn-dashboard__table-wrap">
+              <table className="jn-dashboard__table">
+                <thead>
+                  <tr>
+                    <th scope="col">Documento</th>
+                    <th scope="col">Origem</th>
+                    <th scope="col">Enviado em</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Ações</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {filaPreview.map((row) => (
+                    <tr key={`${row.escopo}-${row.id}`}>
+                      <td>{documentoLabel(row)}</td>
+                      <td>{origemLabel(row)}</td>
+                      <td>{formatDateTimeBr(row.enviadoEm)}</td>
+                      <td>
+                        <Badge tone={statusTone(row.status)}>{row.statusRotulo}</Badge>
+                      </td>
+                      <td>
+                        <Link to="/validacao" className="jn-link">
+                          Analisar
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </section>
 
         <section className="jn-dashboard__panel" aria-labelledby="jn-dashboard-alerts">

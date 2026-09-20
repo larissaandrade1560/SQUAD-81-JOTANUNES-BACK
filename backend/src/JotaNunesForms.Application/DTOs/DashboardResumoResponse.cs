@@ -11,4 +11,5 @@ public sealed record DashboardResumoResponse(
     int ComprovantesPendentes,
     int ComprovantesEmAtraso,
     int ComprovantesNoPrazo,
-    int ComprovantesEnviadosEmAtraso);
+    int ComprovantesEnviadosEmAtraso,
+    int DocumentosValidacaoFila);

@@ -5,6 +5,20 @@
   margin-bottom: var(--space-5);
 }
 
+.jn-dashboard__metrics--five {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.jn-dashboard__panel-status {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-tab);
+}
+
+.jn-dashboard__panel-status--error {
+  color: var(--color-danger);
+}
+
 .jn-dashboard__resumo-error {
   margin: 0 0 var(--space-4);
   font-size: var(--font-size-tab);
@@ -83,7 +97,8 @@
 }
 
 @media (max-width: 1100px) {
-  .jn-dashboard__metrics {
+  .jn-dashboard__metrics,
+  .jn-dashboard__metrics--five {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 

@@ -10,17 +10,23 @@ public sealed class GetDashboardResumoUseCase
     private readonly IObraRepository _obras;
     private readonly IFuncionarioRepository _funcionarios;
     private readonly IPagamentoFuncionarioRepository _pagamentos;
+    private readonly IDocumentoEmpresaRepository _documentosEmpresa;
+    private readonly IDocumentoFuncionarioRepository _documentosFuncionario;
 
     public GetDashboardResumoUseCase(
         IEmpresaRepository empresas,
         IObraRepository obras,
         IFuncionarioRepository funcionarios,
-        IPagamentoFuncionarioRepository pagamentos)
+        IPagamentoFuncionarioRepository pagamentos,
+        IDocumentoEmpresaRepository documentosEmpresa,
+        IDocumentoFuncionarioRepository documentosFuncionario)
     {
         _empresas = empresas;
         _obras = obras;
         _funcionarios = funcionarios;
         _pagamentos = pagamentos;
+        _documentosEmpresa = documentosEmpresa;
+        _documentosFuncionario = documentosFuncionario;
     }
 
     public async Task<DashboardResumoResponse> ExecuteAsync(CancellationToken cancellationToken = default)
@@ -30,6 +36,8 @@ public sealed class GetDashboardResumoUseCase
         var funcionarios = await _funcionarios.ListAsync(cancellationToken: cancellationToken);
         var pagamentos = await _pagamentos.ListAsync(cancellationToken: cancellationToken);
         var hoje = DateOnly.FromDateTime(DateTime.UtcNow);
+        var docsEmpresaPendentes = await _documentosEmpresa.ListPendentesAsync(cancellationToken);
+        var docsFuncionarioPendentes = await _documentosFuncionario.ListPendentesAsync(cancellationToken);
 
         var pendentes = 0;
         var emAtraso = 0;
@@ -66,6 +74,7 @@ public sealed class GetDashboardResumoUseCase
             ComprovantesPendentes: pendentes,
             ComprovantesEmAtraso: emAtraso,
             ComprovantesNoPrazo: noPrazo,
-            ComprovantesEnviadosEmAtraso: enviadosEmAtraso);
+            ComprovantesEnviadosEmAtraso: enviadosEmAtraso,
+            DocumentosValidacaoFila: docsEmpresaPendentes.Count + docsFuncionarioPendentes.Count);
     }
 }
