@@ -5,6 +5,7 @@ using JotaNunesForms.Application.UseCases.Formularios;
 using JotaNunesForms.Application.UseCases.Empresas;
 using JotaNunesForms.Application.UseCases.Funcionarios;
 using JotaNunesForms.Application.UseCases.Obras;
+using JotaNunesForms.Application.UseCases.Pagamentos;
 using JotaNunesForms.Application.UseCases.Usuarios;
 using JotaNunesForms.Application.UseCases.Validacao;
 using Microsoft.Extensions.DependencyInjection;
@@ -48,6 +49,8 @@ public static class DependencyInjection
         services.AddScoped<RejeitarDocumentoEmpresaValidacaoUseCase>();
         services.AddScoped<AprovarDocumentoFuncionarioValidacaoUseCase>();
         services.AddScoped<RejeitarDocumentoFuncionarioValidacaoUseCase>();
+        services.AddScoped<ListPagamentosFuncionarioUseCase>();
+        services.AddScoped<RegistrarPagamentoFuncionarioUseCase>();
         return services;
     }
 }

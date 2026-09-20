@@ -7,6 +7,7 @@ import { EmpresasPage } from '../pages/EmpresasPage'
 import { FuncionariosPage } from '../pages/FuncionariosPage'
 import { LoginPage } from '../pages/LoginPage'
 import { ModulePlaceholderPage } from '../pages/ModulePlaceholderPage'
+import { PagamentosPage } from '../pages/PagamentosPage'
 import { ValidacaoPage } from '../pages/ValidacaoPage'
 import { ObrasPage } from '../pages/ObrasPage'
 import { UsuariosPage } from '../pages/UsuariosPage'
@@ -16,7 +17,6 @@ import { ProtectedRoute } from './ProtectedRoute'
 import { RoleHome } from './RoleHome'
 
 const moduleRoutes = [
-  { path: 'pagamentos' },
   { path: 'pendencias' },
   { path: 'auditoria' },
 ] as const
@@ -41,6 +41,7 @@ export const router = createBrowserRouter([
           { path: 'funcionarios', element: <FuncionariosPage /> },
           { path: 'funcionarios/:funcionarioId/documentos', element: <FuncionarioDocumentosPage /> },
           { path: 'documentos', element: <DocumentosEmpresaPage /> },
+          { path: 'pagamentos', element: <PagamentosPage /> },
           {
             element: <InternalRoute />,
             children: [

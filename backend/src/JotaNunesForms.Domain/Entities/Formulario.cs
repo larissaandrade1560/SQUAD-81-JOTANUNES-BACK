@@ -36,3 +36,5 @@ public sealed class Formulario
         return string.IsNullOrWhiteSpace(descricao) ? null : descricao.Trim();
     }
 }
+
+

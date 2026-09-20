@@ -1,0 +1,128 @@
+.jn-pagamentos__status {
+  margin: 0 0 var(--space-4);
+  color: var(--color-text-secondary);
+}
+
+.jn-pagamentos__status--error {
+  color: var(--color-danger);
+}
+
+.jn-pagamentos__table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-surface);
+}
+
+.jn-pagamentos__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-tab);
+}
+
+.jn-pagamentos__table th,
+.jn-pagamentos__table td {
+  padding: var(--space-3) var(--space-4);
+  text-align: left;
+  border-bottom: 1px solid var(--color-border-default);
+}
+
+.jn-pagamentos__table th {
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.jn-pagamentos__dialog {
+  position: fixed;
+  inset: 0;
+  background: rgb(15 23 42 / 45%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  z-index: 20;
+}
+
+.jn-pagamentos__dialog-form {
+  width: min(100%, 28rem);
+  max-height: 90dvh;
+  overflow-y: auto;
+  background: var(--color-bg-surface);
+  border-radius: var(--radius-sm);
+  padding: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  box-shadow: 0 12px 40px rgb(0 0 0 / 12%);
+}
+
+.jn-pagamentos__dialog-form h2 {
+  margin: 0;
+  font-size: var(--font-size-h2);
+}
+
+.jn-pagamentos__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.jn-pagamentos__field select,
+.jn-pagamentos__field input[type='date'],
+.jn-pagamentos__field input[type='month'] {
+  width: 100%;
+  font: inherit;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-sm);
+}
+
+.jn-pagamentos__dialog-form select,
+.jn-pagamentos__dialog-form input[type='date'],
+.jn-pagamentos__dialog-form input[type='month'] {
+  width: 100%;
+  font: inherit;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-sm);
+}
+
+.jn-pagamentos__prazo-hint {
+  margin: 0;
+  font-size: var(--font-size-tab);
+  color: var(--color-text-secondary);
+}
+
+.jn-pagamentos__dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+@media (max-width: 767px) {
+  .jn-pagamentos__dialog {
+    align-items: flex-end;
+    padding: var(--space-3);
+  }
+
+  .jn-pagamentos__dialog-form {
+    width: 100%;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+
+  .jn-pagamentos__dialog-actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .jn-pagamentos__dialog-actions :where(.jn-button) {
+    width: 100%;
+  }
+
+  .jn-pagamentos__table th,
+  .jn-pagamentos__table td {
+    padding: var(--space-2) var(--space-3);
+  }
+}

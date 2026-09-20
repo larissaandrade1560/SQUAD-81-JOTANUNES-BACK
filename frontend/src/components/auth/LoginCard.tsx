@@ -5,17 +5,18 @@ import { Logo } from '../ui/Logo'
 import './LoginCard.css'
 
 export type LoginCardProps = {
-  onSubmit?: (values: { document: string; password: string }) => void
+  onSubmit?: (values: { document: string; password: string }) => void | Promise<void>
   error?: string
+  submitting?: boolean
 }
 
-export function LoginCard({ onSubmit, error }: LoginCardProps) {
+export function LoginCard({ onSubmit, error, submitting = false }: LoginCardProps) {
   const [documentValue, setDocumentValue] = useState('')
   const [password, setPassword] = useState('')
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    onSubmit?.({ document: documentValue, password })
+    await onSubmit?.({ document: documentValue, password })
   }
 
   return (
@@ -66,8 +67,8 @@ export function LoginCard({ onSubmit, error }: LoginCardProps) {
           }}
         />
 
-        <Button type="submit" variant="primary" size="auth">
-          Acessar
+        <Button type="submit" variant="primary" size="auth" loading={submitting} disabled={submitting}>
+          {submitting ? 'Entrando…' : 'Acessar'}
         </Button>
       </form>
     </section>
