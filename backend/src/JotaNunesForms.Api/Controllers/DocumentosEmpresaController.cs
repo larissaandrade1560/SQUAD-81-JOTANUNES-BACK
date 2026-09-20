@@ -14,15 +14,18 @@ public sealed class DocumentosEmpresaController : ControllerBase
 {
     private readonly ListDocumentosEmpresaUseCase _list;
     private readonly UploadDocumentoEmpresaUseCase _upload;
+    private readonly ReenviarDocumentoEmpresaUseCase _reenviar;
     private readonly GetDocumentoEmpresaDownloadUseCase _download;
 
     public DocumentosEmpresaController(
         ListDocumentosEmpresaUseCase list,
         UploadDocumentoEmpresaUseCase upload,
+        ReenviarDocumentoEmpresaUseCase reenviar,
         GetDocumentoEmpresaDownloadUseCase download)
     {
         _list = list;
         _upload = upload;
+        _reenviar = reenviar;
         _download = download;
     }
 
@@ -70,6 +73,48 @@ public sealed class DocumentosEmpresaController : ControllerBase
                 stream,
                 cancellationToken);
             return CreatedAtAction(nameof(List), created);
+        }
+        catch (DocumentoEmpresaException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception)
+        {
+            return StatusCode(502, new { message = "Falha ao enviar arquivo para o storage. Tente novamente." });
+        }
+    }
+
+    [HttpPost("{id:guid}/reenviar")]
+    [Authorize(Policy = "Terceirizado")]
+    [RequestSizeLimit(10 * 1024 * 1024)]
+    public async Task<ActionResult<DocumentoEmpresaResponse>> Reenviar(
+        Guid id,
+        IFormFile arquivo,
+        CancellationToken cancellationToken)
+    {
+        var empresaId = UserClaims.GetEmpresaId(User);
+        if (empresaId is null)
+        {
+            return Forbid();
+        }
+
+        if (arquivo is null || arquivo.Length == 0)
+        {
+            return BadRequest(new { message = "Selecione um arquivo PDF." });
+        }
+
+        try
+        {
+            await using var stream = arquivo.OpenReadStream();
+            var updated = await _reenviar.ExecuteAsync(
+                id,
+                empresaId.Value,
+                arquivo.FileName,
+                arquivo.ContentType,
+                arquivo.Length,
+                stream,
+                cancellationToken);
+            return Ok(updated);
         }
         catch (DocumentoEmpresaException ex)
         {

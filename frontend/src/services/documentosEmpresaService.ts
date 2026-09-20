@@ -83,6 +83,52 @@ export function getDocumentoDownloadUrl(id: string): Promise<DocumentoDownloadAp
   return apiRequest<DocumentoDownloadApi>(`/api/documentos-empresa/${id}/download`)
 }
 
+export async function reenviarDocumentoEmpresa(
+  id: string,
+  file: File,
+): Promise<DocumentoEmpresaApi> {
+  const form = new FormData()
+  form.append('arquivo', file)
+
+  const token = getAccessToken()
+  const url = `${getApiBaseUrl()}/api/documentos-empresa/${id}/reenviar`
+  let response: Response
+  try {
+    response = await fetch(url, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: form,
+    })
+  } catch {
+    const error: ApiError = {
+      message: 'Falha de conexão com a API. Aguarde e tente novamente.',
+      status: 0,
+    }
+    throw error
+  }
+
+  const text = await response.text()
+  let payload: unknown
+  try {
+    payload = text ? JSON.parse(text) : undefined
+  } catch {
+    payload = undefined
+  }
+  if (!response.ok) {
+    const message =
+      typeof payload === 'object' &&
+      payload !== null &&
+      'message' in payload &&
+      typeof (payload as { message: unknown }).message === 'string'
+        ? (payload as { message: string }).message
+        : `Reenvio falhou (${response.status})`
+    const error: ApiError = { message, status: response.status }
+    throw error
+  }
+
+  return payload as DocumentoEmpresaApi
+}
+
 export function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`

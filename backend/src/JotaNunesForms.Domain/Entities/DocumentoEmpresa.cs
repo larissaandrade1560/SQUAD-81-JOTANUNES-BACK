@@ -53,6 +53,28 @@ public sealed class DocumentoEmpresa
         AnalisadoEm = DateTime.UtcNow;
     }
 
+    public void Reenviar(string nomeArquivo, string storageKey, string contentType, long tamanhoBytes)
+    {
+        if (Status is not StatusDocumento.Rejeitado)
+        {
+            throw new InvalidOperationException("Somente documentos rejeitados podem ser reenviados.");
+        }
+
+        if (tamanhoBytes <= 0)
+        {
+            throw new ArgumentException("Arquivo inválido.", nameof(tamanhoBytes));
+        }
+
+        NomeArquivo = NormalizeNomeArquivo(nomeArquivo);
+        StorageKey = NormalizeStorageKey(storageKey);
+        ContentType = contentType;
+        TamanhoBytes = tamanhoBytes;
+        Status = StatusDocumento.Pendente;
+        MotivoRejeicao = null;
+        AnalisadoEm = null;
+        EnviadoEm = DateTime.UtcNow;
+    }
+
     private DocumentoEmpresa()
     {
     }

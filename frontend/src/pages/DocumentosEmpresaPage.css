@@ -35,6 +35,16 @@
   min-width: min(100%, 16rem);
 }
 
+.jn-docs-empresa__reenvio-input {
+  display: none;
+}
+
+.jn-docs-empresa__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
 .jn-docs-empresa__table-wrap {
   overflow-x: auto;
   border: 1px solid var(--color-border-default);

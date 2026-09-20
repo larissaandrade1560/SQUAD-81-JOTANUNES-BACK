@@ -83,4 +83,50 @@ export function getDocumentoFuncionarioDownloadUrl(id: string): Promise<{ url: s
   return apiRequest(`/api/documentos-funcionario/${id}/download`)
 }
 
+export async function reenviarDocumentoFuncionario(
+  id: string,
+  file: File,
+): Promise<DocumentoFuncionarioApi> {
+  const form = new FormData()
+  form.append('arquivo', file)
+
+  const token = getAccessToken()
+  const url = `${getApiBaseUrl()}/api/documentos-funcionario/${id}/reenviar`
+  let response: Response
+  try {
+    response = await fetch(url, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: form,
+    })
+  } catch {
+    const error: ApiError = {
+      message: 'Falha de conexão com a API. Aguarde e tente novamente.',
+      status: 0,
+    }
+    throw error
+  }
+
+  const text = await response.text()
+  let payload: unknown
+  try {
+    payload = text ? JSON.parse(text) : undefined
+  } catch {
+    payload = undefined
+  }
+  if (!response.ok) {
+    const message =
+      typeof payload === 'object' &&
+      payload !== null &&
+      'message' in payload &&
+      typeof (payload as { message: unknown }).message === 'string'
+        ? (payload as { message: string }).message
+        : `Reenvio falhou (${response.status})`
+    const error: ApiError = { message, status: response.status }
+    throw error
+  }
+
+  return payload as DocumentoFuncionarioApi
+}
+
 export { formatFileSize } from './documentosEmpresaService'

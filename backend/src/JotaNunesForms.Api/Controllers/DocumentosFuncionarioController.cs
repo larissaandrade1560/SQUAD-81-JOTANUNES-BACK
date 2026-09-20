@@ -13,15 +13,18 @@ public sealed class DocumentosFuncionarioController : ControllerBase
 {
     private readonly ListDocumentosFuncionarioUseCase _list;
     private readonly UploadDocumentoFuncionarioUseCase _upload;
+    private readonly ReenviarDocumentoFuncionarioUseCase _reenviar;
     private readonly GetDocumentoFuncionarioDownloadUseCase _download;
 
     public DocumentosFuncionarioController(
         ListDocumentosFuncionarioUseCase list,
         UploadDocumentoFuncionarioUseCase upload,
+        ReenviarDocumentoFuncionarioUseCase reenviar,
         GetDocumentoFuncionarioDownloadUseCase download)
     {
         _list = list;
         _upload = upload;
+        _reenviar = reenviar;
         _download = download;
     }
 
@@ -79,6 +82,48 @@ public sealed class DocumentosFuncionarioController : ControllerBase
                 stream,
                 cancellationToken);
             return CreatedAtAction(nameof(List), new { funcionarioId }, created);
+        }
+        catch (DocumentoFuncionarioException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception)
+        {
+            return StatusCode(502, new { message = "Falha ao enviar arquivo para o storage. Tente novamente." });
+        }
+    }
+
+    [HttpPost("api/documentos-funcionario/{id:guid}/reenviar")]
+    [Authorize(Policy = "Terceirizado")]
+    [RequestSizeLimit(10 * 1024 * 1024)]
+    public async Task<ActionResult<DocumentoFuncionarioResponse>> Reenviar(
+        Guid id,
+        IFormFile arquivo,
+        CancellationToken cancellationToken)
+    {
+        var empresaId = UserClaims.GetEmpresaId(User);
+        if (empresaId is null)
+        {
+            return Forbid();
+        }
+
+        if (arquivo is null || arquivo.Length == 0)
+        {
+            return BadRequest(new { message = "Selecione um arquivo PDF." });
+        }
+
+        try
+        {
+            await using var stream = arquivo.OpenReadStream();
+            var updated = await _reenviar.ExecuteAsync(
+                id,
+                empresaId.Value,
+                arquivo.FileName,
+                arquivo.ContentType,
+                arquivo.Length,
+                stream,
+                cancellationToken);
+            return Ok(updated);
         }
         catch (DocumentoFuncionarioException ex)
         {

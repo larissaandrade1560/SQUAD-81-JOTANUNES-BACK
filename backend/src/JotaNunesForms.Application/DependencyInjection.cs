@@ -37,9 +37,11 @@ public static class DependencyInjection
         services.AddScoped<GetDashboardResumoUseCase>();
         services.AddScoped<ListDocumentosEmpresaUseCase>();
         services.AddScoped<UploadDocumentoEmpresaUseCase>();
+        services.AddScoped<ReenviarDocumentoEmpresaUseCase>();
         services.AddScoped<GetDocumentoEmpresaDownloadUseCase>();
         services.AddScoped<ListDocumentosFuncionarioUseCase>();
         services.AddScoped<UploadDocumentoFuncionarioUseCase>();
+        services.AddScoped<ReenviarDocumentoFuncionarioUseCase>();
         services.AddScoped<GetDocumentoFuncionarioDownloadUseCase>();
         services.AddScoped<ListValidacaoFilaUseCase>();
         services.AddScoped<AprovarDocumentoEmpresaValidacaoUseCase>();

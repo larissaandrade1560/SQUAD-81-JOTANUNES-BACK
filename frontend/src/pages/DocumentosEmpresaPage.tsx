@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Badge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
 import { PageHeader } from '../components/ui/PageHeader'
@@ -9,6 +9,7 @@ import {
   listDocumentosEmpresa,
   TIPOS_DOCUMENTO,
   uploadDocumentoEmpresa,
+  reenviarDocumentoEmpresa,
   type DocumentoEmpresaApi,
 } from '../services/documentosEmpresaService'
 import { getSession } from '../store/authStorage'
@@ -34,7 +35,9 @@ function statusTone(status: number): 'success' | 'warning' | 'neutral' | 'danger
   return 'info'
 }
 
-/** RF07 — Documentos empresariais (PDF no R2). */
+const STATUS_REJEITADO = 3
+
+/** RF07 / RF11 — Documentos empresariais (PDF no R2) com reenvio após rejeição. */
 export function DocumentosEmpresaPage() {
   const session = getSession()
   const canUpload = session?.role === 'terceirizado'
@@ -46,6 +49,8 @@ export function DocumentosEmpresaPage() {
   const [file, setFile] = useState<File | null>(null)
   const [uploadError, setUploadError] = useState<string | undefined>()
   const [uploading, setUploading] = useState(false)
+  const [reenviandoId, setReenviandoId] = useState<string | null>(null)
+  const reenvioInputRef = useRef<HTMLInputElement>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -93,6 +98,33 @@ export function DocumentosEmpresaPage() {
     }
   }
 
+  function handleReenviarClick(id: string) {
+    setReenviandoId(id)
+    setUploadError(undefined)
+    reenvioInputRef.current?.click()
+  }
+
+  async function handleReenviarFile(event: React.ChangeEvent<HTMLInputElement>) {
+    const selected = event.target.files?.[0]
+    event.target.value = ''
+    if (!selected || !reenviandoId) {
+      setReenviandoId(null)
+      return
+    }
+
+    setUploading(true)
+    setUploadError(undefined)
+    try {
+      await reenviarDocumentoEmpresa(reenviandoId, selected)
+      await load()
+    } catch (err) {
+      setUploadError(apiErrorMessage(err))
+    } finally {
+      setUploading(false)
+      setReenviandoId(null)
+    }
+  }
+
   return (
     <section className="jn-docs-empresa">
       <PageHeader
@@ -105,7 +137,17 @@ export function DocumentosEmpresaPage() {
       />
 
       {canUpload && (
-        <form className="jn-docs-empresa__upload" onSubmit={handleUpload}>
+        <>
+          <input
+            ref={reenvioInputRef}
+            type="file"
+            accept="application/pdf,.pdf"
+            className="jn-docs-empresa__reenvio-input"
+            aria-hidden="true"
+            tabIndex={-1}
+            onChange={(e) => void handleReenviarFile(e)}
+          />
+          <form className="jn-docs-empresa__upload" onSubmit={handleUpload}>
           <label className="jn-docs-empresa__field">
             <span>Tipo de documento</span>
             <select value={tipo} onChange={(e) => setTipo(Number(e.target.value))}>
@@ -134,6 +176,7 @@ export function DocumentosEmpresaPage() {
             {uploading ? 'Enviando…' : 'Enviar documento'}
           </Button>
         </form>
+        </>
       )}
 
       {loading && <p className="jn-docs-empresa__status">Carregando…</p>}
@@ -176,9 +219,21 @@ export function DocumentosEmpresaPage() {
                     </td>
                     <td>{d.motivoRejeicao ?? '—'}</td>
                     <td>
-                      <Button type="button" variant="ghost" onClick={() => void handleDownload(d.id)}>
-                        Baixar
-                      </Button>
+                      <div className="jn-docs-empresa__actions">
+                        <Button type="button" variant="ghost" onClick={() => void handleDownload(d.id)}>
+                          Baixar
+                        </Button>
+                        {canUpload && d.status === STATUS_REJEITADO && (
+                          <Button
+                            type="button"
+                            variant="primary"
+                            disabled={uploading && reenviandoId === d.id}
+                            onClick={() => handleReenviarClick(d.id)}
+                          >
+                            {uploading && reenviandoId === d.id ? 'Reenviando…' : 'Reenviar'}
+                          </Button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))
