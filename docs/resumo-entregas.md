@@ -133,14 +133,22 @@ Reenvio de PDF substituindo arquivo rejeitado (empresa e funcionário); estende 
 
 → `docs/rf16-alertas-comprovante-implementacao.md`
 
-### RF17–RF20 — pendentes
+### RF20 — Dashboard gerencial (parcial)
+
+- Fila real de validação no dashboard (preview) + métrica **Documentos em análise** via `documentosValidacaoFila` em `GET /api/dashboard/resumo`.
+- → `docs/rf20-dashboard-parcial-implementacao.md`
+
+### RF18 — Consulta de pendências
+
+- `GET /api/pendencias` + tela `/pendencias` (irregularidades documentais e comprovantes).
+- → `docs/rf18-pendencias-implementacao.md` (**aguarda deploy API + Pages**)
+
+### RF17 / RF19 — pendentes
 
 | RF | Escopo |
 |----|--------|
 | RF17 | `/auditoria` — histórico de versões de documentos |
-| RF18 | `/pendencias` — irregularidades empresa/trabalhador |
 | RF19 | Consulta por obra (alocações) |
-| RF20 | Dashboard — fila validação real + métricas documentais |
 
 ---
 
@@ -209,8 +217,10 @@ Reenvio de PDF substituindo arquivo rejeitado (empresa e funcionário); estende 
 
 | Prioridade | Item |
 |------------|------|
-| RF16 | Alertas e cards no dashboard (comprovantes pendentes/atraso) | **MVP entregue** — ver `docs/rf16-alertas-comprovante-implementacao.md`; RF18 `/pendencias` ainda placeholder |
-| RF18 / RF20 | Dashboard gerencial e consultas Jotanunes |
+| RF16 | **MVP entregue** — ver `docs/rf16-alertas-comprovante-implementacao.md` |
+| RF20 | **Parcial entregue** — fila + métrica documentos — ver `docs/rf20-dashboard-parcial-implementacao.md` |
+| RF18 | **Implementado local** — ver `docs/rf18-pendencias-implementacao.md` (deploy pendente) |
+| RF17 / RF19 | Auditoria e consulta por obra |
 | RF12 E2E | Cenário vencido + nova versão (seed ou SQL em `valido_ate`) |
 | RF13/14 E2E | Cenários **Em atraso** e **Enviado em atraso** |
 | ClickUp | Atribuir RF11–RF14 concluídos a Matheus — ver `docs/clickup/atribuicao-matheus-2026-09-19.md` e `docs/clickup/kanban-squad81.md` |

@@ -155,7 +155,7 @@ export function DashboardPage() {
     <section className="jn-dashboard">
       <PageHeader
         title="Dashboard"
-        subtitle="RF16/RF20 — métricas e fila de validação vêm da API. Pendências agregadas (RF18) ainda em placeholder."
+        subtitle="RF16/RF20 — métricas e fila de validação vêm da API. Irregularidades agregadas em Pendências (RF18)."
       />
 
       {resumoError && (

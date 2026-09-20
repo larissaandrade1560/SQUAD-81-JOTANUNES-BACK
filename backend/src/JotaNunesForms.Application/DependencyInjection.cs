@@ -53,6 +53,7 @@ public static class DependencyInjection
         services.AddScoped<RegistrarPagamentoFuncionarioUseCase>();
         services.AddScoped<UploadComprovantePagamentoUseCase>();
         services.AddScoped<GetComprovantePagamentoDownloadUseCase>();
+        services.AddScoped<ListPendenciasUseCase>();
         return services;
     }
 }
