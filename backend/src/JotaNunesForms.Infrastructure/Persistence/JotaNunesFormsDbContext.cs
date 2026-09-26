@@ -28,6 +28,28 @@ public sealed class JotaNunesFormsDbContext : DbContext
 
     public DbSet<PagamentoFuncionario> PagamentosFuncionario => Set<PagamentoFuncionario>();
 
+    public DbSet<CatalogoRequisito> CatalogoRequisitos => Set<CatalogoRequisito>();
+
+    public DbSet<ParametroNormativo> ParametrosNormativos => Set<ParametroNormativo>();
+
+    public DbSet<EscopoArt> EscoposArt => Set<EscopoArt>();
+
+    public DbSet<Contrato> Contratos => Set<Contrato>();
+
+    public DbSet<ProcessoContratacao> ProcessosContratacao => Set<ProcessoContratacao>();
+
+    public DbSet<Socio> Socios => Set<Socio>();
+
+    public DbSet<ItemChecklist> ItensChecklist => Set<ItemChecklist>();
+
+    public DbSet<DocumentoVersao> DocumentosVersoes => Set<DocumentoVersao>();
+
+    public DbSet<AnaliseDocumento> AnalisesDocumento => Set<AnaliseDocumento>();
+
+    public DbSet<Mobilizacao> Mobilizacoes => Set<Mobilizacao>();
+
+    public DbSet<HistoricoLotacao> HistoricoLotacoes => Set<HistoricoLotacao>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(JotaNunesFormsDbContext).Assembly);

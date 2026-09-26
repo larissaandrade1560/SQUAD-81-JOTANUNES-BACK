@@ -13,6 +13,11 @@ public interface IFuncionarioObraRepository
         IReadOnlyList<Guid> obraIds,
         CancellationToken cancellationToken = default);
 
+    Task EnsureVinculoAsync(
+        Guid funcionarioId,
+        Guid obraId,
+        CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<Funcionario>> ListFuncionariosByObraIdAsync(
         Guid obraId,
         CancellationToken cancellationToken = default);

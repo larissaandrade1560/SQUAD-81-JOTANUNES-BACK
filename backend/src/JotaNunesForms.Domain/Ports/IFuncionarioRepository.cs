@@ -10,6 +10,11 @@ public interface IFuncionarioRepository
         Guid? empresaId = null,
         CancellationToken cancellationToken = default);
 
+    Task<Funcionario?> GetByCpfInEmpresaAsync(
+        Guid empresaId,
+        string cpf,
+        CancellationToken cancellationToken = default);
+
     Task<bool> ExistsCpfInEmpresaAsync(
         Guid empresaId,
         string cpf,

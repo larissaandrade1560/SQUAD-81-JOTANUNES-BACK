@@ -14,6 +14,14 @@ public sealed class Obra
 
     public bool Ativo { get; private set; }
 
+    public string? EngenheiroResponsavel { get; private set; }
+
+    public DateOnly? DataInicio { get; private set; }
+
+    public DateOnly? DataFim { get; private set; }
+
+    public string? EquipesInternas { get; private set; }
+
     public DateTime CriadoEm { get; private set; }
 
     private Obra()
@@ -47,11 +55,22 @@ public sealed class Obra
         return normalized;
     }
 
-    public void Atualizar(string nome, string? cidade, string? uf)
+    public void Atualizar(
+        string nome,
+        string? cidade,
+        string? uf,
+        string? engenheiroResponsavel = null,
+        DateOnly? dataInicio = null,
+        DateOnly? dataFim = null,
+        string? equipesInternas = null)
     {
         Nome = NormalizeNome(nome);
         Cidade = NormalizeOptional(cidade);
         Uf = NormalizeUf(uf);
+        EngenheiroResponsavel = NormalizeOptional(engenheiroResponsavel);
+        DataInicio = dataInicio;
+        DataFim = dataFim;
+        EquipesInternas = NormalizeOptional(equipesInternas);
     }
 
     public void DefinirStatus(bool ativo) => Ativo = ativo;

@@ -11,17 +11,32 @@ public sealed class ListValidacaoFilaUseCase
     private readonly IDocumentoFuncionarioRepository _documentosFuncionario;
     private readonly IEmpresaRepository _empresas;
     private readonly IFuncionarioRepository _funcionarios;
+    private readonly IDocumentoVersaoRepository _versoes;
+    private readonly IItemChecklistRepository _itens;
+    private readonly IProcessoContratacaoRepository _processos;
+    private readonly IContratoRepository _contratos;
+    private readonly ICatalogoRequisitoRepository _catalogo;
 
     public ListValidacaoFilaUseCase(
         IDocumentoEmpresaRepository documentosEmpresa,
         IDocumentoFuncionarioRepository documentosFuncionario,
         IEmpresaRepository empresas,
-        IFuncionarioRepository funcionarios)
+        IFuncionarioRepository funcionarios,
+        IDocumentoVersaoRepository versoes,
+        IItemChecklistRepository itens,
+        IProcessoContratacaoRepository processos,
+        IContratoRepository contratos,
+        ICatalogoRequisitoRepository catalogo)
     {
         _documentosEmpresa = documentosEmpresa;
         _documentosFuncionario = documentosFuncionario;
         _empresas = empresas;
         _funcionarios = funcionarios;
+        _versoes = versoes;
+        _itens = itens;
+        _processos = processos;
+        _contratos = contratos;
+        _catalogo = catalogo;
     }
 
     public async Task<IReadOnlyList<ValidacaoDocumentoItemResponse>> ExecuteAsync(
@@ -85,6 +100,52 @@ public sealed class ListValidacaoFilaUseCase
                 doc.Status,
                 DocumentoFuncionarioResponse.StatusLabel(doc.Status),
                 doc.EnviadoEm));
+        }
+
+        var catalogo = (await _catalogo.ListAsync(cancellationToken)).ToDictionary(c => c.Id);
+        var versoesPendentes = await _versoes.ListVigentesPendentesAsync(cancellationToken);
+        foreach (var versao in versoesPendentes)
+        {
+            var item = await _itens.GetByIdAsync(versao.ItemChecklistId, cancellationToken);
+            if (item is null)
+            {
+                continue;
+            }
+
+            var processo = await _processos.GetByIdAsync(item.ProcessoId, cancellationToken);
+            if (processo is null)
+            {
+                continue;
+            }
+
+            var contrato = await _contratos.GetByIdAsync(processo.ContratoId, cancellationToken);
+            if (contrato is null)
+            {
+                continue;
+            }
+
+            catalogo.TryGetValue(item.CatalogoRequisitoId, out var requisito);
+            items.Add(new ValidacaoDocumentoItemResponse(
+                "versao",
+                versao.Id,
+                contrato.EmpresaId,
+                nomesEmpresa.GetValueOrDefault(contrato.EmpresaId, "—"),
+                null,
+                item.TitularTipo == TitularRequisito.Socio
+                    ? $"Sócio {item.TitularOrdem}"
+                    : item.TitularTipo == TitularRequisito.Contrato
+                        ? "Contrato"
+                        : null,
+                requisito?.Nome ?? "Requisito",
+                versao.NomeArquivo ?? "formulário",
+                versao.TamanhoBytes ?? 0,
+                StatusDocumento.EmAnalise,
+                DocumentoEmpresaResponse.StatusLabel(StatusDocumento.EmAnalise),
+                versao.EnviadoEm,
+                processo.Id,
+                item.Id,
+                versao.Id,
+                requisito?.Codigo));
         }
 
         return items.OrderBy(i => i.EnviadoEm).ToList();

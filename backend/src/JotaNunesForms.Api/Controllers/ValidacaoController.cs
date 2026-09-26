@@ -1,4 +1,8 @@
+using System.Security.Claims;
+using JotaNunesForms.Application.Auth;
+using JotaNunesForms.Application.Documentos;
 using JotaNunesForms.Application.DTOs;
+using JotaNunesForms.Application.UseCases.Auth;
 using JotaNunesForms.Application.UseCases.Validacao;
 using JotaNunesForms.Application.Validacao;
 using Microsoft.AspNetCore.Authorization;
@@ -16,21 +20,31 @@ public sealed class ValidacaoController : ControllerBase
     private readonly RejeitarDocumentoEmpresaValidacaoUseCase _rejeitarEmpresa;
     private readonly AprovarDocumentoFuncionarioValidacaoUseCase _aprovarFuncionario;
     private readonly RejeitarDocumentoFuncionarioValidacaoUseCase _rejeitarFuncionario;
+    private readonly AprovarVersaoUseCase _aprovarVersao;
+    private readonly RejeitarVersaoUseCase _rejeitarVersao;
+    private readonly GetAuthenticatedUserUseCase _authUser;
 
     public ValidacaoController(
         ListValidacaoFilaUseCase list,
         AprovarDocumentoEmpresaValidacaoUseCase aprovarEmpresa,
         RejeitarDocumentoEmpresaValidacaoUseCase rejeitarEmpresa,
         AprovarDocumentoFuncionarioValidacaoUseCase aprovarFuncionario,
-        RejeitarDocumentoFuncionarioValidacaoUseCase rejeitarFuncionario)
+        RejeitarDocumentoFuncionarioValidacaoUseCase rejeitarFuncionario,
+        AprovarVersaoUseCase aprovarVersao,
+        RejeitarVersaoUseCase rejeitarVersao,
+        GetAuthenticatedUserUseCase authUser)
     {
         _list = list;
         _aprovarEmpresa = aprovarEmpresa;
         _rejeitarEmpresa = rejeitarEmpresa;
         _aprovarFuncionario = aprovarFuncionario;
         _rejeitarFuncionario = rejeitarFuncionario;
+        _aprovarVersao = aprovarVersao;
+        _rejeitarVersao = rejeitarVersao;
+        _authUser = authUser;
     }
 
+    [HttpGet]
     [HttpGet("fila")]
     public async Task<ActionResult<IReadOnlyList<ValidacaoDocumentoItemResponse>>> ListFila(
         CancellationToken cancellationToken)
@@ -123,5 +137,78 @@ public sealed class ValidacaoController : ControllerBase
         {
             return BadRequest(new { message = ex.Message });
         }
+    }
+
+    [HttpPost("versoes/{versaoId:guid}/aprovar")]
+    public async Task<ActionResult<DocumentoVersaoResponse>> AprovarVersao(
+        Guid versaoId,
+        [FromBody] AprovarVersaoRequest? request,
+        CancellationToken cancellationToken)
+    {
+        if (!UserClaims.IsEquipeInterna(User))
+        {
+            return Forbid();
+        }
+
+        try
+        {
+            var analistaId = await ResolveUsuarioId(cancellationToken);
+            return Ok(await _aprovarVersao.ExecuteAsync(
+                versaoId,
+                analistaId,
+                request ?? new AprovarVersaoRequest(null, null),
+                cancellationToken));
+        }
+        catch (DocumentoVersaoException ex)
+        {
+            return StatusCode(ex.StatusCode, new { message = ex.Message });
+        }
+        catch (ValidacaoException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (AuthException ex)
+        {
+            return Unauthorized(new { message = ex.Message });
+        }
+    }
+
+    [HttpPost("versoes/{versaoId:guid}/rejeitar")]
+    public async Task<ActionResult<DocumentoVersaoResponse>> RejeitarVersao(
+        Guid versaoId,
+        [FromBody] RejeitarVersaoRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (!UserClaims.IsEquipeInterna(User))
+        {
+            return Forbid();
+        }
+
+        try
+        {
+            var analistaId = await ResolveUsuarioId(cancellationToken);
+            return Ok(await _rejeitarVersao.ExecuteAsync(versaoId, analistaId, request, cancellationToken));
+        }
+        catch (DocumentoVersaoException ex)
+        {
+            return StatusCode(ex.StatusCode, new { message = ex.Message });
+        }
+        catch (ValidacaoException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (AuthException ex)
+        {
+            return Unauthorized(new { message = ex.Message });
+        }
+    }
+
+    private async Task<Guid> ResolveUsuarioId(CancellationToken cancellationToken)
+    {
+        var documento = User.FindFirstValue(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)
+            ?? User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? throw new ValidacaoException("Usuário autenticado inválido.");
+        var user = await _authUser.ExecuteAsync(documento, cancellationToken);
+        return user.Id;
     }
 }

@@ -38,6 +38,20 @@ public sealed class ObraConfiguration : IEntityTypeConfiguration<Obra>
             .HasColumnName("ativo")
             .IsRequired();
 
+        builder.Property(o => o.EngenheiroResponsavel)
+            .HasColumnName("engenheiro_responsavel")
+            .HasMaxLength(200);
+
+        builder.Property(o => o.DataInicio)
+            .HasColumnName("data_inicio");
+
+        builder.Property(o => o.DataFim)
+            .HasColumnName("data_fim");
+
+        builder.Property(o => o.EquipesInternas)
+            .HasColumnName("equipes_internas")
+            .HasMaxLength(500);
+
         builder.Property(o => o.CriadoEm)
             .HasColumnName("criado_em")
             .IsRequired();

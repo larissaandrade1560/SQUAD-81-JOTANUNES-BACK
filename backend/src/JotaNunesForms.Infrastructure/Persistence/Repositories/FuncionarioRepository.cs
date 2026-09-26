@@ -30,6 +30,14 @@ public sealed class FuncionarioRepository : IFuncionarioRepository
         return await query.OrderBy(f => f.Nome).ToListAsync(cancellationToken);
     }
 
+    public Task<Funcionario?> GetByCpfInEmpresaAsync(
+        Guid empresaId,
+        string cpf,
+        CancellationToken cancellationToken = default) =>
+        _dbContext.Funcionarios.FirstOrDefaultAsync(
+            f => f.EmpresaId == empresaId && f.Cpf == cpf,
+            cancellationToken);
+
     public Task<bool> ExistsCpfInEmpresaAsync(
         Guid empresaId,
         string cpf,

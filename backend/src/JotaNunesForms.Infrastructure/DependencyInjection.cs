@@ -39,6 +39,13 @@ public static class DependencyInjection
         services.AddScoped<IDocumentoEmpresaRepository, DocumentoEmpresaRepository>();
         services.AddScoped<IDocumentoFuncionarioRepository, DocumentoFuncionarioRepository>();
         services.AddScoped<IPagamentoFuncionarioRepository, PagamentoFuncionarioRepository>();
+        services.AddScoped<ICatalogoRequisitoRepository, CatalogoRequisitoRepository>();
+        services.AddScoped<IContratoRepository, ContratoRepository>();
+        services.AddScoped<IProcessoContratacaoRepository, ProcessoContratacaoRepository>();
+        services.AddScoped<ISocioRepository, SocioRepository>();
+        services.AddScoped<IItemChecklistRepository, ItemChecklistRepository>();
+        services.AddScoped<IDocumentoVersaoRepository, DocumentoVersaoRepository>();
+        services.AddScoped<IMobilizacaoRepository, MobilizacaoRepository>();
         services.Configure<R2StorageOptions>(configuration.GetSection("R2"));
         services.AddSingleton<IObjectStorage, R2ObjectStorage>();
         services.AddSingleton<IPasswordHasher, BcryptPasswordHasher>();

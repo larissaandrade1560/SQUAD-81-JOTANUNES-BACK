@@ -2,6 +2,7 @@ using System.Text;
 using JotaNunesForms.Application;
 using JotaNunesForms.Infrastructure;
 using JotaNunesForms.Infrastructure.Auth;
+using JotaNunesForms.Infrastructure.Persistence.Seeding;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 
@@ -79,6 +80,7 @@ if (bool.TryParse(app.Configuration["Database:ApplyMigrations"], out var applyMi
 }
 
 await AuthUserSeeder.SeedDefaultUsersAsync(app.Services);
+await CatalogoRequisitoSeeder.SeedAsync(app.Services);
 
 app.UseSwagger();
 app.UseSwaggerUI();

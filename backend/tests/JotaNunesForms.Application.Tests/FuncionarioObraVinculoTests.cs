@@ -85,6 +85,12 @@ public sealed class FuncionarioObraVinculoTests
             CancellationToken cancellationToken = default) =>
             Task.FromResult<IReadOnlyList<Funcionario>>([seed]);
 
+        public Task<Funcionario?> GetByCpfInEmpresaAsync(
+            Guid empresaId,
+            string cpf,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult(empresaId == seed.EmpresaId && cpf == seed.Cpf ? seed : null);
+
         public Task<bool> ExistsCpfInEmpresaAsync(
             Guid empresaId,
             string cpf,
@@ -127,6 +133,12 @@ public sealed class FuncionarioObraVinculoTests
             LastReplacedIds = obraIds.ToList();
             return Task.CompletedTask;
         }
+
+        public Task EnsureVinculoAsync(
+            Guid funcionarioId,
+            Guid obraId,
+            CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
 
         public Task<IReadOnlyList<Funcionario>> ListFuncionariosByObraIdAsync(
             Guid obraId,

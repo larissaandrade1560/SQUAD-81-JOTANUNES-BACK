@@ -48,6 +48,30 @@ public sealed class EmpresaConfiguration : IEntityTypeConfiguration<Empresa>
             .HasColumnName("ativo")
             .IsRequired();
 
+        builder.Property(e => e.Logradouro)
+            .HasColumnName("logradouro")
+            .HasMaxLength(200);
+
+        builder.Property(e => e.NumeroEndereco)
+            .HasColumnName("numero_endereco")
+            .HasMaxLength(32);
+
+        builder.Property(e => e.Bairro)
+            .HasColumnName("bairro")
+            .HasMaxLength(120);
+
+        builder.Property(e => e.Municipio)
+            .HasColumnName("municipio")
+            .HasMaxLength(120);
+
+        builder.Property(e => e.Uf)
+            .HasColumnName("uf")
+            .HasMaxLength(2);
+
+        builder.Property(e => e.Cep)
+            .HasColumnName("cep")
+            .HasMaxLength(8);
+
         builder.Property(e => e.CriadoEm)
             .HasColumnName("criado_em")
             .IsRequired();

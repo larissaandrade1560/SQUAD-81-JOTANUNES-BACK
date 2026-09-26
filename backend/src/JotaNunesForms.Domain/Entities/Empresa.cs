@@ -18,6 +18,18 @@ public sealed class Empresa
 
     public bool Ativo { get; private set; }
 
+    public string? Logradouro { get; private set; }
+
+    public string? NumeroEndereco { get; private set; }
+
+    public string? Bairro { get; private set; }
+
+    public string? Municipio { get; private set; }
+
+    public string? Uf { get; private set; }
+
+    public string? Cep { get; private set; }
+
     public DateTime CriadoEm { get; private set; }
 
     private Empresa()
@@ -77,6 +89,49 @@ public sealed class Empresa
     }
 
     public void DefinirStatus(bool ativo) => Ativo = ativo;
+
+    public void AtualizarEndereco(
+        string? logradouro,
+        string? numeroEndereco,
+        string? bairro,
+        string? municipio,
+        string? uf,
+        string? cep)
+    {
+        Logradouro = NormalizeOptional(logradouro);
+        NumeroEndereco = NormalizeOptional(numeroEndereco);
+        Bairro = NormalizeOptional(bairro);
+        Municipio = NormalizeOptional(municipio);
+        Uf = NormalizeUf(uf);
+        Cep = NormalizeCep(cep);
+    }
+
+    private static string? NormalizeUf(string? uf)
+    {
+        if (string.IsNullOrWhiteSpace(uf))
+        {
+            return null;
+        }
+
+        var letters = new string(uf.Where(char.IsLetter).ToArray()).ToUpperInvariant();
+        if (letters.Length != 2)
+        {
+            throw new ArgumentException("UF deve conter 2 letras.", nameof(uf));
+        }
+
+        return letters;
+    }
+
+    private static string? NormalizeCep(string? cep)
+    {
+        if (string.IsNullOrWhiteSpace(cep))
+        {
+            return null;
+        }
+
+        var digits = new string(cep.Where(char.IsDigit).ToArray());
+        return digits.Length == 0 ? null : digits;
+    }
 
     private static string NormalizeRazaoSocial(string razaoSocial)
     {

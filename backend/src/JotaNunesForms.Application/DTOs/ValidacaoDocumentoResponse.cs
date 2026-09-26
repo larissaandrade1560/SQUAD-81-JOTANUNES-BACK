@@ -14,6 +14,10 @@ public sealed record ValidacaoDocumentoItemResponse(
     long TamanhoBytes,
     StatusDocumento Status,
     string StatusRotulo,
-    DateTime EnviadoEm);
+    DateTime EnviadoEm,
+    Guid? ProcessoId = null,
+    Guid? ItemId = null,
+    Guid? VersaoId = null,
+    string? CatalogoCodigo = null);
 
 public sealed record RejeitarDocumentoRequest(string Motivo);

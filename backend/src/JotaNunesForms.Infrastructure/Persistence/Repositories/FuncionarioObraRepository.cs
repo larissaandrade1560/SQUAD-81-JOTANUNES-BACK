@@ -56,6 +56,23 @@ public sealed class FuncionarioObraRepository : IFuncionarioObraRepository
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task EnsureVinculoAsync(
+        Guid funcionarioId,
+        Guid obraId,
+        CancellationToken cancellationToken = default)
+    {
+        var exists = await _dbContext.FuncionarioObras.AnyAsync(
+            fo => fo.FuncionarioId == funcionarioId && fo.ObraId == obraId,
+            cancellationToken);
+        if (exists)
+        {
+            return;
+        }
+
+        await _dbContext.FuncionarioObras.AddAsync(new FuncionarioObra(funcionarioId, obraId), cancellationToken);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+
     public async Task<IReadOnlyList<Funcionario>> ListFuncionariosByObraIdAsync(
         Guid obraId,
         CancellationToken cancellationToken = default)

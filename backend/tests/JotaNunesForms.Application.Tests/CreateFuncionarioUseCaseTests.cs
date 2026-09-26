@@ -59,6 +59,12 @@ public sealed class CreateFuncionarioUseCaseTests
             CancellationToken cancellationToken = default) =>
             Task.FromResult<IReadOnlyList<Funcionario>>([]);
 
+        public Task<Funcionario?> GetByCpfInEmpresaAsync(
+            Guid empresaId,
+            string cpf,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult<Funcionario?>(null);
+
         public Task<bool> ExistsCpfInEmpresaAsync(
             Guid empresaId,
             string cpf,
@@ -108,6 +114,12 @@ public sealed class CreateFuncionarioUseCaseTests
         public Task ReplaceForFuncionarioAsync(
             Guid funcionarioId,
             IReadOnlyList<Guid> obraIds,
+            CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+
+        public Task EnsureVinculoAsync(
+            Guid funcionarioId,
+            Guid obraId,
             CancellationToken cancellationToken = default) =>
             Task.CompletedTask;
 
