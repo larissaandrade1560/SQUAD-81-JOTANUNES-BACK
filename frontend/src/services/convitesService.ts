@@ -21,7 +21,7 @@ export type TokenConviteApi = {
 export function convidarEmpresa(empresaId: string, email: string): Promise<ConviteAcessoApi> {
   return apiRequest<ConviteAcessoApi>(`/api/empresas/${empresaId}/convite`, {
     method: 'POST',
-    body: JSON.stringify({ email }),
+    body: { email },
   })
 }
 
@@ -40,6 +40,6 @@ export function definirSenhaConvite(
 ): Promise<void> {
   return apiRequest<void>(`/api/auth/convites/${encodeURIComponent(token)}/senha`, {
     method: 'POST',
-    body: JSON.stringify({ senha, confirmacao }),
+    body: { senha, confirmacao },
   })
 }
