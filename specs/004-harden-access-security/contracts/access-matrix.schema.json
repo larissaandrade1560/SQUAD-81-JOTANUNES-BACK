@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jotanunes.local/schemas/access-matrix.schema.json",
+  "title": "Jota Nunes Access Matrix",
+  "type": "object",
+  "required": ["schemaVersion", "denialDefaults", "operations"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "denialDefaults": {
+      "type": "object",
+      "required": ["unauthenticated", "insufficientRoleOrCompanyType", "missingResource"],
+      "additionalProperties": false,
+      "properties": {
+        "unauthenticated": { "const": 401 },
+        "insufficientRoleOrCompanyType": { "const": 403 },
+        "missingResource": { "const": 404 }
+      }
+    },
+    "operations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/operation"
+      }
+    }
+  },
+  "$defs": {
+    "operation": {
+      "type": "object",
+      "required": ["method", "route", "access", "scope", "tenantBoundaryOutcome"],
+      "additionalProperties": false,
+      "properties": {
+        "method": {
+          "enum": ["GET", "POST", "PUT", "PATCH", "DELETE"]
+        },
+        "route": {
+          "type": "string",
+          "pattern": "^/"
+        },
+        "access": {
+          "enum": [
+            "Public",
+            "Any",
+            "Admin",
+            "Internal",
+            "Own",
+            "OwnMO",
+            "AdminOrOwn",
+            "InternalOrAny",
+            "InternalOrOwn",
+            "InternalOrOwnMO"
+          ]
+        },
+        "scope": {
+          "enum": [
+            "active-identity",
+            "admin-global-or-own-tenant",
+            "availability-only",
+            "global",
+            "initial-access",
+            "internal-global-or-active-basic-catalog",
+            "internal-global-or-own-mo-tenant",
+            "internal-global-or-own-process",
+            "internal-global-or-own-tenant",
+            "own-mo-tenant",
+            "own-tenant",
+            "valid-invitation"
+          ]
+        },
+        "tenantBoundaryOutcome": {
+          "oneOf": [
+            {
+              "type": "object",
+              "required": ["status", "behavior"],
+              "additionalProperties": false,
+              "properties": {
+                "status": { "const": 200 },
+                "behavior": { "const": "filtered" }
+              }
+            },
+            {
+              "type": "object",
+              "required": ["status", "behavior"],
+              "additionalProperties": false,
+              "properties": {
+                "status": { "const": 404 },
+                "behavior": { "const": "generic-not-found" }
+              }
+            },
+            {
+              "type": "object",
+              "required": ["status", "behavior"],
+              "additionalProperties": false,
+              "properties": {
+                "status": { "type": "null" },
+                "behavior": { "const": "not-applicable" }
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}
