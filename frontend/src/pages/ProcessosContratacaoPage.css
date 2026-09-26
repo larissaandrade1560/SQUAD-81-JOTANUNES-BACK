@@ -1,0 +1,129 @@
+.jn-processos__status {
+  margin: 0 0 var(--space-4);
+  color: var(--color-text-secondary);
+}
+
+.jn-processos__status--error {
+  color: var(--color-danger);
+}
+
+.jn-processos__table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-surface);
+}
+
+.jn-processos__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-tab);
+}
+
+.jn-processos__table th,
+.jn-processos__table td {
+  padding: var(--space-3) var(--space-4);
+  text-align: left;
+  border-bottom: 1px solid var(--color-border-default);
+}
+
+.jn-processos__table th {
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.jn-processos__dialog {
+  position: fixed;
+  inset: 0;
+  background: rgb(15 23 42 / 45%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  z-index: 20;
+}
+
+.jn-processos__form {
+  width: min(100%, 36rem);
+  max-height: 90vh;
+  overflow-y: auto;
+  background: var(--color-bg-surface);
+  border-radius: var(--radius-sm);
+  padding: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  box-shadow: 0 12px 40px rgb(0 0 0 / 12%);
+}
+
+.jn-processos__form-title {
+  margin: 0;
+  font-size: var(--font-size-h2);
+}
+
+.jn-processos__checkbox,
+.jn-processos__select-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-size: var(--font-size-tab);
+}
+
+.jn-processos__checkbox {
+  flex-direction: row;
+  align-items: center;
+}
+
+.jn-processos__select-field select {
+  font: inherit;
+  padding: var(--space-2);
+}
+
+.jn-processos__form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+.jn-processos__codigo {
+  display: block;
+  color: var(--color-text-secondary);
+  font-size: 0.85em;
+}
+
+.jn-processos__row--inactive {
+  opacity: 0.6;
+}
+
+.jn-processos__item-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.jn-processos__upload {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-tab);
+  cursor: pointer;
+}
+
+.jn-processos__upload input {
+  max-width: 11rem;
+}
+
+.jn-processos__historico {
+  margin: 0;
+  padding-left: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.jn-processos__analise {
+  margin: var(--space-1) 0 0;
+  color: var(--color-text-secondary);
+}

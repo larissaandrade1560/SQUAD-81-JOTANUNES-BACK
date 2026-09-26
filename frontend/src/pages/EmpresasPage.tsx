@@ -11,6 +11,7 @@ import {
   updateEmpresa,
   type EmpresaApi,
 } from '../services/empresasService'
+import { createSocio, formatCpf, listSocios, type SocioApi } from '../services/sociosService'
 import { getSession } from '../store/authStorage'
 import './EmpresasPage.css'
 
@@ -49,6 +50,12 @@ export function EmpresasPage() {
   const [form, setForm] = useState(emptyForm)
   const [formError, setFormError] = useState<string | undefined>()
   const [saving, setSaving] = useState(false)
+  const [sociosEmpresa, setSociosEmpresa] = useState<EmpresaApi | null>(null)
+  const [socios, setSocios] = useState<SocioApi[]>([])
+  const [socioNome, setSocioNome] = useState('')
+  const [socioCpf, setSocioCpf] = useState('')
+  const [socioError, setSocioError] = useState<string | undefined>()
+  const [savingSocio, setSavingSocio] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -86,6 +93,36 @@ export function EmpresasPage() {
       ativo: empresa.ativo,
     })
     setFormError(undefined)
+  }
+
+  async function openSocios(empresa: EmpresaApi) {
+    setSociosEmpresa(empresa)
+    setSocioNome('')
+    setSocioCpf('')
+    setSocioError(undefined)
+    try {
+      setSocios(await listSocios(empresa.id))
+    } catch (err) {
+      setSocioError(apiErrorMessage(err))
+      setSocios([])
+    }
+  }
+
+  async function handleCreateSocio(event: React.FormEvent) {
+    event.preventDefault()
+    if (!sociosEmpresa) return
+    setSavingSocio(true)
+    setSocioError(undefined)
+    try {
+      await createSocio(sociosEmpresa.id, socioNome, socioCpf)
+      setSocioNome('')
+      setSocioCpf('')
+      setSocios(await listSocios(sociosEmpresa.id))
+    } catch (err) {
+      setSocioError(apiErrorMessage(err))
+    } finally {
+      setSavingSocio(false)
+    }
   }
 
   function closeForm() {
@@ -161,12 +198,13 @@ export function EmpresasPage() {
                 <th scope="col">Contato</th>
                 <th scope="col">Status</th>
                 {isAdmin && <th scope="col">Ações</th>}
+                <th scope="col">Quadro</th>
               </tr>
             </thead>
             <tbody>
               {empresas.length === 0 ? (
                 <tr>
-                  <td colSpan={isAdmin ? 6 : 5}>Nenhuma empresa cadastrada.</td>
+                  <td colSpan={isAdmin ? 7 : 6}>Nenhuma empresa cadastrada.</td>
                 </tr>
               ) : (
                 empresas.map((empresa) => (
@@ -187,6 +225,11 @@ export function EmpresasPage() {
                         </Button>
                       </td>
                     )}
+                    <td>
+                      <Button type="button" variant="ghost" onClick={() => void openSocios(empresa)}>
+                        Sócios
+                      </Button>
+                    </td>
                   </tr>
                 ))
               )}
@@ -302,6 +345,59 @@ export function EmpresasPage() {
               </Button>
             </div>
           </form>
+        </div>
+      )}
+
+      {sociosEmpresa && (
+        <div className="jn-empresas__dialog" role="dialog" aria-modal="true">
+          <div className="jn-empresas__form">
+            <h2 className="jn-empresas__form-title">Quadro societário — {sociosEmpresa.razaoSocial}</h2>
+            {socios.length === 0 ? (
+              <p className="jn-empresas__readonly">Nenhum sócio cadastrado.</p>
+            ) : (
+              <ul>
+                {socios.map((socio) => (
+                  <li key={socio.id}>
+                    {socio.nome} · {formatCpf(socio.cpf)} · {socio.ativo ? 'Ativo' : 'Inativo'}
+                  </li>
+                ))}
+              </ul>
+            )}
+            <form onSubmit={(event) => void handleCreateSocio(event)}>
+              <FormField
+                id="socio-nome"
+                label="Nome do sócio"
+                inputProps={{
+                  required: true,
+                  value: socioNome,
+                  onChange: (e) => setSocioNome(e.target.value),
+                }}
+              />
+              <FormField
+                id="socio-cpf"
+                label="CPF"
+                inputProps={{
+                  required: true,
+                  placeholder: '000.000.000-00',
+                  value: socioCpf,
+                  onChange: (e) => setSocioCpf(e.target.value),
+                }}
+              />
+              {socioError && (
+                <p className="jn-empresas__status jn-empresas__status--error" role="alert">
+                  {socioError}
+                </p>
+              )}
+              <div className="jn-empresas__form-actions">
+                <Button type="button" variant="ghost" onClick={() => setSociosEmpresa(null)}>
+                  Fechar
+                </Button>
+                <Button type="submit" variant="primary" disabled={savingSocio}>
+                  {savingSocio ? 'Salvando…' : 'Adicionar sócio'}
+                </Button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </section>

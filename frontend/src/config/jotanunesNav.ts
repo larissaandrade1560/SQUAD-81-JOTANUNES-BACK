@@ -14,6 +14,8 @@ export const JOTANUNES_NAV: JotanunesNavItem[] = [
   { to: '/obras', label: 'Obras', roles: ['admin', 'analista'] },
   { to: '/funcionarios', label: 'Funcionários' },
   { to: '/documentos', label: 'Documentos' },
+  { to: '/processos', label: 'Processos' },
+  { to: '/mobilizacoes', label: 'Mobilização' },
   { to: '/validacao', label: 'Validação', roles: ['admin', 'analista'] },
   { to: '/pagamentos', label: 'Pagamentos' },
   { to: '/pendencias', label: 'Pendências', roles: ['admin', 'analista'] },

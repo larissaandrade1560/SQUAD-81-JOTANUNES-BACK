@@ -13,6 +13,10 @@ export type ValidacaoDocumentoItem = {
   status: number
   statusRotulo: string
   enviadoEm: string
+  processoId?: string | null
+  itemId?: string | null
+  versaoId?: string | null
+  catalogoCodigo?: string | null
 }
 
 export function listValidacaoFila(): Promise<ValidacaoDocumentoItem[]> {
@@ -23,8 +27,10 @@ export function aprovarDocumentoValidacao(escopo: string, id: string): Promise<u
   const path =
     escopo === 'funcionario'
       ? `/api/validacao/funcionario/${id}/aprovar`
-      : `/api/validacao/empresa/${id}/aprovar`
-  return apiRequest(path, { method: 'POST' })
+      : escopo === 'versao'
+        ? `/api/validacao/versoes/${id}/aprovar`
+        : `/api/validacao/empresa/${id}/aprovar`
+  return apiRequest(path, { method: 'POST', body: {} })
 }
 
 export function rejeitarDocumentoValidacao(
@@ -35,7 +41,9 @@ export function rejeitarDocumentoValidacao(
   const path =
     escopo === 'funcionario'
       ? `/api/validacao/funcionario/${id}/rejeitar`
-      : `/api/validacao/empresa/${id}/rejeitar`
+      : escopo === 'versao'
+        ? `/api/validacao/versoes/${id}/rejeitar`
+        : `/api/validacao/empresa/${id}/rejeitar`
   return apiRequest(path, { method: 'POST', body: { motivo } })
 }
 

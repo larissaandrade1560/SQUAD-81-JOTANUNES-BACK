@@ -10,6 +10,9 @@ import { ModulePlaceholderPage } from '../pages/ModulePlaceholderPage'
 import { PagamentosPage } from '../pages/PagamentosPage'
 import { PendenciasPage } from '../pages/PendenciasPage'
 import { ValidacaoPage } from '../pages/ValidacaoPage'
+import { ProcessosContratacaoPage } from '../pages/ProcessosContratacaoPage'
+import { ProcessoChecklistPage } from '../pages/ProcessoChecklistPage'
+import { MobilizacaoPage } from '../pages/MobilizacaoPage'
 import { ObrasPage } from '../pages/ObrasPage'
 import { UsuariosPage } from '../pages/UsuariosPage'
 import { AdminRoute } from './AdminRoute'
@@ -39,6 +42,10 @@ export const router = createBrowserRouter([
           { path: 'funcionarios', element: <FuncionariosPage /> },
           { path: 'funcionarios/:funcionarioId/documentos', element: <FuncionarioDocumentosPage /> },
           { path: 'documentos', element: <DocumentosEmpresaPage /> },
+          { path: 'processos', element: <ProcessosContratacaoPage /> },
+          { path: 'processos/:processoId', element: <ProcessoChecklistPage /> },
+          { path: 'mobilizacoes', element: <MobilizacaoPage /> },
+          { path: 'mobilizacoes/:mobilizacaoId', element: <MobilizacaoPage /> },
           { path: 'pagamentos', element: <PagamentosPage /> },
           {
             element: <InternalRoute />,

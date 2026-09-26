@@ -25,7 +25,9 @@ function apiErrorMessage(err: unknown): string {
 }
 
 function escopoLabel(escopo: string): string {
-  return escopo === 'funcionario' ? 'Funcionário' : 'Empresa'
+  if (escopo === 'funcionario') return 'Funcionário'
+  if (escopo === 'versao') return 'Checklist'
+  return 'Empresa'
 }
 
 function statusTone(status: number): 'success' | 'warning' | 'neutral' | 'danger' | 'info' {
@@ -129,6 +131,7 @@ export function ValidacaoPage() {
                 <th scope="col">Empresa</th>
                 <th scope="col">Funcionário</th>
                 <th scope="col">Tipo</th>
+                <th scope="col">Código</th>
                 <th scope="col">Arquivo</th>
                 <th scope="col">Tamanho</th>
                 <th scope="col">Enviado em</th>
@@ -139,7 +142,7 @@ export function ValidacaoPage() {
             <tbody>
               {fila.length === 0 ? (
                 <tr>
-                  <td colSpan={9}>Nenhum documento pendente de validação.</td>
+                    <td colSpan={10}>Nenhum documento pendente de validação.</td>
                 </tr>
               ) : (
                 fila.map((item) => (
@@ -150,6 +153,7 @@ export function ValidacaoPage() {
                     <td>{item.empresaRazaoSocial}</td>
                     <td>{item.funcionarioNome ?? '—'}</td>
                     <td>{item.tipoRotulo}</td>
+                    <td>{item.catalogoCodigo ?? '—'}</td>
                     <td>{item.nomeArquivo}</td>
                     <td>{formatFileSize(item.tamanhoBytes)}</td>
                     <td>{new Date(item.enviadoEm).toLocaleString('pt-BR')}</td>
