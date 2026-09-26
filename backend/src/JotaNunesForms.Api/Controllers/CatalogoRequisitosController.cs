@@ -8,7 +8,7 @@ namespace JotaNunesForms.Api.Controllers;
 
 [ApiController]
 [Route("api/catalogo-requisitos")]
-[Authorize]
+[Authorize(Policy = "Interno")]
 public sealed class CatalogoRequisitosController : ControllerBase
 {
     private readonly ListCatalogoRequisitosUseCase _list;

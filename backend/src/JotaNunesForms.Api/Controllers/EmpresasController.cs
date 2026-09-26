@@ -2,7 +2,6 @@ using System.Security.Claims;
 using JotaNunesForms.Application.Convites;
 using JotaNunesForms.Application.DTOs;
 using JotaNunesForms.Application.Empresas;
-using JotaNunesForms.Application.UseCases.Auth;
 using JotaNunesForms.Application.UseCases.Convites;
 using JotaNunesForms.Application.UseCases.Empresas;
 using Microsoft.AspNetCore.Authorization;
@@ -21,7 +20,6 @@ public sealed class EmpresasController : ControllerBase
     private readonly UpdateEmpresaUseCase _update;
     private readonly ConvidarEmpresaUseCase _convidar;
     private readonly GetAcessoEmpresaUseCase _acesso;
-    private readonly GetAuthenticatedUserUseCase _authUser;
 
     public EmpresasController(
         ListEmpresasUseCase list,
@@ -29,8 +27,7 @@ public sealed class EmpresasController : ControllerBase
         CreateEmpresaUseCase create,
         UpdateEmpresaUseCase update,
         ConvidarEmpresaUseCase convidar,
-        GetAcessoEmpresaUseCase acesso,
-        GetAuthenticatedUserUseCase authUser)
+        GetAcessoEmpresaUseCase acesso)
     {
         _list = list;
         _get = get;
@@ -38,21 +35,29 @@ public sealed class EmpresasController : ControllerBase
         _update = update;
         _convidar = convidar;
         _acesso = acesso;
-        _authUser = authUser;
     }
 
     [HttpGet]
+    [Authorize(Policy = "InternalOrOwn")]
     public async Task<ActionResult<IReadOnlyList<EmpresaResponse>>> List(CancellationToken cancellationToken)
     {
-        return Ok(await _list.ExecuteAsync(cancellationToken));
+        return Ok(await _list.ExecuteAsync(UserClaims.GetAccessScope(HttpContext), cancellationToken));
     }
 
     [HttpGet("{id:guid}")]
+    [Authorize(Policy = "InternalOrOwn")]
     public async Task<ActionResult<EmpresaResponse>> Get(Guid id, CancellationToken cancellationToken)
     {
         try
         {
-            return Ok(await _get.ExecuteAsync(id, cancellationToken));
+            return Ok(await _get.ExecuteAsync(
+                id,
+                UserClaims.GetAccessScope(HttpContext),
+                new JotaNunesForms.Application.Auth.SecurityRequestContext(
+                    HttpContext.TraceIdentifier,
+                    Request.Method,
+                    "/api/empresas/{id}"),
+                cancellationToken));
         }
         catch (EmpresaException ex)
         {
@@ -101,13 +106,13 @@ public sealed class EmpresasController : ControllerBase
         [FromBody] ConvidarEmpresaRequest request,
         CancellationToken cancellationToken)
     {
-        var actor = await ObterUsuarioAutenticadoAsync(cancellationToken);
+        var actorId = ObterUsuarioAutenticadoId();
         try
         {
             var (response, created) = await _convidar.ExecuteAsync(
                 empresaId,
                 request,
-                actor.Id,
+                actorId,
                 cancellationToken);
 
             if (created)
@@ -157,12 +162,10 @@ public sealed class EmpresasController : ControllerBase
         }
     }
 
-    private async Task<AuthUserResponse> ObterUsuarioAutenticadoAsync(CancellationToken cancellationToken)
+    private Guid ObterUsuarioAutenticadoId()
     {
-        var subject = User.FindFirstValue(ClaimTypes.NameIdentifier)
-            ?? User.FindFirstValue(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)
-            ?? throw new UnauthorizedAccessException();
-
-        return await _authUser.ExecuteAsync(subject, cancellationToken);
+        return Guid.TryParse(User.FindFirstValue("usuario_id"), out var userId) && userId != Guid.Empty
+            ? userId
+            : throw new UnauthorizedAccessException();
     }
 }

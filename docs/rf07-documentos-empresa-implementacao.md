@@ -26,6 +26,10 @@
 
 - `/documentos` — `DocumentosEmpresaPage` (upload terceirizado; consulta interna).
 
+## Caminho preferido (fluxo 002)
+
+Novos envios do checklist dinâmico usam `POST /api/checklist-itens/{itemId}/versoes` (hash SHA-256, histórico e análise). Este endpoint de `documentos-empresa` permanece para o fluxo legado RF07/RF12 e não foi desativado.
+
 ## Deploy
 
 Migration `20260919213000_AddDocumentosEmpresa`. Push + **manual deploy Render**.

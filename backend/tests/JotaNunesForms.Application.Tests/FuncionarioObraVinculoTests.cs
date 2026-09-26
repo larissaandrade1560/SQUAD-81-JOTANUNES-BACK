@@ -1,4 +1,5 @@
 using JotaNunesForms.Application.DTOs;
+using JotaNunesForms.Application.Auth;
 using JotaNunesForms.Application.Funcionarios;
 using JotaNunesForms.Application.UseCases.Funcionarios;
 using JotaNunesForms.Domain.Entities;
@@ -21,12 +22,14 @@ public sealed class FuncionarioObraVinculoTests
             funcionarios,
             new FakeEmpresaRepository(empresa),
             new FakeObraRepository(obra),
-            vinculos);
+            vinculos,
+            new AccessScopeGuard(new NoOpSecurityEventSink()));
 
         var result = await useCase.ExecuteAsync(
             funcionario.Id,
-            empresa.Id,
-            new UpdateFuncionarioRequest("Maria Souza", "Servente", true, new[] { obra.Id }));
+            new AccessScope.Company(Guid.NewGuid(), empresa.Id, TipoEmpresa.MaoDeObra),
+            new UpdateFuncionarioRequest("Maria Souza", "Servente", true, new[] { obra.Id }),
+            new SecurityRequestContext("unit-test", "PUT", "/api/funcionarios/{id}"));
 
         Assert.Equal("Maria Souza", result.Nome);
         Assert.Single(vinculos.LastReplacedIds);
@@ -144,5 +147,11 @@ public sealed class FuncionarioObraVinculoTests
             Guid obraId,
             CancellationToken cancellationToken = default) =>
             Task.FromResult<IReadOnlyList<Funcionario>>([]);
+    }
+
+    private sealed class NoOpSecurityEventSink : ISecurityEventSink
+    {
+        public ValueTask PublishAsync(SecurityEvent securityEvent, CancellationToken cancellationToken = default) =>
+            ValueTask.CompletedTask;
     }
 }

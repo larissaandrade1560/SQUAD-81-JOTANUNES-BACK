@@ -1,5 +1,7 @@
 using JotaNunesForms.Application.DTOs;
+using JotaNunesForms.Application.Auth;
 using JotaNunesForms.Application.Funcionarios;
+using JotaNunesForms.Domain.Entities;
 using JotaNunesForms.Domain.Ports;
 
 namespace JotaNunesForms.Application.UseCases.Funcionarios;
@@ -10,40 +12,49 @@ public sealed class UpdateFuncionarioUseCase
     private readonly IEmpresaRepository _empresas;
     private readonly IObraRepository _obras;
     private readonly IFuncionarioObraRepository _vinculos;
+    private readonly AccessScopeGuard _scopeGuard;
 
     public UpdateFuncionarioUseCase(
         IFuncionarioRepository funcionarios,
         IEmpresaRepository empresas,
         IObraRepository obras,
-        IFuncionarioObraRepository vinculos)
+        IFuncionarioObraRepository vinculos,
+        AccessScopeGuard scopeGuard)
     {
         _funcionarios = funcionarios;
         _empresas = empresas;
         _obras = obras;
         _vinculos = vinculos;
+        _scopeGuard = scopeGuard;
     }
 
     public async Task<FuncionarioResponse> ExecuteAsync(
         Guid id,
-        Guid? actorEmpresaId,
+        AccessScope scope,
         UpdateFuncionarioRequest request,
+        SecurityRequestContext securityRequest,
         CancellationToken cancellationToken = default)
     {
+        if (scope is not AccessScope.Company companyScope || companyScope.Type != TipoEmpresa.MaoDeObra)
+        {
+            throw new FuncionarioException("Acesso não permitido.", 403);
+        }
+
         var funcionario = await _funcionarios.GetByIdAsync(id, cancellationToken);
         if (funcionario is null)
         {
-            throw new FuncionarioException("Funcionário não encontrado.");
+            throw new FuncionarioException("Recurso não encontrado.", 404);
         }
 
-        if (actorEmpresaId is not null && funcionario.EmpresaId != actorEmpresaId.Value)
+        if (!await _scopeGuard.AllowsCompanyAsync(scope, funcionario.EmpresaId, securityRequest, cancellationToken))
         {
-            throw new FuncionarioException("Sem permissão para alterar este funcionário.");
+            throw new FuncionarioException("Recurso não encontrado.", 404);
         }
 
         var empresa = await _empresas.GetByIdAsync(funcionario.EmpresaId, cancellationToken);
         if (empresa is null)
         {
-            throw new FuncionarioException("Empresa não encontrada.");
+            throw new FuncionarioException("Recurso não encontrado.", 404);
         }
 
         if (request.ObraIds is not null)

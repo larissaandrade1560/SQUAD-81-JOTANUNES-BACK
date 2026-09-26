@@ -1,6 +1,6 @@
-using System.Security.Claims;
 using JotaNunesForms.Application.Auth;
 using JotaNunesForms.Application.Convites;
+using JotaNunesForms.Domain.Ports;
 using JotaNunesForms.Application.DTOs;
 using JotaNunesForms.Application.UseCases.Auth;
 using JotaNunesForms.Application.UseCases.Convites;
@@ -17,17 +17,20 @@ public sealed class AuthController : ControllerBase
     private readonly GetAuthenticatedUserUseCase _getAuthenticatedUser;
     private readonly ValidarTokenConviteUseCase _validarConvite;
     private readonly DefinirSenhaConviteUseCase _definirSenhaConvite;
+    private readonly ISecurityEventSink _securityEvents;
 
     public AuthController(
         LoginUseCase login,
         GetAuthenticatedUserUseCase getAuthenticatedUser,
         ValidarTokenConviteUseCase validarConvite,
-        DefinirSenhaConviteUseCase definirSenhaConvite)
+        DefinirSenhaConviteUseCase definirSenhaConvite,
+        ISecurityEventSink securityEvents)
     {
         _login = login;
         _getAuthenticatedUser = getAuthenticatedUser;
         _validarConvite = validarConvite;
         _definirSenhaConvite = definirSenhaConvite;
+        _securityEvents = securityEvents;
     }
 
     [HttpPost("login")]
@@ -43,6 +46,13 @@ public sealed class AuthController : ControllerBase
         }
         catch (AuthException ex)
         {
+            await _securityEvents.PublishAsync(new SecurityEvent(
+                "authentication_failed",
+                "invalid_credentials",
+                HttpContext.TraceIdentifier,
+                Method: Request.Method,
+                Route: "/api/auth/login",
+                StatusCode: StatusCodes.Status401Unauthorized), cancellationToken);
             return Unauthorized(new { message = ex.Message });
         }
     }
@@ -51,17 +61,15 @@ public sealed class AuthController : ControllerBase
     [Authorize]
     public async Task<ActionResult<AuthUserResponse>> Me(CancellationToken cancellationToken)
     {
-        var documento = User.FindFirstValue(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)
-            ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-        if (string.IsNullOrWhiteSpace(documento))
+        var rawUserId = User.FindFirst("usuario_id")?.Value;
+        if (!Guid.TryParse(rawUserId, out var userId) || userId == Guid.Empty)
         {
             return Unauthorized();
         }
 
         try
         {
-            var user = await _getAuthenticatedUser.ExecuteAsync(documento, cancellationToken);
+            var user = await _getAuthenticatedUser.ExecuteAsync(userId, cancellationToken);
             return Ok(user);
         }
         catch (AuthException ex)

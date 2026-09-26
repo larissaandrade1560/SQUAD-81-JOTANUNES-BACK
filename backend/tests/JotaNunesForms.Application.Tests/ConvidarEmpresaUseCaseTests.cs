@@ -62,10 +62,10 @@ public sealed class ConvidarEmpresaUseCaseTests
     [Fact]
     public async Task ExecuteAsync_ThrowsConflict_WhenEmailUsedByOtherCompany()
     {
-        var empresaId = Guid.NewGuid();
+        var empresa = CreateEmpresa(TipoEmpresa.Materiais);
+        var empresaId = empresa.Id;
         var otherUser = Usuario.CriarTerceirizadoParaConvite("111", "Outra", Guid.NewGuid());
         otherUser.DefinirEmailConvite("dup@b.com");
-        var empresa = CreateEmpresa(empresaId, TipoEmpresa.Materiais);
         var useCase = CreateUseCase(
             new FakeEmpresaRepository(empresa),
             new FakeUsuarioRepository { ExistingEmailUser = otherUser },

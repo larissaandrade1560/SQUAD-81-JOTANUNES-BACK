@@ -1,5 +1,6 @@
 using JotaNunesForms.Application.Documentos;
 using JotaNunesForms.Application.DTOs;
+using JotaNunesForms.Application.Auth;
 using JotaNunesForms.Application.UseCases.Documentos;
 using JotaNunesForms.Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
@@ -29,28 +30,29 @@ public sealed class DocumentosFuncionarioController : ControllerBase
     }
 
     [HttpGet("api/funcionarios/{funcionarioId:guid}/documentos")]
+    [Authorize(Policy = "InternalOrOwnMO")]
     public async Task<ActionResult<IReadOnlyList<DocumentoFuncionarioResponse>>> List(
         Guid funcionarioId,
         CancellationToken cancellationToken)
     {
-        Guid? scope = UserClaims.IsTerceirizado(User) ? UserClaims.GetEmpresaId(User) : null;
-        if (UserClaims.IsTerceirizado(User) && scope is null)
-        {
-            return Forbid();
-        }
-
         try
         {
-            return Ok(await _list.ExecuteAsync(funcionarioId, scope, cancellationToken));
+            return Ok(await _list.ExecuteAsync(
+                funcionarioId,
+                UserClaims.GetAccessScope(HttpContext),
+                SecurityRequest("/api/funcionarios/{funcionarioId}/documentos"),
+                cancellationToken));
         }
         catch (DocumentoFuncionarioException ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return ex.StatusCode == 404
+                ? NotFound(new { message = "Recurso não encontrado." })
+                : StatusCode(ex.StatusCode, new { message = ex.Message });
         }
     }
 
     [HttpPost("api/funcionarios/{funcionarioId:guid}/documentos")]
-    [Authorize(Policy = "Terceirizado")]
+    [Authorize(Policy = "TerceirizadoMaoDeObra")]
     [RequestSizeLimit(10 * 1024 * 1024)]
     public async Task<ActionResult<DocumentoFuncionarioResponse>> Upload(
         Guid funcionarioId,
@@ -58,12 +60,6 @@ public sealed class DocumentosFuncionarioController : ControllerBase
         [FromForm] TipoDocumentoFuncionario tipo,
         CancellationToken cancellationToken)
     {
-        var empresaId = UserClaims.GetEmpresaId(User);
-        if (empresaId is null)
-        {
-            return Forbid();
-        }
-
         if (arquivo is null || arquivo.Length == 0)
         {
             return BadRequest(new { message = "Selecione um arquivo PDF." });
@@ -74,7 +70,8 @@ public sealed class DocumentosFuncionarioController : ControllerBase
             await using var stream = arquivo.OpenReadStream();
             var created = await _upload.ExecuteAsync(
                 funcionarioId,
-                empresaId.Value,
+                UserClaims.GetAccessScope(HttpContext),
+                SecurityRequest("/api/funcionarios/{funcionarioId}/documentos"),
                 tipo,
                 arquivo.FileName,
                 arquivo.ContentType,
@@ -85,7 +82,9 @@ public sealed class DocumentosFuncionarioController : ControllerBase
         }
         catch (DocumentoFuncionarioException ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return ex.StatusCode == 404
+                ? NotFound(new { message = "Recurso não encontrado." })
+                : StatusCode(ex.StatusCode, new { message = ex.Message });
         }
         catch (Exception)
         {
@@ -94,19 +93,13 @@ public sealed class DocumentosFuncionarioController : ControllerBase
     }
 
     [HttpPost("api/documentos-funcionario/{id:guid}/reenviar")]
-    [Authorize(Policy = "Terceirizado")]
+    [Authorize(Policy = "TerceirizadoMaoDeObra")]
     [RequestSizeLimit(10 * 1024 * 1024)]
     public async Task<ActionResult<DocumentoFuncionarioResponse>> Reenviar(
         Guid id,
         IFormFile arquivo,
         CancellationToken cancellationToken)
     {
-        var empresaId = UserClaims.GetEmpresaId(User);
-        if (empresaId is null)
-        {
-            return Forbid();
-        }
-
         if (arquivo is null || arquivo.Length == 0)
         {
             return BadRequest(new { message = "Selecione um arquivo PDF." });
@@ -117,7 +110,8 @@ public sealed class DocumentosFuncionarioController : ControllerBase
             await using var stream = arquivo.OpenReadStream();
             var updated = await _reenviar.ExecuteAsync(
                 id,
-                empresaId.Value,
+                UserClaims.GetAccessScope(HttpContext),
+                SecurityRequest("/api/documentos-funcionario/{id}/reenviar"),
                 arquivo.FileName,
                 arquivo.ContentType,
                 arquivo.Length,
@@ -127,7 +121,9 @@ public sealed class DocumentosFuncionarioController : ControllerBase
         }
         catch (DocumentoFuncionarioException ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return ex.StatusCode == 404
+                ? NotFound(new { message = "Recurso não encontrado." })
+                : StatusCode(ex.StatusCode, new { message = ex.Message });
         }
         catch (Exception)
         {
@@ -136,23 +132,29 @@ public sealed class DocumentosFuncionarioController : ControllerBase
     }
 
     [HttpGet("api/documentos-funcionario/{id:guid}/download")]
+    [Authorize(Policy = "InternalOrOwnMO")]
     public async Task<ActionResult<DocumentoDownloadResponse>> Download(
         Guid id,
         CancellationToken cancellationToken)
     {
-        Guid? scope = UserClaims.IsTerceirizado(User) ? UserClaims.GetEmpresaId(User) : null;
-        if (UserClaims.IsTerceirizado(User) && scope is null)
-        {
-            return Forbid();
-        }
-
         try
         {
-            return Ok(await _download.ExecuteAsync(id, scope, cancellationToken));
+            return Ok(await _download.ExecuteAsync(
+                id,
+                UserClaims.GetAccessScope(HttpContext),
+                SecurityRequest("/api/documentos-funcionario/{id}/download"),
+                cancellationToken));
         }
         catch (DocumentoFuncionarioException ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return ex.StatusCode == 404
+                ? NotFound(new { message = "Recurso não encontrado." })
+                : StatusCode(ex.StatusCode, new { message = ex.Message });
         }
     }
+
+    private SecurityRequestContext SecurityRequest(string route) => new(
+        HttpContext.TraceIdentifier,
+        Request.Method,
+        route);
 }

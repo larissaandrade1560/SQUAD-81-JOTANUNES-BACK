@@ -1,9 +1,22 @@
 using System.Security.Claims;
+using JotaNunesForms.Application.Auth;
+using Microsoft.AspNetCore.Http;
 
 namespace JotaNunesForms.Api;
 
 internal static class UserClaims
 {
+    public static AccessScope GetAccessScope(HttpContext context)
+    {
+        if (context.Items.TryGetValue("JotaNunesForms.CurrentIdentity", out var value)
+            && value is CurrentIdentity identity)
+        {
+            return AccessScope.From(identity);
+        }
+
+        throw new InvalidIdentityException("A identidade corrente não foi resolvida.");
+    }
+
     public static string? GetPerfil(ClaimsPrincipal user) =>
         user.FindFirstValue("perfil");
 

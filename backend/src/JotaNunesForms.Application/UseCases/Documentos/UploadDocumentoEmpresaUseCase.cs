@@ -1,5 +1,6 @@
 using JotaNunesForms.Application.Documentos;
 using JotaNunesForms.Application.DTOs;
+using JotaNunesForms.Application.Auth;
 using JotaNunesForms.Domain.Entities;
 using JotaNunesForms.Domain.Ports;
 
@@ -24,7 +25,7 @@ public sealed class UploadDocumentoEmpresaUseCase
     }
 
     public async Task<DocumentoEmpresaResponse> ExecuteAsync(
-        Guid empresaId,
+        AccessScope scope,
         TipoDocumentoEmpresarial tipo,
         string nomeArquivo,
         string contentType,
@@ -32,20 +33,21 @@ public sealed class UploadDocumentoEmpresaUseCase
         Stream conteudo,
         CancellationToken cancellationToken = default)
     {
-        if (!_storage.IsConfigured)
+        if (scope is not AccessScope.Company companyScope)
         {
-            throw new DocumentoEmpresaException("Armazenamento de documentos não configurado (R2).");
+            throw new DocumentoEmpresaException("Acesso não permitido.", 403);
         }
 
+        var empresaId = companyScope.CompanyId;
         var empresa = await _empresas.GetByIdAsync(empresaId, cancellationToken);
         if (empresa is null)
         {
-            throw new DocumentoEmpresaException("Empresa não encontrada.");
+            throw new DocumentoEmpresaException("Recurso não encontrado.", 404);
         }
 
-        if (empresa.Tipo != TipoEmpresa.MaoDeObra)
+        if (!_storage.IsConfigured)
         {
-            throw new DocumentoEmpresaException("Upload disponível apenas para empresas de Mão de Obra.");
+            throw new DocumentoEmpresaException("Armazenamento de documentos não configurado (R2).", 503);
         }
 
         if (!Enum.IsDefined(typeof(TipoDocumentoEmpresarial), tipo))

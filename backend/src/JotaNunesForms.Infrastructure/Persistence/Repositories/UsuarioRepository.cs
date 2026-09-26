@@ -34,6 +34,17 @@ public sealed class UsuarioRepository : IUsuarioRepository
     public Task<Usuario?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
         _dbContext.Usuarios.FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
 
+    public Task<UsuarioSecurityState?> GetSecurityStateByIdAsync(
+        Guid id,
+        CancellationToken cancellationToken = default) =>
+        (from usuario in _dbContext.Usuarios
+         join empresa in _dbContext.Empresas on usuario.EmpresaId equals (Guid?)empresa.Id into empresas
+         from empresa in empresas.DefaultIfEmpty()
+         where usuario.Id == id
+         select new UsuarioSecurityState(usuario, empresa == null ? null : empresa.Tipo, empresa == null ? null : empresa.Ativo))
+        .TagWith("security_identity")
+        .SingleOrDefaultAsync(cancellationToken);
+
     public async Task<IReadOnlyList<Usuario>> ListAsync(CancellationToken cancellationToken = default) =>
         await _dbContext.Usuarios
             .AsNoTracking()

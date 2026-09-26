@@ -1,4 +1,4 @@
-using JotaNunesForms.Application.Auth;
+using JotaNunesForms.Domain.Ports;
 
 namespace JotaNunesForms.Api.Authorization;
 

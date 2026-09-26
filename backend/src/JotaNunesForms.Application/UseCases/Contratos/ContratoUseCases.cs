@@ -1,4 +1,5 @@
 using JotaNunesForms.Application.DTOs;
+using JotaNunesForms.Application.Auth;
 using JotaNunesForms.Application.Empresas;
 using JotaNunesForms.Application.Obras;
 using JotaNunesForms.Application.Processos;
@@ -52,10 +53,18 @@ public sealed class ListContratosUseCase
     public ListContratosUseCase(IContratoRepository contratos) => _contratos = contratos;
 
     public async Task<IReadOnlyList<ContratoResponse>> ExecuteAsync(
-        Guid? empresaId,
+        AccessScope scope,
+        Guid? empresaFilterId,
         Guid? obraId,
         CancellationToken cancellationToken = default)
     {
+        var empresaId = scope switch
+        {
+            AccessScope.Internal => empresaFilterId,
+            AccessScope.Company company => company.CompanyId,
+            _ => throw new InvalidIdentityException("Escopo de acesso inválido."),
+        };
+
         var contratos = await _contratos.ListAsync(empresaId, obraId, cancellationToken);
         return contratos.Select(ContratoResponse.FromEntity).ToList();
     }

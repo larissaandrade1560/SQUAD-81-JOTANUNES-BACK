@@ -4,6 +4,7 @@ export type AuthSession = {
   displayName: string
   profileLabel: 'Administrador' | 'Analista' | 'Terceirizado'
   role: 'admin' | 'analista' | 'terceirizado'
+  tipoEmpresa: 1 | 2 | null
   expiresAtUtc: string
 }
 
@@ -21,7 +22,7 @@ export function getSession(): AuthSession | null {
 
   try {
     const session = JSON.parse(raw) as AuthSession
-    if (!session.accessToken || isExpired(session)) {
+    if (!isSessionShapeValid(session) || isExpired(session)) {
       clearSession()
       return null
     }
@@ -53,4 +54,20 @@ function isExpired(session: AuthSession): boolean {
     return false
   }
   return expires <= Date.now()
+}
+
+function isSessionShapeValid(session: AuthSession): boolean {
+  if (!session.accessToken || !session.document || !session.displayName || !session.expiresAtUtc
+    || Number.isNaN(Date.parse(session.expiresAtUtc))) {
+    return false
+  }
+  if (!['admin', 'analista', 'terceirizado'].includes(session.role)) {
+    return false
+  }
+  if (session.tipoEmpresa !== null && session.tipoEmpresa !== 1 && session.tipoEmpresa !== 2) {
+    return false
+  }
+  return session.role === 'terceirizado'
+    ? session.tipoEmpresa === 1 || session.tipoEmpresa === 2
+    : session.tipoEmpresa === null
 }

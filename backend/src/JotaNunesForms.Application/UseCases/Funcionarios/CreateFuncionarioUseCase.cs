@@ -1,4 +1,5 @@
 using JotaNunesForms.Application.DTOs;
+using JotaNunesForms.Application.Auth;
 using JotaNunesForms.Application.Funcionarios;
 using JotaNunesForms.Domain.Entities;
 using JotaNunesForms.Domain.Ports;
@@ -25,10 +26,16 @@ public sealed class CreateFuncionarioUseCase
     }
 
     public async Task<FuncionarioResponse> ExecuteAsync(
-        Guid empresaId,
+        AccessScope scope,
         CreateFuncionarioRequest request,
         CancellationToken cancellationToken = default)
     {
+        if (scope is not AccessScope.Company companyScope || companyScope.Type != TipoEmpresa.MaoDeObra)
+        {
+            throw new FuncionarioException("Acesso não permitido.", 403);
+        }
+
+        var empresaId = companyScope.CompanyId;
         var empresa = await _empresas.GetByIdAsync(empresaId, cancellationToken);
         if (empresa is null)
         {

@@ -1,6 +1,6 @@
 # Resumo das entregas — Jota Nunes Forms (Squad 81)
 
-Documento consolidado até **20/09/2026**. Detalhes por RF em `docs/rf*-implementacao.md`. Dia 19/09: `docs/resumo-2026-09-19.md`.
+Documento consolidado até **20/09/2026**, com atualização de segurança em **26/09/2026**. Detalhes por RF em `docs/rf*-implementacao.md`. Dia 19/09: `docs/resumo-2026-09-19.md`.
 
 **Repositório:** `SQUAD-81-JOTANUNES-BACK` · branch **`develop`**
 
@@ -25,13 +25,17 @@ Convite de empresas terceirizadas (e-mail, link de senha, login por e-mail): spe
 - **API:** Docker no Render; após push, **deploy manual** quando há migration ou env. Startup com `Database__ApplyMigrations=true`.
 - **R2 na API:** `R2__AccountId`, `R2__AccessKeyId`, `R2__SecretAccessKey`, `R2__BucketName=jotanunes-docs`.
 
-**Usuários de teste (seed)**
+**Credenciais de teste:** não são mais documentadas aqui. O seed padrão foi limitado a `Development`, não cria contas sem `AUTH_SEED_PASSWORD` forte e nunca usa a senha demo `senha123`. Credenciais antigas que ainda existam em produção precisam ser rotacionadas no provedor e ter os acessos revisados.
 
-| Perfil | Documento | Senha |
-|--------|-----------|-------|
-| Admin | `00000000001` | `senha123` |
-| Terceirizado (MO) | `11122233344` | `senha123` |
-| Analista | `12345678900` | `senha123` |
+## Feature 004 — endurecimento de acesso (26/09/2026)
+
+Implementação adicionada ao repositório: revalidação do usuário/empresa no banco por requisição, `usuario_id` e `tipo_empresa` nos novos JWTs, recusa de claims divergentes após alteração cadastral, policies de fallback e por capacidade, `AccessScope.Internal/Company` nos casos de uso com tenant, ownership genérico 404, bloqueio de módulos MO para Materiais, limpeza da sessão frontend em `401`, validação fail-closed de JWT/CORS em produção, Swagger somente em Development, seed sem senha padrão e bootstrap Admin create-only. A matriz canônica tem fixture local com validação JSON Schema, verificação semântica das respostas tenant e inventário de endpoints.
+
+Também foram adicionados testes HTTP com PostgreSQL efêmero (Testcontainers), cenários A×B de leitura e mutação, verificação de ausência de escrita no storage, revogação por inativação/perfil/empresa, matriz de perfis/tipo, consulta de identidade e listagens, testes de startup/CORS/Swagger, logs sanitizados, inventário de rotas e testes frontend. **Os testes backend não puderam ser executados** porque `dotnet` e Docker não estão disponíveis neste ambiente. `npm run lint` passou, com avisos `react(set-state-in-effect)`; Vitest e Vite/build não iniciaram porque o ambiente tem Node 18 e o projeto exige Node 22 (a etapa `tsc -b` do build passou antes da falha do Vite). Não há evidência de suíte/build completa verde nem de deploy; a validação final segue pendente em CI/host compatível.
+
+Roteiro de validação controlada após publicação: [`docs/validacao-seguranca-producao.md`](./validacao-seguranca-producao.md).
+
+Antes do próximo deploy Render: configurar `Jwt__SigningKey` como segredo aleatório (32+ caracteres) e `Cors__Origins` com origens HTTPS exatas; deixar `BootstrapAdmin__Enabled=false`; rotacionar as antigas credenciais demo em produção; publicar e executar o smoke test por perfil. Tokens emitidos pela versão antiga, sem `usuario_id`, serão recusados e exigirão novo login.
 
 ---
 

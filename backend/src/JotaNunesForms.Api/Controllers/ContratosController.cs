@@ -1,4 +1,5 @@
 using JotaNunesForms.Application.DTOs;
+using JotaNunesForms.Application.Auth;
 using JotaNunesForms.Application.Empresas;
 using JotaNunesForms.Application.Obras;
 using JotaNunesForms.Application.Processos;
@@ -23,18 +24,17 @@ public sealed class ContratosController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Policy = "InternalOrOwn")]
     public async Task<ActionResult<IReadOnlyList<ContratoResponse>>> List(
         [FromQuery] Guid? empresaId,
         [FromQuery] Guid? obraId,
         CancellationToken cancellationToken)
     {
-        Guid? scope = UserClaims.IsTerceirizado(User) ? UserClaims.GetEmpresaId(User) : empresaId;
-        if (UserClaims.IsTerceirizado(User) && scope is null)
-        {
-            return Forbid();
-        }
-
-        return Ok(await _list.ExecuteAsync(scope, obraId, cancellationToken));
+        return Ok(await _list.ExecuteAsync(
+            UserClaims.GetAccessScope(HttpContext),
+            empresaId,
+            obraId,
+            cancellationToken));
     }
 
     [HttpPost]

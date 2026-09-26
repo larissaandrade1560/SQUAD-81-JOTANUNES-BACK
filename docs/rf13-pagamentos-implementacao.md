@@ -10,7 +10,7 @@ Terceirizado (MO) registra **data de pagamento** por funcionário e competência
 - Migration `20260920163000_AddPagamentosFuncionario` (com **Designer**)
 - `GET /api/pagamentos` — terceirizado: escopo empresa; interno: todos
 - `POST /api/pagamentos` — terceirizado; unique `(funcionario_id, competencia)`
-- Situação na listagem: Pendente / Em atraso (base RF16, sem comprovante ainda)
+- Situação na listagem: Pendente / Em atraso / No prazo / Enviado em atraso (RF16 parcial; com comprovante via RF14)
 
 ## Frontend
 
@@ -19,11 +19,10 @@ Terceirizado (MO) registra **data de pagamento** por funcionário e competência
 
 ## Deploy
 
-1. Push `develop`
-2. Deploy manual Render (migration `AddPagamentosFuncionario`)
-3. Cloudflare Pages (frontend)
+Concluído em produção (20/09/2026): migrations `AddPagamentosFuncionario` + `AddPagamentoComprovanteArquivo` (RF14).
 
-## Próximo
+## Relacionado
 
-- **RF14** — upload de comprovante vinculado ao pagamento (ver `docs/rf14-comprovante-implementacao.md`)
-- **RF16** — alertas/dashboard com situação real
+- **RF14** — `docs/rf14-comprovante-implementacao.md`
+- **RF16** — alertas/dashboard (pendente)
+- **Resumo geral** — `docs/resumo-entregas.md`

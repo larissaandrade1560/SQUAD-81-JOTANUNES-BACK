@@ -20,6 +20,7 @@ import { AdminRoute } from './AdminRoute'
 import { InternalRoute } from './InternalRoute'
 import { ProtectedRoute } from './ProtectedRoute'
 import { RoleHome } from './RoleHome'
+import { CompanyTypeRoute } from './CompanyTypeRoute'
 
 const moduleRoutes = [{ path: 'auditoria' }] as const
 
@@ -45,14 +46,19 @@ export const router = createBrowserRouter([
         element: <AppShell />,
         children: [
           { index: true, element: <RoleHome /> },
-          { path: 'funcionarios', element: <FuncionariosPage /> },
-          { path: 'funcionarios/:funcionarioId/documentos', element: <FuncionarioDocumentosPage /> },
           { path: 'documentos', element: <DocumentosEmpresaPage /> },
           { path: 'processos', element: <ProcessosContratacaoPage /> },
           { path: 'processos/:processoId', element: <ProcessoChecklistPage /> },
-          { path: 'mobilizacoes', element: <MobilizacaoPage /> },
-          { path: 'mobilizacoes/:mobilizacaoId', element: <MobilizacaoPage /> },
-          { path: 'pagamentos', element: <PagamentosPage /> },
+          {
+            element: <CompanyTypeRoute allowedCompanyTypes={[1]} />,
+            children: [
+              { path: 'funcionarios', element: <FuncionariosPage /> },
+              { path: 'funcionarios/:funcionarioId/documentos', element: <FuncionarioDocumentosPage /> },
+              { path: 'mobilizacoes', element: <MobilizacaoPage /> },
+              { path: 'mobilizacoes/:mobilizacaoId', element: <MobilizacaoPage /> },
+              { path: 'pagamentos', element: <PagamentosPage /> },
+            ],
+          },
           {
             element: <InternalRoute />,
             children: [

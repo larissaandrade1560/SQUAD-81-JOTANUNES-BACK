@@ -32,7 +32,7 @@ export function AppShell() {
     return null
   }
 
-  const navItems = navItemsForRole(session.role)
+  const navItems = navItemsForRole(session.role, session.tipoEmpresa)
 
   function handleLogout() {
     logout()
@@ -62,7 +62,9 @@ export function AppShell() {
         <div className="jn-app-shell__brand">
           <Logo variant="on-dark" />
           <p className="jn-app-shell__context">
-            {session.role === 'terceirizado' ? 'Empresa parceira (MO)' : 'Equipe Jotanunes'}
+            {session.role === 'terceirizado'
+              ? `Empresa parceira (${session.tipoEmpresa === 1 ? 'MO' : 'Materiais'})`
+              : 'Equipe Jotanunes'}
           </p>
         </div>
         <nav className="jn-app-shell__nav">

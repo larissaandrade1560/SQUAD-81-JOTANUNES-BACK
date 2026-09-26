@@ -1,4 +1,5 @@
 using JotaNunesForms.Application.DTOs;
+using JotaNunesForms.Application.Auth;
 using JotaNunesForms.Application.Empresas;
 using JotaNunesForms.Application.Mobilizacoes;
 using JotaNunesForms.Application.Obras;
@@ -33,6 +34,7 @@ public sealed class MobilizacoesController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Policy = "InternalOrOwnMO")]
     public async Task<ActionResult<IReadOnlyList<MobilizacaoResponse>>> List(
         [FromQuery] Guid? empresaId,
         [FromQuery] Guid? obraId,
@@ -40,45 +42,56 @@ public sealed class MobilizacoesController : ControllerBase
         [FromQuery] SituacaoMobilizacao? situacao,
         CancellationToken cancellationToken)
     {
-        Guid? scope = UserClaims.IsTerceirizado(User) ? UserClaims.GetEmpresaId(User) : empresaId;
-        if (UserClaims.IsTerceirizado(User) && scope is null)
-        {
-            return Forbid();
-        }
-
-        return Ok(await _list.ExecuteAsync(scope, obraId, contratoId, situacao, cancellationToken));
+        return Ok(await _list.ExecuteAsync(
+            UserClaims.GetAccessScope(HttpContext),
+            empresaId,
+            obraId,
+            contratoId,
+            situacao,
+            cancellationToken));
     }
 
     [HttpGet("{id:guid}")]
+    [Authorize(Policy = "InternalOrOwnMO")]
     public async Task<ActionResult<MobilizacaoResponse>> Get(Guid id, CancellationToken cancellationToken)
     {
         try
         {
-            return Ok(await _get.ExecuteAsync(id, ScopeEmpresa(), cancellationToken));
+            return Ok(await _get.ExecuteAsync(
+                id,
+                UserClaims.GetAccessScope(HttpContext),
+                SecurityRequest("/api/mobilizacoes/{id}"),
+                cancellationToken));
         }
         catch (MobilizacaoException ex)
         {
-            return StatusCode(ex.StatusCode, new { message = ex.Message });
+            return ex.StatusCode == 404
+                ? NotFound(new { message = "Recurso não encontrado." })
+                : StatusCode(ex.StatusCode, new { message = ex.Message });
         }
-        catch (EmpresaException ex)
+        catch (EmpresaException)
         {
-            return NotFound(new { message = ex.Message });
+            return NotFound(new { message = "Recurso não encontrado." });
         }
     }
 
     [HttpPost]
+    [Authorize(Policy = "TerceirizadoMaoDeObra")]
     public async Task<ActionResult<MobilizacaoResponse>> Create(
         [FromBody] CreateMobilizacaoRequest request,
         CancellationToken cancellationToken)
     {
         try
         {
-            var created = await _create.ExecuteAsync(request, ScopeEmpresa(), cancellationToken);
+            var created = await _create.ExecuteAsync(request, UserClaims.GetAccessScope(HttpContext), cancellationToken);
             return CreatedAtAction(nameof(Get), new { id = created.Id }, created);
         }
         catch (MobilizacaoException ex)
         {
-            return StatusCode(ex.StatusCode, new { message = ex.Message });
+            return StatusCode(ex.StatusCode, new
+            {
+                message = ex.StatusCode == 404 ? "Recurso não encontrado." : ex.Message,
+            });
         }
         catch (EmpresaException ex)
         {
@@ -95,6 +108,7 @@ public sealed class MobilizacoesController : ControllerBase
     }
 
     [HttpPatch("{id:guid}")]
+    [Authorize(Policy = "TerceirizadoMaoDeObra")]
     public async Task<ActionResult<MobilizacaoResponse>> Update(
         Guid id,
         [FromBody] UpdateMobilizacaoRequest request,
@@ -102,13 +116,24 @@ public sealed class MobilizacoesController : ControllerBase
     {
         try
         {
-            return Ok(await _update.ExecuteAsync(id, request, ScopeEmpresa(), cancellationToken));
+            return Ok(await _update.ExecuteAsync(
+                id,
+                request,
+                UserClaims.GetAccessScope(HttpContext),
+                SecurityRequest("/api/mobilizacoes/{id}"),
+                cancellationToken));
         }
         catch (MobilizacaoException ex)
         {
-            return StatusCode(ex.StatusCode, new { message = ex.Message });
+            return StatusCode(ex.StatusCode, new
+            {
+                message = ex.StatusCode == 404 ? "Recurso não encontrado." : ex.Message,
+            });
         }
     }
 
-    private Guid? ScopeEmpresa() => UserClaims.IsTerceirizado(User) ? UserClaims.GetEmpresaId(User) : null;
+    private SecurityRequestContext SecurityRequest(string route) => new(
+        HttpContext.TraceIdentifier,
+        Request.Method,
+        route);
 }

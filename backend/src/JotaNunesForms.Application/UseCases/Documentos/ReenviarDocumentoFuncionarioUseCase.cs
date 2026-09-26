@@ -1,5 +1,6 @@
 using JotaNunesForms.Application.Documentos;
 using JotaNunesForms.Application.DTOs;
+using JotaNunesForms.Application.Auth;
 using JotaNunesForms.Domain.Entities;
 using JotaNunesForms.Domain.Ports;
 
@@ -13,48 +14,52 @@ public sealed class ReenviarDocumentoFuncionarioUseCase
     private readonly IFuncionarioRepository _funcionarios;
     private readonly IEmpresaRepository _empresas;
     private readonly IObjectStorage _storage;
+    private readonly AccessScopeGuard _scopeGuard;
 
     public ReenviarDocumentoFuncionarioUseCase(
         IDocumentoFuncionarioRepository documentos,
         IFuncionarioRepository funcionarios,
         IEmpresaRepository empresas,
-        IObjectStorage storage)
+        IObjectStorage storage,
+        AccessScopeGuard scopeGuard)
     {
         _documentos = documentos;
         _funcionarios = funcionarios;
         _empresas = empresas;
         _storage = storage;
+        _scopeGuard = scopeGuard;
     }
 
     public async Task<DocumentoFuncionarioResponse> ExecuteAsync(
         Guid id,
-        Guid scopeEmpresaId,
+        AccessScope scope,
+        SecurityRequestContext securityRequest,
         string nomeArquivo,
         string contentType,
         long tamanhoBytes,
         Stream conteudo,
         CancellationToken cancellationToken = default)
     {
-        if (!_storage.IsConfigured)
+        if (scope is not AccessScope.Company companyScope || companyScope.Type != TipoEmpresa.MaoDeObra)
         {
-            throw new DocumentoFuncionarioException("Armazenamento de documentos não configurado (R2).");
+            throw new DocumentoFuncionarioException("Acesso não permitido.", 403);
         }
 
         var documento = await _documentos.GetByIdAsync(id, cancellationToken);
         if (documento is null)
         {
-            throw new DocumentoFuncionarioException("Documento não encontrado.");
+            throw new DocumentoFuncionarioException("Recurso não encontrado.", 404);
         }
 
         var funcionario = await _funcionarios.GetByIdAsync(documento.FuncionarioId, cancellationToken);
         if (funcionario is null)
         {
-            throw new DocumentoFuncionarioException("Funcionário não encontrado.");
+            throw new DocumentoFuncionarioException("Recurso não encontrado.", 404);
         }
 
-        if (funcionario.EmpresaId != scopeEmpresaId)
+        if (!await _scopeGuard.AllowsCompanyAsync(scope, funcionario.EmpresaId, securityRequest, cancellationToken))
         {
-            throw new DocumentoFuncionarioException("Sem permissão para reenviar este documento.");
+            throw new DocumentoFuncionarioException("Recurso não encontrado.", 404);
         }
 
         if (tamanhoBytes <= 0 || tamanhoBytes > MaxBytes)
@@ -71,7 +76,12 @@ public sealed class ReenviarDocumentoFuncionarioUseCase
         var empresa = await _empresas.GetByIdAsync(funcionario.EmpresaId, cancellationToken);
         if (empresa is null)
         {
-            throw new DocumentoFuncionarioException("Empresa não encontrada.");
+            throw new DocumentoFuncionarioException("Recurso não encontrado.", 404);
+        }
+
+        if (!_storage.IsConfigured)
+        {
+            throw new DocumentoFuncionarioException("Armazenamento de documentos não configurado (R2).", 503);
         }
 
         var novoArquivoId = Guid.NewGuid();

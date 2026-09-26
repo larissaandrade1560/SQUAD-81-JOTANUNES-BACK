@@ -14,6 +14,14 @@ public interface IUsuarioRepository
 
     Task<Usuario?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
+    async Task<UsuarioSecurityState?> GetSecurityStateByIdAsync(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        var usuario = await GetByIdAsync(id, cancellationToken);
+        return usuario is null ? null : new UsuarioSecurityState(usuario, null, null);
+    }
+
     Task<IReadOnlyList<Usuario>> ListAsync(CancellationToken cancellationToken = default);
 
     Task<bool> AnyAsync(CancellationToken cancellationToken = default);

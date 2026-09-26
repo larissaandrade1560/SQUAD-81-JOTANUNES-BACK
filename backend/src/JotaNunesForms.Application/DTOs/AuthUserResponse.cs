@@ -7,8 +7,12 @@ public sealed record AuthUserResponse(
     string Documento,
     string NomeExibicao,
     string PerfilRotulo,
-    PerfilUsuario Perfil)
+    PerfilUsuario Perfil,
+    TipoEmpresa? TipoEmpresa = null)
 {
     public static AuthUserResponse FromUsuario(Usuario usuario) =>
         new(usuario.Id, usuario.Documento, usuario.NomeExibicao, usuario.PerfilRotulo, usuario.Perfil);
+
+    public static AuthUserResponse FromUsuario(Usuario usuario, TipoEmpresa? tipoEmpresa) =>
+        new(usuario.Id, usuario.Documento, usuario.NomeExibicao, usuario.PerfilRotulo, usuario.Perfil, tipoEmpresa);
 }

@@ -24,3 +24,19 @@ services:
           property: connectionString
       - key: Cors__Origins
         sync: false
+      - key: Jwt__Issuer
+        value: JotaNunesForms
+      - key: Jwt__Audience
+        value: JotaNunesForms
+      - key: Jwt__SigningKey
+        sync: false
+      - key: Jwt__ExpirationMinutes
+        value: "480"
+      - key: BootstrapAdmin__Enabled
+        value: "false"
+      - key: BootstrapAdmin__Documento
+        sync: false
+      - key: BootstrapAdmin__NomeExibicao
+        sync: false
+      - key: BootstrapAdmin__Password
+        sync: false

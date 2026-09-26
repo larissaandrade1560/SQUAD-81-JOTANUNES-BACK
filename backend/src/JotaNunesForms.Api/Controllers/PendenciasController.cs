@@ -7,7 +7,7 @@ namespace JotaNunesForms.Api.Controllers;
 
 [ApiController]
 [Route("api/pendencias")]
-[Authorize]
+[Authorize(Policy = "Interno")]
 public sealed class PendenciasController : ControllerBase
 {
     private readonly ListPendenciasUseCase _list;
@@ -18,11 +18,6 @@ public sealed class PendenciasController : ControllerBase
     public async Task<ActionResult<IReadOnlyList<PendenciaItemResponse>>> List(
         CancellationToken cancellationToken)
     {
-        if (!UserClaims.IsEquipeInterna(User))
-        {
-            return Forbid();
-        }
-
         return Ok(await _list.ExecuteAsync(cancellationToken));
     }
 }

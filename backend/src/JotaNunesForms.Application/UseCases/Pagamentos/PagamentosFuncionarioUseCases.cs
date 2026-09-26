@@ -1,4 +1,5 @@
 using JotaNunesForms.Application.DTOs;
+using JotaNunesForms.Application.Auth;
 using JotaNunesForms.Application.Pagamentos;
 using JotaNunesForms.Domain.Entities;
 using JotaNunesForms.Domain.Ports;
@@ -22,9 +23,16 @@ public sealed class ListPagamentosFuncionarioUseCase
     }
 
     public async Task<IReadOnlyList<PagamentoFuncionarioResponse>> ExecuteAsync(
-        Guid? scopeEmpresaId,
+        AccessScope scope,
         CancellationToken cancellationToken = default)
     {
+        var scopeEmpresaId = scope switch
+        {
+            AccessScope.Internal => (Guid?)null,
+            AccessScope.Company company when company.Type == TipoEmpresa.MaoDeObra => company.CompanyId,
+            _ => throw new PagamentoException("Acesso não permitido.", 403),
+        };
+
         var list = await _pagamentos.ListAsync(scopeEmpresaId, cancellationToken);
         var funcionarios = await _funcionarios.ListAsync(scopeEmpresaId, cancellationToken);
         var nomesFunc = funcionarios.ToDictionary(f => f.Id, f => f.Nome);
@@ -80,28 +88,43 @@ public sealed class RegistrarPagamentoFuncionarioUseCase
     private readonly IPagamentoFuncionarioRepository _pagamentos;
     private readonly IFuncionarioRepository _funcionarios;
     private readonly IEmpresaRepository _empresas;
+    private readonly AccessScopeGuard _scopeGuard;
 
     public RegistrarPagamentoFuncionarioUseCase(
         IPagamentoFuncionarioRepository pagamentos,
         IFuncionarioRepository funcionarios,
-        IEmpresaRepository empresas)
+        IEmpresaRepository empresas,
+        AccessScopeGuard scopeGuard)
     {
         _pagamentos = pagamentos;
         _funcionarios = funcionarios;
         _empresas = empresas;
+        _scopeGuard = scopeGuard;
     }
 
     public async Task<PagamentoFuncionarioResponse> ExecuteAsync(
-        Guid empresaId,
+        AccessScope scope,
         RegistrarPagamentoRequest request,
+        SecurityRequestContext securityRequest,
         CancellationToken cancellationToken = default)
     {
+        if (scope is not AccessScope.Company companyScope || companyScope.Type != TipoEmpresa.MaoDeObra)
+        {
+            throw new PagamentoException("Acesso não permitido.", 403);
+        }
+
+        var empresaId = companyScope.CompanyId;
         var competencia = NormalizeCompetencia(request.Competencia);
 
         var funcionario = await _funcionarios.GetByIdAsync(request.FuncionarioId, cancellationToken);
-        if (funcionario is null || funcionario.EmpresaId != empresaId)
+        if (funcionario is null)
         {
-            throw new PagamentoException("Funcionário não encontrado.");
+            throw new PagamentoException("Recurso não encontrado.", 404);
+        }
+
+        if (!await _scopeGuard.AllowsCompanyAsync(scope, funcionario.EmpresaId, securityRequest, cancellationToken))
+        {
+            throw new PagamentoException("Recurso não encontrado.", 404);
         }
 
         if (!funcionario.Ativo)

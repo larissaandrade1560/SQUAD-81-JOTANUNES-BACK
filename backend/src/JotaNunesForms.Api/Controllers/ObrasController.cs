@@ -32,17 +32,19 @@ public sealed class ObrasController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Policy = "InternalOrAny")]
     public async Task<ActionResult<IReadOnlyList<ObraResponse>>> List(CancellationToken cancellationToken)
     {
-        return Ok(await _list.ExecuteAsync(cancellationToken));
+        return Ok(await _list.ExecuteAsync(UserClaims.GetAccessScope(HttpContext), cancellationToken));
     }
 
     [HttpGet("{id:guid}")]
+    [Authorize(Policy = "InternalOrAny")]
     public async Task<ActionResult<ObraResponse>> Get(Guid id, CancellationToken cancellationToken)
     {
         try
         {
-            return Ok(await _get.ExecuteAsync(id, cancellationToken));
+            return Ok(await _get.ExecuteAsync(id, UserClaims.GetAccessScope(HttpContext), cancellationToken));
         }
         catch (ObraException ex)
         {
@@ -68,6 +70,7 @@ public sealed class ObrasController : ControllerBase
     }
 
     [HttpGet("{id:guid}/funcionarios")]
+    [Authorize(Policy = "Interno")]
     public async Task<ActionResult<IReadOnlyList<ObraFuncionarioAlocacaoResponse>>> ListFuncionarios(
         Guid id,
         CancellationToken cancellationToken)

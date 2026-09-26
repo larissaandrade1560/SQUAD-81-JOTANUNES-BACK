@@ -57,7 +57,7 @@ cd NOME_DO_REPOSITORIO
 cp .env.example .env
 ```
 
-Edite o arquivo `.env` se quiser alterar usuário, senha ou nome do banco PostgreSQL.
+Edite o arquivo `.env` se quiser alterar usuário, senha ou nome do banco PostgreSQL. O `.env.example` contém somente parâmetros locais; segredos de produção devem ser cadastrados no secret manager do provedor e nunca versionados.
 
 Importante: nunca envie o arquivo `.env` para o GitHub.
 
@@ -80,6 +80,8 @@ docker compose logs -f
 ```
 
 As migrations do PostgreSQL são aplicadas automaticamente pela API em ambiente Docker (`Database__ApplyMigrations=true`).
+
+A API Swagger está disponível apenas em `Development`. Em produção são obrigatórios uma chave JWT aleatória de pelo menos 32 caracteres e uma allowlist CORS de origens HTTPS exatas. O bootstrap do primeiro administrador fica desabilitado por padrão, é create-only e deve ser desativado logo após o uso. O procedimento completo está em [backend/README.md](backend/README.md#configuração-segura-de-produção).
 
 ## Endereços locais
 

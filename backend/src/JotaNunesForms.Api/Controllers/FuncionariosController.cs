@@ -1,4 +1,5 @@
 using JotaNunesForms.Application.DTOs;
+using JotaNunesForms.Application.Auth;
 using JotaNunesForms.Application.Funcionarios;
 using JotaNunesForms.Application.UseCases.Funcionarios;
 using Microsoft.AspNetCore.Authorization;
@@ -26,60 +27,61 @@ public sealed class FuncionariosController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Policy = "InternalOrOwnMO")]
     public async Task<ActionResult<IReadOnlyList<FuncionarioResponse>>> List(CancellationToken cancellationToken)
     {
-        Guid? scope = UserClaims.IsTerceirizado(User) ? UserClaims.GetEmpresaId(User) : null;
-        if (UserClaims.IsTerceirizado(User) && scope is null)
+        try
         {
-            return Forbid();
+            return Ok(await _list.ExecuteAsync(UserClaims.GetAccessScope(HttpContext), cancellationToken));
         }
-
-        return Ok(await _list.ExecuteAsync(scope, cancellationToken));
+        catch (FuncionarioException ex)
+        {
+            return StatusCode(ex.StatusCode, new { message = ex.StatusCode == 404 ? "Recurso não encontrado." : ex.Message });
+        }
     }
 
     [HttpPost]
-    [Authorize(Policy = "Terceirizado")]
+    [Authorize(Policy = "TerceirizadoMaoDeObra")]
     public async Task<ActionResult<FuncionarioResponse>> Create(
         [FromBody] CreateFuncionarioRequest request,
         CancellationToken cancellationToken)
     {
-        var empresaId = UserClaims.GetEmpresaId(User);
-        if (empresaId is null)
-        {
-            return Forbid();
-        }
-
         try
         {
-            var created = await _create.ExecuteAsync(empresaId.Value, request, cancellationToken);
+            var created = await _create.ExecuteAsync(UserClaims.GetAccessScope(HttpContext), request, cancellationToken);
             return CreatedAtAction(nameof(List), created);
         }
         catch (FuncionarioException ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return StatusCode(ex.StatusCode, new { message = ex.Message });
         }
     }
 
     [HttpPut("{id:guid}")]
-    [Authorize(Policy = "Terceirizado")]
+    [Authorize(Policy = "TerceirizadoMaoDeObra")]
     public async Task<ActionResult<FuncionarioResponse>> Update(
         Guid id,
         [FromBody] UpdateFuncionarioRequest request,
         CancellationToken cancellationToken)
     {
-        var empresaId = UserClaims.GetEmpresaId(User);
-        if (empresaId is null)
-        {
-            return Forbid();
-        }
-
         try
         {
-            return Ok(await _update.ExecuteAsync(id, empresaId, request, cancellationToken));
+            return Ok(await _update.ExecuteAsync(
+                id,
+                UserClaims.GetAccessScope(HttpContext),
+                request,
+                new SecurityRequestContext(
+                    HttpContext.TraceIdentifier,
+                    Request.Method,
+                    "/api/funcionarios/{id}"),
+                cancellationToken));
         }
         catch (FuncionarioException ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return StatusCode(ex.StatusCode, new
+            {
+                message = ex.StatusCode == 404 ? "Recurso não encontrado." : ex.Message,
+            });
         }
     }
 }

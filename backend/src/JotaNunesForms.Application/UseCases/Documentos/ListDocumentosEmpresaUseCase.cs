@@ -1,5 +1,6 @@
 using JotaNunesForms.Application.Documentos;
 using JotaNunesForms.Application.DTOs;
+using JotaNunesForms.Application.Auth;
 using JotaNunesForms.Domain.Entities;
 using JotaNunesForms.Domain.Ports;
 
@@ -19,9 +20,10 @@ public sealed class ListDocumentosEmpresaUseCase
     }
 
     public async Task<IReadOnlyList<DocumentoEmpresaResponse>> ExecuteAsync(
-        Guid? scopeEmpresaId,
+        AccessScope scope,
         CancellationToken cancellationToken = default)
     {
+        var scopeEmpresaId = scope is AccessScope.Company company ? company.CompanyId : (Guid?)null;
         var list = await _documentos.ListAsync(scopeEmpresaId, cancellationToken);
         var utcNow = DateTime.UtcNow;
 

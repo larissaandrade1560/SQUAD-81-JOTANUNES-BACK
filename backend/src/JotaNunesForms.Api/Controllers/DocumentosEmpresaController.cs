@@ -1,5 +1,6 @@
 using JotaNunesForms.Application.Documentos;
 using JotaNunesForms.Application.DTOs;
+using JotaNunesForms.Application.Auth;
 using JotaNunesForms.Application.UseCases.Documentos;
 using JotaNunesForms.Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
@@ -30,32 +31,21 @@ public sealed class DocumentosEmpresaController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Policy = "InternalOrOwn")]
     public async Task<ActionResult<IReadOnlyList<DocumentoEmpresaResponse>>> List(
         CancellationToken cancellationToken)
     {
-        Guid? scope = UserClaims.IsTerceirizado(User) ? UserClaims.GetEmpresaId(User) : null;
-        if (UserClaims.IsTerceirizado(User) && scope is null)
-        {
-            return Forbid();
-        }
-
-        return Ok(await _list.ExecuteAsync(scope, cancellationToken));
+        return Ok(await _list.ExecuteAsync(UserClaims.GetAccessScope(HttpContext), cancellationToken));
     }
 
     [HttpPost]
-    [Authorize(Policy = "Terceirizado")]
+    [Authorize(Policy = "Own")]
     [RequestSizeLimit(10 * 1024 * 1024)]
     public async Task<ActionResult<DocumentoEmpresaResponse>> Upload(
         IFormFile arquivo,
         [FromForm] TipoDocumentoEmpresarial tipo,
         CancellationToken cancellationToken)
     {
-        var empresaId = UserClaims.GetEmpresaId(User);
-        if (empresaId is null)
-        {
-            return Forbid();
-        }
-
         if (arquivo is null || arquivo.Length == 0)
         {
             return BadRequest(new { message = "Selecione um arquivo PDF." });
@@ -65,7 +55,7 @@ public sealed class DocumentosEmpresaController : ControllerBase
         {
             await using var stream = arquivo.OpenReadStream();
             var created = await _upload.ExecuteAsync(
-                empresaId.Value,
+                UserClaims.GetAccessScope(HttpContext),
                 tipo,
                 arquivo.FileName,
                 arquivo.ContentType,
@@ -76,7 +66,9 @@ public sealed class DocumentosEmpresaController : ControllerBase
         }
         catch (DocumentoEmpresaException ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return ex.StatusCode == 404
+                ? NotFound(new { message = "Recurso não encontrado." })
+                : StatusCode(ex.StatusCode, new { message = ex.Message });
         }
         catch (Exception)
         {
@@ -85,19 +77,13 @@ public sealed class DocumentosEmpresaController : ControllerBase
     }
 
     [HttpPost("{id:guid}/reenviar")]
-    [Authorize(Policy = "Terceirizado")]
+    [Authorize(Policy = "Own")]
     [RequestSizeLimit(10 * 1024 * 1024)]
     public async Task<ActionResult<DocumentoEmpresaResponse>> Reenviar(
         Guid id,
         IFormFile arquivo,
         CancellationToken cancellationToken)
     {
-        var empresaId = UserClaims.GetEmpresaId(User);
-        if (empresaId is null)
-        {
-            return Forbid();
-        }
-
         if (arquivo is null || arquivo.Length == 0)
         {
             return BadRequest(new { message = "Selecione um arquivo PDF." });
@@ -108,7 +94,8 @@ public sealed class DocumentosEmpresaController : ControllerBase
             await using var stream = arquivo.OpenReadStream();
             var updated = await _reenviar.ExecuteAsync(
                 id,
-                empresaId.Value,
+                UserClaims.GetAccessScope(HttpContext),
+                SecurityRequest("/api/documentos-empresa/{id}/reenviar"),
                 arquivo.FileName,
                 arquivo.ContentType,
                 arquivo.Length,
@@ -118,7 +105,9 @@ public sealed class DocumentosEmpresaController : ControllerBase
         }
         catch (DocumentoEmpresaException ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return ex.StatusCode == 404
+                ? NotFound(new { message = "Recurso não encontrado." })
+                : StatusCode(ex.StatusCode, new { message = ex.Message });
         }
         catch (Exception)
         {
@@ -127,23 +116,29 @@ public sealed class DocumentosEmpresaController : ControllerBase
     }
 
     [HttpGet("{id:guid}/download")]
+    [Authorize(Policy = "InternalOrOwn")]
     public async Task<ActionResult<DocumentoDownloadResponse>> Download(
         Guid id,
         CancellationToken cancellationToken)
     {
-        Guid? scope = UserClaims.IsTerceirizado(User) ? UserClaims.GetEmpresaId(User) : null;
-        if (UserClaims.IsTerceirizado(User) && scope is null)
-        {
-            return Forbid();
-        }
-
         try
         {
-            return Ok(await _download.ExecuteAsync(id, scope, cancellationToken));
+            return Ok(await _download.ExecuteAsync(
+                id,
+                UserClaims.GetAccessScope(HttpContext),
+                SecurityRequest("/api/documentos-empresa/{id}/download"),
+                cancellationToken));
         }
         catch (DocumentoEmpresaException ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return ex.StatusCode == 404
+                ? NotFound(new { message = "Recurso não encontrado." })
+                : StatusCode(ex.StatusCode, new { message = ex.Message });
         }
     }
+
+    private SecurityRequestContext SecurityRequest(string route) => new(
+        HttpContext.TraceIdentifier,
+        Request.Method,
+        route);
 }

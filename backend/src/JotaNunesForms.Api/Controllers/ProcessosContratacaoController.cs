@@ -4,7 +4,6 @@ using JotaNunesForms.Application.DTOs;
 using JotaNunesForms.Application.Empresas;
 using JotaNunesForms.Application.Obras;
 using JotaNunesForms.Application.Processos;
-using JotaNunesForms.Application.UseCases.Auth;
 using JotaNunesForms.Application.UseCases.Processos;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -22,7 +21,6 @@ public sealed class ProcessosContratacaoController : ControllerBase
     private readonly ListChecklistProcessoUseCase _checklist;
     private readonly UpdateProcessoContratacaoUseCase _update;
     private readonly EncaminharProcessoSetorContratosUseCase _encaminhar;
-    private readonly GetAuthenticatedUserUseCase _authUser;
 
     public ProcessosContratacaoController(
         CreateProcessoContratacaoUseCase create,
@@ -30,8 +28,7 @@ public sealed class ProcessosContratacaoController : ControllerBase
         GetProcessoContratacaoUseCase get,
         ListChecklistProcessoUseCase checklist,
         UpdateProcessoContratacaoUseCase update,
-        EncaminharProcessoSetorContratosUseCase encaminhar,
-        GetAuthenticatedUserUseCase authUser)
+        EncaminharProcessoSetorContratosUseCase encaminhar)
     {
         _create = create;
         _list = list;
@@ -39,28 +36,23 @@ public sealed class ProcessosContratacaoController : ControllerBase
         _checklist = checklist;
         _update = update;
         _encaminhar = encaminhar;
-        _authUser = authUser;
     }
 
     [HttpGet]
+    [Authorize(Policy = "InternalOrOwn")]
     public async Task<ActionResult<IReadOnlyList<ProcessoContratacaoResponse>>> List(
         CancellationToken cancellationToken)
     {
-        Guid? scope = UserClaims.IsTerceirizado(User) ? UserClaims.GetEmpresaId(User) : null;
-        if (UserClaims.IsTerceirizado(User) && scope is null)
-        {
-            return Forbid();
-        }
-
-        return Ok(await _list.ExecuteAsync(scope, cancellationToken));
+        return Ok(await _list.ExecuteAsync(UserClaims.GetAccessScope(HttpContext), cancellationToken));
     }
 
     [HttpGet("{id:guid}")]
+    [Authorize(Policy = "InternalOrOwn")]
     public async Task<ActionResult<ProcessoContratacaoResponse>> Get(Guid id, CancellationToken cancellationToken)
     {
         try
         {
-            return Ok(await _get.ExecuteAsync(id, cancellationToken));
+            return Ok(await _get.ExecuteAsync(id, UserClaims.GetAccessScope(HttpContext), SecurityRequest("/api/processos-contratacao/{id}"), cancellationToken));
         }
         catch (ProcessoException ex)
         {
@@ -69,13 +61,14 @@ public sealed class ProcessosContratacaoController : ControllerBase
     }
 
     [HttpGet("{id:guid}/checklist")]
+    [Authorize(Policy = "InternalOrOwn")]
     public async Task<ActionResult<IReadOnlyList<ItemChecklistResponse>>> Checklist(
         Guid id,
         CancellationToken cancellationToken)
     {
         try
         {
-            return Ok(await _checklist.ExecuteAsync(id, cancellationToken));
+            return Ok(await _checklist.ExecuteAsync(id, UserClaims.GetAccessScope(HttpContext), SecurityRequest("/api/processos-contratacao/{id}/checklist"), cancellationToken));
         }
         catch (ProcessoException ex)
         {
@@ -135,15 +128,11 @@ public sealed class ProcessosContratacaoController : ControllerBase
     }
 
     [HttpPost("{id:guid}/encaminhar-contratos")]
+    [Authorize(Policy = "Interno")]
     public async Task<ActionResult<ProcessoContratacaoResponse>> Encaminhar(
         Guid id,
         CancellationToken cancellationToken)
     {
-        if (!UserClaims.IsEquipeInterna(User))
-        {
-            return Forbid();
-        }
-
         try
         {
             return Ok(await _encaminhar.ExecuteAsync(id, cancellationToken));
@@ -156,10 +145,12 @@ public sealed class ProcessosContratacaoController : ControllerBase
 
     private async Task<Guid> ResolveUsuarioId(CancellationToken cancellationToken)
     {
-        var documento = User.FindFirstValue(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)
-            ?? User.FindFirstValue(ClaimTypes.NameIdentifier)
-            ?? throw new ProcessoException("Usuário autenticado inválido.");
-        var user = await _authUser.ExecuteAsync(documento, cancellationToken);
-        return user.Id;
+        cancellationToken.ThrowIfCancellationRequested();
+        return Guid.TryParse(User.FindFirstValue("usuario_id"), out var userId) && userId != Guid.Empty
+            ? userId
+            : throw new ProcessoException("Usuário autenticado inválido.");
     }
+
+    private JotaNunesForms.Application.Auth.SecurityRequestContext SecurityRequest(string route) =>
+        new(HttpContext.TraceIdentifier, Request.Method, route);
 }

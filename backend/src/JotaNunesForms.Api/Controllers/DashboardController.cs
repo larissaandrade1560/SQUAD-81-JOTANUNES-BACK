@@ -7,7 +7,7 @@ namespace JotaNunesForms.Api.Controllers;
 
 [ApiController]
 [Route("api/dashboard")]
-[Authorize]
+[Authorize(Policy = "Interno")]
 public sealed class DashboardController : ControllerBase
 {
     private readonly GetDashboardResumoUseCase _resumo;

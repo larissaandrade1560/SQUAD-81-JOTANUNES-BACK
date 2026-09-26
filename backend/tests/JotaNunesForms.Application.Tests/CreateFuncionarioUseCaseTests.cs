@@ -1,4 +1,5 @@
 using JotaNunesForms.Application.DTOs;
+using JotaNunesForms.Application.Auth;
 using JotaNunesForms.Application.UseCases.Funcionarios;
 using JotaNunesForms.Domain.Entities;
 using JotaNunesForms.Domain.Ports;
@@ -19,7 +20,7 @@ public sealed class CreateFuncionarioUseCaseTests
             new FakeFuncionarioObraRepository());
 
         var result = await useCase.ExecuteAsync(
-            empresa.Id,
+            new AccessScope.Company(Guid.NewGuid(), empresa.Id, TipoEmpresa.MaoDeObra),
             new CreateFuncionarioRequest("João Silva", "52998224725", "Pedreiro"));
 
         Assert.Equal("52998224725", result.Cpf);

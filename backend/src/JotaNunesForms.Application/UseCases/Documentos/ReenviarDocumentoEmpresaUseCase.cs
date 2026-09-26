@@ -1,5 +1,6 @@
 using JotaNunesForms.Application.Documentos;
 using JotaNunesForms.Application.DTOs;
+using JotaNunesForms.Application.Auth;
 using JotaNunesForms.Domain.Entities;
 using JotaNunesForms.Domain.Ports;
 
@@ -12,40 +13,39 @@ public sealed class ReenviarDocumentoEmpresaUseCase
     private readonly IDocumentoEmpresaRepository _documentos;
     private readonly IEmpresaRepository _empresas;
     private readonly IObjectStorage _storage;
+    private readonly AccessScopeGuard _scopeGuard;
 
     public ReenviarDocumentoEmpresaUseCase(
         IDocumentoEmpresaRepository documentos,
         IEmpresaRepository empresas,
-        IObjectStorage storage)
+        IObjectStorage storage,
+        AccessScopeGuard scopeGuard)
     {
         _documentos = documentos;
         _empresas = empresas;
         _storage = storage;
+        _scopeGuard = scopeGuard;
     }
 
     public async Task<DocumentoEmpresaResponse> ExecuteAsync(
         Guid id,
-        Guid scopeEmpresaId,
+        AccessScope scope,
+        SecurityRequestContext securityRequest,
         string nomeArquivo,
         string contentType,
         long tamanhoBytes,
         Stream conteudo,
         CancellationToken cancellationToken = default)
     {
-        if (!_storage.IsConfigured)
-        {
-            throw new DocumentoEmpresaException("Armazenamento de documentos não configurado (R2).");
-        }
-
         var documento = await _documentos.GetByIdAsync(id, cancellationToken);
         if (documento is null)
         {
-            throw new DocumentoEmpresaException("Documento não encontrado.");
+            throw new DocumentoEmpresaException("Recurso não encontrado.", 404);
         }
 
-        if (documento.EmpresaId != scopeEmpresaId)
+        if (!await _scopeGuard.AllowsCompanyAsync(scope, documento.EmpresaId, securityRequest, cancellationToken))
         {
-            throw new DocumentoEmpresaException("Sem permissão para reenviar este documento.");
+            throw new DocumentoEmpresaException("Recurso não encontrado.", 404);
         }
 
         if (tamanhoBytes <= 0 || tamanhoBytes > MaxBytes)
@@ -62,7 +62,17 @@ public sealed class ReenviarDocumentoEmpresaUseCase
         var empresa = await _empresas.GetByIdAsync(documento.EmpresaId, cancellationToken);
         if (empresa is null)
         {
-            throw new DocumentoEmpresaException("Empresa não encontrada.");
+            throw new DocumentoEmpresaException("Recurso não encontrado.", 404);
+        }
+
+        if (scope is not AccessScope.Company)
+        {
+            throw new DocumentoEmpresaException("Acesso não permitido.", 403);
+        }
+
+        if (!_storage.IsConfigured)
+        {
+            throw new DocumentoEmpresaException("Armazenamento de documentos não configurado (R2).", 503);
         }
 
         var novoArquivoId = Guid.NewGuid();

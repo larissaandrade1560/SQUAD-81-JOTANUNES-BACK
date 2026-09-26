@@ -1,3 +1,5 @@
+using JotaNunesForms.Domain.Ports;
+
 namespace JotaNunesForms.Application.Auth;
 
 public sealed class AccessScopeGuard(ISecurityEventSink securityEvents)

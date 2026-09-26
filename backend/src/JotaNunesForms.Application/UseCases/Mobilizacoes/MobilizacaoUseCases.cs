@@ -1,4 +1,5 @@
 using JotaNunesForms.Application.DTOs;
+using JotaNunesForms.Application.Auth;
 using JotaNunesForms.Application.Empresas;
 using JotaNunesForms.Application.Mobilizacoes;
 using JotaNunesForms.Application.Obras;
@@ -46,11 +47,15 @@ public sealed class CreateMobilizacaoUseCase
 
     public async Task<MobilizacaoResponse> ExecuteAsync(
         CreateMobilizacaoRequest request,
-        Guid? scopeEmpresaId,
+        AccessScope scope,
         CancellationToken cancellationToken = default)
     {
-        var empresaId = scopeEmpresaId ?? request.EmpresaId
-            ?? throw new MobilizacaoException("Empresa é obrigatória.");
+        if (scope is not AccessScope.Company companyScope || companyScope.Type != TipoEmpresa.MaoDeObra)
+        {
+            throw new MobilizacaoException("Acesso não permitido.", 403);
+        }
+
+        var empresaId = companyScope.CompanyId;
         var empresa = await _empresas.GetByIdAsync(empresaId, cancellationToken)
             ?? throw new EmpresaException("Empresa não encontrada.");
 
@@ -62,11 +67,11 @@ public sealed class CreateMobilizacaoUseCase
         var obra = await _obras.GetByIdAsync(request.ObraId, cancellationToken)
             ?? throw new ObraException("Obra não encontrada.");
         var contrato = await _contratos.GetByIdAsync(request.ContratoId, cancellationToken)
-            ?? throw new MobilizacaoException("Contrato não encontrado.", 404);
+            ?? throw new MobilizacaoException("Recurso não encontrado.", 404);
 
         if (contrato.EmpresaId != empresa.Id || contrato.ObraId != obra.Id)
         {
-            throw new MobilizacaoException("Contrato não pertence à empresa e obra informadas.");
+            throw new MobilizacaoException("Recurso não encontrado.", 404);
         }
 
         ProcessoContratacao? processo = null;
@@ -82,12 +87,12 @@ public sealed class CreateMobilizacaoUseCase
 
         if (processo is null)
         {
-            throw new MobilizacaoException("Abra um processo com mobilização de trabalhadores para este contrato.");
+            throw new MobilizacaoException("Recurso não encontrado.", 404);
         }
 
         if (!processo.MobilizaTrabalhadores || processo.ContratoId != contrato.Id)
         {
-            throw new MobilizacaoException("O processo informado não autoriza mobilização neste contrato.");
+            throw new MobilizacaoException("Recurso não encontrado.", 404);
         }
 
         string cpf;
@@ -225,12 +230,20 @@ public sealed class ListMobilizacoesUseCase
     }
 
     public async Task<IReadOnlyList<MobilizacaoResponse>> ExecuteAsync(
-        Guid? empresaId,
+        AccessScope scope,
+        Guid? empresaFilterId,
         Guid? obraId,
         Guid? contratoId,
         SituacaoMobilizacao? situacao,
         CancellationToken cancellationToken = default)
     {
+        var empresaId = scope switch
+        {
+            AccessScope.Internal => empresaFilterId,
+            AccessScope.Company company when company.Type == TipoEmpresa.MaoDeObra => company.CompanyId,
+            _ => throw new MobilizacaoException("Acesso não permitido.", 403),
+        };
+
         var lista = await _mobilizacoes.ListAsync(empresaId, obraId, contratoId, situacao, cancellationToken);
         var catalogo = await _catalogo.ListAsync(cancellationToken);
         var resultado = new List<MobilizacaoResponse>();
@@ -262,33 +275,42 @@ public sealed class GetMobilizacaoUseCase
     private readonly IEmpresaRepository _empresas;
     private readonly ICatalogoRequisitoRepository _catalogo;
     private readonly CreateMobilizacaoUseCase _create;
+    private readonly AccessScopeGuard _scopeGuard;
 
     public GetMobilizacaoUseCase(
         IMobilizacaoRepository mobilizacoes,
         IFuncionarioRepository funcionarios,
         IEmpresaRepository empresas,
         ICatalogoRequisitoRepository catalogo,
-        CreateMobilizacaoUseCase create)
+        CreateMobilizacaoUseCase create,
+        AccessScopeGuard scopeGuard)
     {
         _mobilizacoes = mobilizacoes;
         _funcionarios = funcionarios;
         _empresas = empresas;
         _catalogo = catalogo;
         _create = create;
+        _scopeGuard = scopeGuard;
     }
 
     public async Task<MobilizacaoResponse> ExecuteAsync(
         Guid id,
-        Guid? scopeEmpresaId,
+        AccessScope scope,
+        SecurityRequestContext securityRequest,
         CancellationToken cancellationToken = default)
     {
-        var mobilizacao = await _mobilizacoes.GetByIdAsync(id, cancellationToken)
-            ?? throw new MobilizacaoException("Mobilização não encontrada.", 404);
-        var funcionario = await _funcionarios.GetByIdAsync(mobilizacao.FuncionarioId, cancellationToken)
-            ?? throw new MobilizacaoException("Funcionário não encontrado.", 404);
-        if (scopeEmpresaId is not null && funcionario.EmpresaId != scopeEmpresaId)
+        if (scope is AccessScope.Company companyScope && companyScope.Type != TipoEmpresa.MaoDeObra)
         {
-            throw new MobilizacaoException("Sem permissão para esta mobilização.", 403);
+            throw new MobilizacaoException("Acesso não permitido.", 403);
+        }
+
+        var mobilizacao = await _mobilizacoes.GetByIdAsync(id, cancellationToken)
+            ?? throw new MobilizacaoException("Recurso não encontrado.", 404);
+        var funcionario = await _funcionarios.GetByIdAsync(mobilizacao.FuncionarioId, cancellationToken)
+            ?? throw new MobilizacaoException("Recurso não encontrado.", 404);
+        if (!await _scopeGuard.AllowsCompanyAsync(scope, funcionario.EmpresaId, securityRequest, cancellationToken))
+        {
+            throw new MobilizacaoException("Recurso não encontrado.", 404);
         }
 
         var empresa = await _empresas.GetByIdAsync(funcionario.EmpresaId, cancellationToken)
@@ -312,10 +334,11 @@ public sealed class UpdateMobilizacaoUseCase
     public async Task<MobilizacaoResponse> ExecuteAsync(
         Guid id,
         UpdateMobilizacaoRequest request,
-        Guid? scopeEmpresaId,
+        AccessScope scope,
+        SecurityRequestContext securityRequest,
         CancellationToken cancellationToken = default)
     {
-        await _get.ExecuteAsync(id, scopeEmpresaId, cancellationToken);
+        await _get.ExecuteAsync(id, scope, securityRequest, cancellationToken);
         var mobilizacao = await _mobilizacoes.GetByIdAsync(id, cancellationToken)
             ?? throw new MobilizacaoException("Mobilização não encontrada.", 404);
         try
@@ -328,6 +351,6 @@ public sealed class UpdateMobilizacaoUseCase
         }
 
         await _mobilizacoes.UpdateAsync(mobilizacao, cancellationToken);
-        return await _get.ExecuteAsync(id, scopeEmpresaId, cancellationToken);
+        return await _get.ExecuteAsync(id, scope, securityRequest, cancellationToken);
     }
 }

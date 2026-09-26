@@ -5,7 +5,7 @@ import { getSession } from '../store/authStorage'
 export function InternalRoute() {
   const session = getSession()
   if (session?.role === 'terceirizado') {
-    return <Navigate to="/funcionarios" replace />
+    return <Navigate to={session.tipoEmpresa === 2 ? '/documentos' : '/funcionarios'} replace />
   }
 
   return <Outlet />

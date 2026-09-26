@@ -1,5 +1,6 @@
 import type { ApiError } from '../types/api'
 import { getAccessToken } from '../store/authStorage'
+import { clearSession } from '../store/authStorage'
 
 const baseUrl = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '') ?? ''
 
@@ -39,6 +40,13 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   })
 
   if (!response.ok) {
+    if (response.status === 401) {
+      clearSession()
+      if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+        window.location.replace('/login')
+      }
+    }
+
     const payload = await parseJsonSafe(response)
     const message =
       typeof payload === 'object' &&

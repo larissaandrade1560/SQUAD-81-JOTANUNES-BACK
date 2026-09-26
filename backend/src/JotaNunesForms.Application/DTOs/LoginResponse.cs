@@ -8,17 +8,20 @@ public sealed record LoginResponse(
     string NomeExibicao,
     string PerfilRotulo,
     PerfilUsuario Perfil,
-    DateTime ExpiresAtUtc)
+    DateTime ExpiresAtUtc,
+    TipoEmpresa? TipoEmpresa)
 {
     public static LoginResponse Create(
         string accessToken,
         Usuario usuario,
-        DateTime expiresAtUtc) =>
+        DateTime expiresAtUtc,
+        TipoEmpresa? tipoEmpresa = null) =>
         new(
             accessToken,
             usuario.Documento,
             usuario.NomeExibicao,
             usuario.PerfilRotulo,
             usuario.Perfil,
-            expiresAtUtc);
+            expiresAtUtc,
+            tipoEmpresa);
 }

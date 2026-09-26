@@ -1,5 +1,7 @@
 using JotaNunesForms.Application.DTOs;
+using JotaNunesForms.Application.Auth;
 using JotaNunesForms.Application.Pagamentos;
+using JotaNunesForms.Domain.Entities;
 using JotaNunesForms.Domain.Ports;
 
 namespace JotaNunesForms.Application.UseCases.Pagamentos;
@@ -12,42 +14,51 @@ public sealed class UploadComprovantePagamentoUseCase
     private readonly IFuncionarioRepository _funcionarios;
     private readonly IEmpresaRepository _empresas;
     private readonly IObjectStorage _storage;
+    private readonly AccessScopeGuard _scopeGuard;
 
     public UploadComprovantePagamentoUseCase(
         IPagamentoFuncionarioRepository pagamentos,
         IFuncionarioRepository funcionarios,
         IEmpresaRepository empresas,
-        IObjectStorage storage)
+        IObjectStorage storage,
+        AccessScopeGuard scopeGuard)
     {
         _pagamentos = pagamentos;
         _funcionarios = funcionarios;
         _empresas = empresas;
         _storage = storage;
+        _scopeGuard = scopeGuard;
     }
 
     public async Task<PagamentoFuncionarioResponse> ExecuteAsync(
         Guid pagamentoId,
-        Guid scopeEmpresaId,
+        AccessScope scope,
+        SecurityRequestContext securityRequest,
         string nomeArquivo,
         string contentType,
         long tamanhoBytes,
         Stream conteudo,
         CancellationToken cancellationToken = default)
     {
-        if (!_storage.IsConfigured)
+        if (scope is not AccessScope.Company companyScope || companyScope.Type != TipoEmpresa.MaoDeObra)
         {
-            throw new PagamentoException("Armazenamento de comprovantes não configurado (R2).");
+            throw new PagamentoException("Acesso não permitido.", 403);
         }
 
         var pagamento = await _pagamentos.GetByIdAsync(pagamentoId, cancellationToken);
         if (pagamento is null)
         {
-            throw new PagamentoException("Pagamento não encontrado.");
+            throw new PagamentoException("Recurso não encontrado.", 404);
         }
 
-        if (pagamento.EmpresaId != scopeEmpresaId)
+        if (!await _scopeGuard.AllowsCompanyAsync(scope, pagamento.EmpresaId, securityRequest, cancellationToken))
         {
-            throw new PagamentoException("Sem permissão para enviar comprovante deste pagamento.");
+            throw new PagamentoException("Recurso não encontrado.", 404);
+        }
+
+        if (!_storage.IsConfigured)
+        {
+            throw new PagamentoException("Armazenamento de comprovantes não configurado (R2).", 503);
         }
 
         if (tamanhoBytes <= 0 || tamanhoBytes > MaxBytes)
@@ -91,39 +102,48 @@ public sealed class GetComprovantePagamentoDownloadUseCase
 {
     private readonly IPagamentoFuncionarioRepository _pagamentos;
     private readonly IObjectStorage _storage;
+    private readonly AccessScopeGuard _scopeGuard;
 
     public GetComprovantePagamentoDownloadUseCase(
         IPagamentoFuncionarioRepository pagamentos,
-        IObjectStorage storage)
+        IObjectStorage storage,
+        AccessScopeGuard scopeGuard)
     {
         _pagamentos = pagamentos;
         _storage = storage;
+        _scopeGuard = scopeGuard;
     }
 
     public async Task<DocumentoDownloadResponse> ExecuteAsync(
         Guid pagamentoId,
-        Guid? scopeEmpresaId,
+        AccessScope scope,
+        SecurityRequestContext securityRequest,
         CancellationToken cancellationToken = default)
     {
-        if (!_storage.IsConfigured)
+        if (scope is AccessScope.Company companyScope && companyScope.Type != TipoEmpresa.MaoDeObra)
         {
-            throw new PagamentoException("Armazenamento de comprovantes não configurado (R2).");
+            throw new PagamentoException("Acesso não permitido.", 403);
         }
 
         var pagamento = await _pagamentos.GetByIdAsync(pagamentoId, cancellationToken);
         if (pagamento is null)
         {
-            throw new PagamentoException("Pagamento não encontrado.");
+            throw new PagamentoException("Recurso não encontrado.", 404);
         }
 
-        if (scopeEmpresaId is not null && pagamento.EmpresaId != scopeEmpresaId.Value)
+        if (!await _scopeGuard.AllowsCompanyAsync(scope, pagamento.EmpresaId, securityRequest, cancellationToken))
         {
-            throw new PagamentoException("Sem permissão para acessar este comprovante.");
+            throw new PagamentoException("Recurso não encontrado.", 404);
         }
 
         if (!pagamento.PossuiComprovante || pagamento.ComprovanteStorageKey is null)
         {
-            throw new PagamentoException("Nenhum comprovante enviado para este pagamento.");
+            throw new PagamentoException("Recurso não encontrado.", 404);
+        }
+
+        if (!_storage.IsConfigured)
+        {
+            throw new PagamentoException("Armazenamento de comprovantes não configurado (R2).", 503);
         }
 
         var validFor = TimeSpan.FromMinutes(15);

@@ -8,3 +8,14 @@ export type ApiError = {
 export type ApiStatusResponse = {
   mensagem: string
 }
+
+export type TipoEmpresaApi = 1 | 2
+
+export type AuthUserApiResponse = {
+  id: string
+  documento: string
+  nomeExibicao: string
+  perfilRotulo: 'Administrador' | 'Analista' | 'Terceirizado'
+  perfil: number
+  tipoEmpresa: TipoEmpresaApi | null
+}

@@ -8,6 +8,7 @@ type LoginApiResponse = {
   nomeExibicao: string
   perfilRotulo: 'Administrador' | 'Analista' | 'Terceirizado'
   perfil: number
+  tipoEmpresa: 1 | 2 | null
   expiresAtUtc: string
 }
 
@@ -38,6 +39,7 @@ export async function loginWithApi(credentials: {
         : response.perfilRotulo === 'Terceirizado'
           ? 'terceirizado'
           : 'analista',
+    tipoEmpresa: response.tipoEmpresa,
     expiresAtUtc: response.expiresAtUtc,
   }
 
@@ -57,6 +59,7 @@ export async function fetchCurrentUser(): Promise<AuthSession | null> {
     documento: string
     nomeExibicao: string
     perfilRotulo: 'Administrador' | 'Analista' | 'Terceirizado'
+    tipoEmpresa: 1 | 2 | null
   }>('/api/auth/me')
 
   return {
@@ -70,6 +73,7 @@ export async function fetchCurrentUser(): Promise<AuthSession | null> {
         : me.perfilRotulo === 'Terceirizado'
           ? 'terceirizado'
           : 'analista',
+    tipoEmpresa: me.tipoEmpresa,
     expiresAtUtc: existing?.expiresAtUtc ?? new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString(),
   }
 }

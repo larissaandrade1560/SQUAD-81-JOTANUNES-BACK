@@ -1,5 +1,4 @@
 using System.Data;
-using JotaNunesForms.Application.Auth;
 using JotaNunesForms.Domain.Entities;
 using JotaNunesForms.Domain.Ports;
 using JotaNunesForms.Infrastructure.Persistence;

@@ -1,4 +1,4 @@
-using JotaNunesForms.Application.Auth;
+using JotaNunesForms.Domain.Ports;
 using Microsoft.AspNetCore.Routing;
 
 namespace JotaNunesForms.Api.Authorization;

@@ -5,6 +5,7 @@ using JotaNunesForms.Infrastructure.Persistence;
 using JotaNunesForms.Infrastructure.Persistence.Repositories;
 using JotaNunesForms.Infrastructure.Storage;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -28,10 +29,11 @@ public static class DependencyInjection
                 "Connection string 'JotaNunesFormsDb' não foi configurada.");
         }
 
-        services.AddDbContext<JotaNunesFormsDbContext>(options =>
+        services.AddDbContext<JotaNunesFormsDbContext>((serviceProvider, options) =>
             options.UseNpgsql(connectionString, npgsql =>
                 npgsql.EnableRetryOnFailure(3, TimeSpan.FromSeconds(5), null)
-                    .MigrationsAssembly(typeof(JotaNunesFormsDbContext).Assembly.FullName)));
+                    .MigrationsAssembly(typeof(JotaNunesFormsDbContext).Assembly.FullName))
+                .AddInterceptors(serviceProvider.GetServices<IInterceptor>()));
 
         services.AddScoped<IFormularioRepository, FormularioRepository>();
         services.AddScoped<IUsuarioRepository, UsuarioRepository>();
@@ -52,6 +54,13 @@ public static class DependencyInjection
         services.AddScoped<IMobilizacaoRepository, MobilizacaoRepository>();
         services.Configure<R2StorageOptions>(configuration.GetSection("R2"));
         services.Configure<EmailOptions>(configuration.GetSection("Email"));
+        services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
+        services.Configure<CorsOptions>(options =>
+        {
+            var origins = configuration[$"{CorsOptions.SectionName}:Origins"] ?? string.Empty;
+            options.Origins = origins.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        });
+        services.Configure<BootstrapAdminOptions>(configuration.GetSection(BootstrapAdminOptions.SectionName));
         services.AddHttpClient(
             ResendHttpEmailSender.HttpClientName,
             client =>

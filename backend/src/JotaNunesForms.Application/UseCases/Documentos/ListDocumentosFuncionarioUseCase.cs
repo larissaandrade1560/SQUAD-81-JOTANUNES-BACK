@@ -1,5 +1,7 @@
 using JotaNunesForms.Application.Documentos;
 using JotaNunesForms.Application.DTOs;
+using JotaNunesForms.Application.Auth;
+using JotaNunesForms.Domain.Entities;
 using JotaNunesForms.Domain.Ports;
 
 namespace JotaNunesForms.Application.UseCases.Documentos;
@@ -9,31 +11,42 @@ public sealed class ListDocumentosFuncionarioUseCase
     private readonly IDocumentoFuncionarioRepository _documentos;
     private readonly IFuncionarioRepository _funcionarios;
     private readonly IEmpresaRepository _empresas;
+    private readonly AccessScopeGuard _scopeGuard;
 
     public ListDocumentosFuncionarioUseCase(
         IDocumentoFuncionarioRepository documentos,
         IFuncionarioRepository funcionarios,
-        IEmpresaRepository empresas)
+        IEmpresaRepository empresas,
+        AccessScopeGuard scopeGuard)
     {
         _documentos = documentos;
         _funcionarios = funcionarios;
         _empresas = empresas;
+        _scopeGuard = scopeGuard;
     }
 
     public async Task<IReadOnlyList<DocumentoFuncionarioResponse>> ExecuteAsync(
         Guid funcionarioId,
-        Guid? scopeEmpresaId,
+        AccessScope scope,
+        SecurityRequestContext securityRequest,
         CancellationToken cancellationToken = default)
     {
+        var scopeEmpresaId = scope switch
+        {
+            AccessScope.Internal => (Guid?)null,
+            AccessScope.Company company when company.Type == TipoEmpresa.MaoDeObra => company.CompanyId,
+            _ => throw new DocumentoFuncionarioException("Acesso não permitido.", 403),
+        };
+
         var funcionario = await _funcionarios.GetByIdAsync(funcionarioId, cancellationToken);
         if (funcionario is null)
         {
-            throw new DocumentoFuncionarioException("Funcionário não encontrado.");
+            throw new DocumentoFuncionarioException("Recurso não encontrado.", 404);
         }
 
-        if (scopeEmpresaId is not null && funcionario.EmpresaId != scopeEmpresaId.Value)
+        if (!await _scopeGuard.AllowsCompanyAsync(scope, funcionario.EmpresaId, securityRequest, cancellationToken))
         {
-            throw new DocumentoFuncionarioException("Sem permissão para acessar este funcionário.");
+            throw new DocumentoFuncionarioException("Recurso não encontrado.", 404);
         }
 
         var empresa = await _empresas.GetByIdAsync(funcionario.EmpresaId, cancellationToken);

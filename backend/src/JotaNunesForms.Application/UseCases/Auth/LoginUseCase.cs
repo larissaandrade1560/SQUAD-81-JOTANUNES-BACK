@@ -2,7 +2,6 @@ using JotaNunesForms.Application.Auth;
 using JotaNunesForms.Application.DTOs;
 using JotaNunesForms.Domain.Entities;
 using JotaNunesForms.Domain.Ports;
-using Microsoft.Extensions.Configuration;
 
 namespace JotaNunesForms.Application.UseCases.Auth;
 
@@ -14,20 +13,17 @@ public sealed class LoginUseCase
     private readonly IEmpresaRepository _empresas;
     private readonly IPasswordHasher _passwordHasher;
     private readonly IJwtTokenGenerator _tokenGenerator;
-    private readonly IConfiguration _configuration;
 
     public LoginUseCase(
         IUsuarioRepository usuarios,
         IEmpresaRepository empresas,
         IPasswordHasher passwordHasher,
-        IJwtTokenGenerator tokenGenerator,
-        IConfiguration configuration)
+        IJwtTokenGenerator tokenGenerator)
     {
         _usuarios = usuarios;
         _empresas = empresas;
         _passwordHasher = passwordHasher;
         _tokenGenerator = tokenGenerator;
-        _configuration = configuration;
     }
 
     public async Task<LoginResponse> ExecuteAsync(
@@ -79,6 +75,7 @@ public sealed class LoginUseCase
             throw new AuthException(MensagemInvalida);
         }
 
+        TipoEmpresa? tipoEmpresa = null;
         if (usuario.Perfil == PerfilUsuario.Terceirizado && usuario.EmpresaId is Guid empresaId)
         {
             var empresa = await _empresas.GetByIdAsync(empresaId, cancellationToken);
@@ -86,13 +83,15 @@ public sealed class LoginUseCase
             {
                 throw new AuthException(MensagemInvalida);
             }
+
+            tipoEmpresa = empresa.Tipo;
         }
 
         var utcNow = DateTime.UtcNow;
-        var expirationMinutes = _configuration.GetValue("Jwt:ExpirationMinutes", 480);
+        var expirationMinutes = _tokenGenerator.ExpirationMinutes;
         var expiresAt = utcNow.AddMinutes(expirationMinutes);
-        var token = _tokenGenerator.GenerateAccessToken(usuario, utcNow);
+        var token = _tokenGenerator.GenerateAccessToken(usuario, utcNow, tipoEmpresa);
 
-        return LoginResponse.Create(token, usuario, expiresAt);
+        return LoginResponse.Create(token, usuario, expiresAt, tipoEmpresa);
     }
 }

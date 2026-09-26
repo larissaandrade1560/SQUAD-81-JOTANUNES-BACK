@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Authentication;
-using JotaNunesForms.Application.Auth;
+using JotaNunesForms.Domain.Ports;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization.Policy;
 using Microsoft.AspNetCore.Routing;

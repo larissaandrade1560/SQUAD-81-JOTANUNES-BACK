@@ -33,7 +33,14 @@ public static class AuthUserSeeder
                 return;
             }
 
-            var defaultPassword = Environment.GetEnvironmentVariable("AUTH_SEED_PASSWORD") ?? "senha123";
+            var defaultPassword = Environment.GetEnvironmentVariable("AUTH_SEED_PASSWORD");
+            if (string.IsNullOrWhiteSpace(defaultPassword)
+                || defaultPassword.Length < 16
+                || SecurityDefaults.IsWeak(defaultPassword))
+            {
+                logger.LogInformation("Seed de usuários ignorado: AUTH_SEED_PASSWORD ausente ou insegura.");
+                return;
+            }
 
             await repository.AddAsync(
                 new Usuario(

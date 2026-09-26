@@ -2,7 +2,6 @@ using System.Security.Claims;
 using JotaNunesForms.Application.Auth;
 using JotaNunesForms.Application.Documentos;
 using JotaNunesForms.Application.DTOs;
-using JotaNunesForms.Application.UseCases.Auth;
 using JotaNunesForms.Application.UseCases.Validacao;
 using JotaNunesForms.Application.Validacao;
 using Microsoft.AspNetCore.Authorization;
@@ -12,7 +11,7 @@ namespace JotaNunesForms.Api.Controllers;
 
 [ApiController]
 [Route("api/validacao")]
-[Authorize]
+[Authorize(Policy = "Interno")]
 public sealed class ValidacaoController : ControllerBase
 {
     private readonly ListValidacaoFilaUseCase _list;
@@ -22,7 +21,6 @@ public sealed class ValidacaoController : ControllerBase
     private readonly RejeitarDocumentoFuncionarioValidacaoUseCase _rejeitarFuncionario;
     private readonly AprovarVersaoUseCase _aprovarVersao;
     private readonly RejeitarVersaoUseCase _rejeitarVersao;
-    private readonly GetAuthenticatedUserUseCase _authUser;
 
     public ValidacaoController(
         ListValidacaoFilaUseCase list,
@@ -31,8 +29,7 @@ public sealed class ValidacaoController : ControllerBase
         AprovarDocumentoFuncionarioValidacaoUseCase aprovarFuncionario,
         RejeitarDocumentoFuncionarioValidacaoUseCase rejeitarFuncionario,
         AprovarVersaoUseCase aprovarVersao,
-        RejeitarVersaoUseCase rejeitarVersao,
-        GetAuthenticatedUserUseCase authUser)
+        RejeitarVersaoUseCase rejeitarVersao)
     {
         _list = list;
         _aprovarEmpresa = aprovarEmpresa;
@@ -41,7 +38,6 @@ public sealed class ValidacaoController : ControllerBase
         _rejeitarFuncionario = rejeitarFuncionario;
         _aprovarVersao = aprovarVersao;
         _rejeitarVersao = rejeitarVersao;
-        _authUser = authUser;
     }
 
     [HttpGet]
@@ -49,11 +45,6 @@ public sealed class ValidacaoController : ControllerBase
     public async Task<ActionResult<IReadOnlyList<ValidacaoDocumentoItemResponse>>> ListFila(
         CancellationToken cancellationToken)
     {
-        if (!UserClaims.IsEquipeInterna(User))
-        {
-            return Forbid();
-        }
-
         return Ok(await _list.ExecuteAsync(cancellationToken));
     }
 
@@ -62,11 +53,6 @@ public sealed class ValidacaoController : ControllerBase
         Guid id,
         CancellationToken cancellationToken)
     {
-        if (!UserClaims.IsEquipeInterna(User))
-        {
-            return Forbid();
-        }
-
         try
         {
             return Ok(await _aprovarEmpresa.ExecuteAsync(id, cancellationToken));
@@ -83,11 +69,6 @@ public sealed class ValidacaoController : ControllerBase
         [FromBody] RejeitarDocumentoRequest request,
         CancellationToken cancellationToken)
     {
-        if (!UserClaims.IsEquipeInterna(User))
-        {
-            return Forbid();
-        }
-
         try
         {
             return Ok(await _rejeitarEmpresa.ExecuteAsync(id, request, cancellationToken));
@@ -103,11 +84,6 @@ public sealed class ValidacaoController : ControllerBase
         Guid id,
         CancellationToken cancellationToken)
     {
-        if (!UserClaims.IsEquipeInterna(User))
-        {
-            return Forbid();
-        }
-
         try
         {
             return Ok(await _aprovarFuncionario.ExecuteAsync(id, cancellationToken));
@@ -124,11 +100,6 @@ public sealed class ValidacaoController : ControllerBase
         [FromBody] RejeitarDocumentoRequest request,
         CancellationToken cancellationToken)
     {
-        if (!UserClaims.IsEquipeInterna(User))
-        {
-            return Forbid();
-        }
-
         try
         {
             return Ok(await _rejeitarFuncionario.ExecuteAsync(id, request, cancellationToken));
@@ -145,11 +116,6 @@ public sealed class ValidacaoController : ControllerBase
         [FromBody] AprovarVersaoRequest? request,
         CancellationToken cancellationToken)
     {
-        if (!UserClaims.IsEquipeInterna(User))
-        {
-            return Forbid();
-        }
-
         try
         {
             var analistaId = await ResolveUsuarioId(cancellationToken);
@@ -179,11 +145,6 @@ public sealed class ValidacaoController : ControllerBase
         [FromBody] RejeitarVersaoRequest request,
         CancellationToken cancellationToken)
     {
-        if (!UserClaims.IsEquipeInterna(User))
-        {
-            return Forbid();
-        }
-
         try
         {
             var analistaId = await ResolveUsuarioId(cancellationToken);
@@ -205,10 +166,9 @@ public sealed class ValidacaoController : ControllerBase
 
     private async Task<Guid> ResolveUsuarioId(CancellationToken cancellationToken)
     {
-        var documento = User.FindFirstValue(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)
-            ?? User.FindFirstValue(ClaimTypes.NameIdentifier)
-            ?? throw new ValidacaoException("Usuário autenticado inválido.");
-        var user = await _authUser.ExecuteAsync(documento, cancellationToken);
-        return user.Id;
+        cancellationToken.ThrowIfCancellationRequested();
+        return Guid.TryParse(User.FindFirstValue("usuario_id"), out var userId) && userId != Guid.Empty
+            ? userId
+            : throw new ValidacaoException("Usuário autenticado inválido.");
     }
 }

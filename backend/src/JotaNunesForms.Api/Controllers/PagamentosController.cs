@@ -1,4 +1,5 @@
 using JotaNunesForms.Application.DTOs;
+using JotaNunesForms.Application.Auth;
 using JotaNunesForms.Application.Pagamentos;
 using JotaNunesForms.Application.UseCases.Pagamentos;
 using Microsoft.AspNetCore.Authorization;
@@ -29,55 +30,44 @@ public sealed class PagamentosController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Policy = "InternalOrOwnMO")]
     public async Task<ActionResult<IReadOnlyList<PagamentoFuncionarioResponse>>> List(
         CancellationToken cancellationToken)
     {
-        Guid? scope = UserClaims.IsTerceirizado(User) ? UserClaims.GetEmpresaId(User) : null;
-        if (UserClaims.IsTerceirizado(User) && scope is null)
-        {
-            return Forbid();
-        }
-
-        return Ok(await _list.ExecuteAsync(scope, cancellationToken));
+        return Ok(await _list.ExecuteAsync(UserClaims.GetAccessScope(HttpContext), cancellationToken));
     }
 
     [HttpPost]
-    [Authorize(Policy = "Terceirizado")]
+    [Authorize(Policy = "TerceirizadoMaoDeObra")]
     public async Task<ActionResult<PagamentoFuncionarioResponse>> Registrar(
         [FromBody] RegistrarPagamentoRequest request,
         CancellationToken cancellationToken)
     {
-        var empresaId = UserClaims.GetEmpresaId(User);
-        if (empresaId is null)
-        {
-            return Forbid();
-        }
-
         try
         {
-            var created = await _registrar.ExecuteAsync(empresaId.Value, request, cancellationToken);
+            var created = await _registrar.ExecuteAsync(
+                UserClaims.GetAccessScope(HttpContext),
+                request,
+                SecurityRequest("/api/pagamentos"),
+                cancellationToken);
             return CreatedAtAction(nameof(List), created);
         }
         catch (PagamentoException ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return ex.StatusCode == 404
+                ? NotFound(new { message = "Recurso não encontrado." })
+                : StatusCode(ex.StatusCode, new { message = ex.Message });
         }
     }
 
     [HttpPost("{id:guid}/comprovante")]
-    [Authorize(Policy = "Terceirizado")]
+    [Authorize(Policy = "TerceirizadoMaoDeObra")]
     [RequestSizeLimit(10 * 1024 * 1024)]
     public async Task<ActionResult<PagamentoFuncionarioResponse>> UploadComprovante(
         Guid id,
         IFormFile arquivo,
         CancellationToken cancellationToken)
     {
-        var empresaId = UserClaims.GetEmpresaId(User);
-        if (empresaId is null)
-        {
-            return Forbid();
-        }
-
         if (arquivo is null || arquivo.Length == 0)
         {
             return BadRequest(new { message = "Selecione um arquivo PDF." });
@@ -88,7 +78,8 @@ public sealed class PagamentosController : ControllerBase
             await using var stream = arquivo.OpenReadStream();
             var updated = await _uploadComprovante.ExecuteAsync(
                 id,
-                empresaId.Value,
+                UserClaims.GetAccessScope(HttpContext),
+                SecurityRequest("/api/pagamentos/{id}/comprovante"),
                 arquivo.FileName,
                 arquivo.ContentType,
                 arquivo.Length,
@@ -98,7 +89,9 @@ public sealed class PagamentosController : ControllerBase
         }
         catch (PagamentoException ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return ex.StatusCode == 404
+                ? NotFound(new { message = "Recurso não encontrado." })
+                : StatusCode(ex.StatusCode, new { message = ex.Message });
         }
         catch (Exception)
         {
@@ -107,23 +100,29 @@ public sealed class PagamentosController : ControllerBase
     }
 
     [HttpGet("{id:guid}/comprovante/download")]
+    [Authorize(Policy = "InternalOrOwnMO")]
     public async Task<ActionResult<DocumentoDownloadResponse>> DownloadComprovante(
         Guid id,
         CancellationToken cancellationToken)
     {
-        Guid? scope = UserClaims.IsTerceirizado(User) ? UserClaims.GetEmpresaId(User) : null;
-        if (UserClaims.IsTerceirizado(User) && scope is null)
-        {
-            return Forbid();
-        }
-
         try
         {
-            return Ok(await _downloadComprovante.ExecuteAsync(id, scope, cancellationToken));
+            return Ok(await _downloadComprovante.ExecuteAsync(
+                id,
+                UserClaims.GetAccessScope(HttpContext),
+                SecurityRequest("/api/pagamentos/{id}/comprovante/download"),
+                cancellationToken));
         }
         catch (PagamentoException ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return ex.StatusCode == 404
+                ? NotFound(new { message = "Recurso não encontrado." })
+                : StatusCode(ex.StatusCode, new { message = ex.Message });
         }
     }
+
+    private SecurityRequestContext SecurityRequest(string route) => new(
+        HttpContext.TraceIdentifier,
+        Request.Method,
+        route);
 }

@@ -1,6 +1,6 @@
 using JotaNunesForms.Application.Documentos;
 using JotaNunesForms.Application.DTOs;
-using JotaNunesForms.Application.Empresas;
+using JotaNunesForms.Application.Auth;
 using JotaNunesForms.Application.Processos;
 using JotaNunesForms.Domain.Entities;
 using JotaNunesForms.Domain.Ports;
@@ -18,6 +18,7 @@ public sealed class EnviarVersaoDocumentoUseCase
     private readonly ICatalogoRequisitoRepository _catalogo;
     private readonly IDocumentoVersaoRepository _versoes;
     private readonly IObjectStorage _storage;
+    private readonly AccessScopeGuard _scopeGuard;
 
     public EnviarVersaoDocumentoUseCase(
         IItemChecklistRepository itens,
@@ -25,7 +26,8 @@ public sealed class EnviarVersaoDocumentoUseCase
         IContratoRepository contratos,
         ICatalogoRequisitoRepository catalogo,
         IDocumentoVersaoRepository versoes,
-        IObjectStorage storage)
+        IObjectStorage storage,
+        AccessScopeGuard scopeGuard)
     {
         _itens = itens;
         _processos = processos;
@@ -33,12 +35,14 @@ public sealed class EnviarVersaoDocumentoUseCase
         _catalogo = catalogo;
         _versoes = versoes;
         _storage = storage;
+        _scopeGuard = scopeGuard;
     }
 
     public async Task<DocumentoVersaoResponse> ExecuteAsync(
         Guid itemId,
         Guid enviadoPorUsuarioId,
-        Guid? scopeEmpresaId,
+        AccessScope scope,
+        SecurityRequestContext securityRequest,
         string? nomeArquivo,
         string? contentType,
         long? tamanhoBytes,
@@ -47,21 +51,21 @@ public sealed class EnviarVersaoDocumentoUseCase
         CancellationToken cancellationToken = default)
     {
         var item = await _itens.GetByIdAsync(itemId, cancellationToken)
-            ?? throw new DocumentoVersaoException("Item de checklist não encontrado.", 404);
+            ?? throw new DocumentoVersaoException("Recurso não encontrado.", 404);
+
+        var processo = await _processos.GetByIdAsync(item.ProcessoId, cancellationToken)
+            ?? throw new DocumentoVersaoException("Recurso não encontrado.", 404);
+        var contrato = await _contratos.GetByIdAsync(processo.ContratoId, cancellationToken)
+            ?? throw new DocumentoVersaoException("Recurso não encontrado.", 404);
+
+        if (!await _scopeGuard.AllowsCompanyAsync(scope, contrato.EmpresaId, securityRequest, cancellationToken))
+        {
+            throw new DocumentoVersaoException("Recurso não encontrado.", 404);
+        }
 
         if (!item.Ativo)
         {
             throw new DocumentoVersaoException("Item inativo não recebe novas versões.", 409);
-        }
-
-        var processo = await _processos.GetByIdAsync(item.ProcessoId, cancellationToken)
-            ?? throw new ProcessoException("Processo não encontrado.");
-        var contrato = await _contratos.GetByIdAsync(processo.ContratoId, cancellationToken)
-            ?? throw new ProcessoException("Contrato do processo não encontrado.");
-
-        if (scopeEmpresaId is not null && contrato.EmpresaId != scopeEmpresaId.Value)
-        {
-            throw new EmpresaException("Sem permissão para este item.");
         }
 
         var requisito = await _catalogo.GetByIdAsync(item.CatalogoRequisitoId, cancellationToken)
@@ -155,34 +159,38 @@ public sealed class ListVersoesItemUseCase
     private readonly IProcessoContratacaoRepository _processos;
     private readonly IContratoRepository _contratos;
     private readonly IDocumentoVersaoRepository _versoes;
+    private readonly AccessScopeGuard _scopeGuard;
 
     public ListVersoesItemUseCase(
         IItemChecklistRepository itens,
         IProcessoContratacaoRepository processos,
         IContratoRepository contratos,
-        IDocumentoVersaoRepository versoes)
+        IDocumentoVersaoRepository versoes,
+        AccessScopeGuard scopeGuard)
     {
         _itens = itens;
         _processos = processos;
         _contratos = contratos;
         _versoes = versoes;
+        _scopeGuard = scopeGuard;
     }
 
     public async Task<IReadOnlyList<DocumentoVersaoResponse>> ExecuteAsync(
         Guid itemId,
-        Guid? scopeEmpresaId,
+        AccessScope scope,
+        SecurityRequestContext securityRequest,
         CancellationToken cancellationToken = default)
     {
         var item = await _itens.GetByIdAsync(itemId, cancellationToken)
-            ?? throw new DocumentoVersaoException("Item de checklist não encontrado.", 404);
+            ?? throw new DocumentoVersaoException("Recurso não encontrado.", 404);
         var processo = await _processos.GetByIdAsync(item.ProcessoId, cancellationToken)
-            ?? throw new ProcessoException("Processo não encontrado.");
+            ?? throw new DocumentoVersaoException("Recurso não encontrado.", 404);
         var contrato = await _contratos.GetByIdAsync(processo.ContratoId, cancellationToken)
-            ?? throw new ProcessoException("Contrato do processo não encontrado.");
+            ?? throw new DocumentoVersaoException("Recurso não encontrado.", 404);
 
-        if (scopeEmpresaId is not null && contrato.EmpresaId != scopeEmpresaId.Value)
+        if (!await _scopeGuard.AllowsCompanyAsync(scope, contrato.EmpresaId, securityRequest, cancellationToken))
         {
-            throw new EmpresaException("Sem permissão para este item.");
+            throw new DocumentoVersaoException("Recurso não encontrado.", 404);
         }
 
         var versoes = await _versoes.ListByItemAsync(itemId, cancellationToken);
@@ -204,49 +212,53 @@ public sealed class GetVersaoDownloadUseCase
     private readonly IProcessoContratacaoRepository _processos;
     private readonly IContratoRepository _contratos;
     private readonly IObjectStorage _storage;
+    private readonly AccessScopeGuard _scopeGuard;
 
     public GetVersaoDownloadUseCase(
         IDocumentoVersaoRepository versoes,
         IItemChecklistRepository itens,
         IProcessoContratacaoRepository processos,
         IContratoRepository contratos,
-        IObjectStorage storage)
+        IObjectStorage storage,
+        AccessScopeGuard scopeGuard)
     {
         _versoes = versoes;
         _itens = itens;
         _processos = processos;
         _contratos = contratos;
         _storage = storage;
+        _scopeGuard = scopeGuard;
     }
 
     public async Task<DocumentoDownloadResponse> ExecuteAsync(
         Guid versaoId,
-        Guid? scopeEmpresaId,
+        AccessScope scope,
+        SecurityRequestContext securityRequest,
         CancellationToken cancellationToken = default)
     {
-        if (!_storage.IsConfigured)
+        var versao = await _versoes.GetByIdAsync(versaoId, cancellationToken)
+            ?? throw new DocumentoVersaoException("Recurso não encontrado.", 404);
+
+        var item = await _itens.GetByIdAsync(versao.ItemChecklistId, cancellationToken)
+            ?? throw new DocumentoVersaoException("Recurso não encontrado.", 404);
+        var processo = await _processos.GetByIdAsync(item.ProcessoId, cancellationToken)
+            ?? throw new DocumentoVersaoException("Recurso não encontrado.", 404);
+        var contrato = await _contratos.GetByIdAsync(processo.ContratoId, cancellationToken)
+            ?? throw new DocumentoVersaoException("Recurso não encontrado.", 404);
+
+        if (!await _scopeGuard.AllowsCompanyAsync(scope, contrato.EmpresaId, securityRequest, cancellationToken))
         {
-            throw new DocumentoVersaoException("Armazenamento de documentos não configurado (R2).");
+            throw new DocumentoVersaoException("Recurso não encontrado.", 404);
         }
 
-        var versao = await _versoes.GetByIdAsync(versaoId, cancellationToken)
-            ?? throw new DocumentoVersaoException("Versão não encontrada.", 404);
+        if (!_storage.IsConfigured)
+        {
+            throw new DocumentoVersaoException("Armazenamento de documentos não configurado (R2).", 503);
+        }
 
         if (string.IsNullOrWhiteSpace(versao.StorageKey))
         {
-            throw new DocumentoVersaoException("Esta versão não possui arquivo para download.");
-        }
-
-        var item = await _itens.GetByIdAsync(versao.ItemChecklistId, cancellationToken)
-            ?? throw new DocumentoVersaoException("Item de checklist não encontrado.", 404);
-        var processo = await _processos.GetByIdAsync(item.ProcessoId, cancellationToken)
-            ?? throw new ProcessoException("Processo não encontrado.");
-        var contrato = await _contratos.GetByIdAsync(processo.ContratoId, cancellationToken)
-            ?? throw new ProcessoException("Contrato do processo não encontrado.");
-
-        if (scopeEmpresaId is not null && contrato.EmpresaId != scopeEmpresaId.Value)
-        {
-            throw new EmpresaException("Sem permissão para este documento.");
+            throw new DocumentoVersaoException("Recurso não encontrado.", 404);
         }
 
         var validFor = TimeSpan.FromMinutes(15);

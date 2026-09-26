@@ -3,7 +3,6 @@ using JotaNunesForms.Application.DTOs;
 using JotaNunesForms.Application.UseCases.Auth;
 using JotaNunesForms.Domain.Entities;
 using JotaNunesForms.Domain.Ports;
-using Microsoft.Extensions.Configuration;
 
 namespace JotaNunesForms.Application.Tests;
 
@@ -24,6 +23,7 @@ public sealed class LoginUseCaseTests
         Assert.Equal("jwt-token", result.AccessToken);
         Assert.Equal("12345678900", result.Documento);
         Assert.Equal("Analista", result.PerfilRotulo);
+        Assert.Null(result.TipoEmpresa);
     }
 
     [Fact]
@@ -62,6 +62,8 @@ public sealed class LoginUseCaseTests
 
         var result = await useCase.ExecuteAsync(new LoginRequest("portal@empresa.com", "senha123"));
         Assert.Equal("jwt-token", result.AccessToken);
+        Assert.Equal(TipoEmpresa.MaoDeObra, result.TipoEmpresa);
+        Assert.InRange(result.ExpiresAtUtc, DateTime.UtcNow.AddMinutes(59), DateTime.UtcNow.AddMinutes(61));
     }
 
     [Fact]
@@ -101,19 +103,11 @@ public sealed class LoginUseCaseTests
         bool passwordValid,
         string token)
     {
-        var config = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["Jwt:ExpirationMinutes"] = "60",
-            })
-            .Build();
-
         return new LoginUseCase(
             repository,
             empresas,
             new FakePasswordHasher(passwordValid),
-            new FakeTokenGenerator(token),
-            config);
+            new FakeTokenGenerator(token));
     }
 
     private sealed class FakeUsuarioRepository : IUsuarioRepository
@@ -207,6 +201,8 @@ public sealed class LoginUseCaseTests
         private readonly string _token;
 
         public FakeTokenGenerator(string token) => _token = token;
+
+        public int ExpirationMinutes => 60;
 
         public string GenerateAccessToken(Usuario usuario, DateTime utcNow) => _token;
     }

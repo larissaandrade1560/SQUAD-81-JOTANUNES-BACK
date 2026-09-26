@@ -1,4 +1,5 @@
 using JotaNunesForms.Application.DTOs;
+using JotaNunesForms.Application.Auth;
 using JotaNunesForms.Application.Empresas;
 using JotaNunesForms.Application.Obras;
 using JotaNunesForms.Application.Processos;
@@ -138,7 +139,7 @@ public sealed class ListProcessosContratacaoUseCase
         _itens = itens;
     }
 
-    public async Task<IReadOnlyList<ProcessoContratacaoResponse>> ExecuteAsync(
+    private async Task<IReadOnlyList<ProcessoContratacaoResponse>> ExecuteFilteredAsync(
         Guid? empresaId,
         CancellationToken cancellationToken = default)
     {
@@ -164,6 +165,15 @@ public sealed class ListProcessosContratacaoUseCase
 
         return resultado;
     }
+
+    public Task<IReadOnlyList<ProcessoContratacaoResponse>> ExecuteAsync(
+        AccessScope scope,
+        CancellationToken cancellationToken = default) => scope switch
+    {
+        AccessScope.Internal => ExecuteFilteredAsync(null, cancellationToken),
+        AccessScope.Company company => ExecuteFilteredAsync(company.CompanyId, cancellationToken),
+        _ => throw new InvalidIdentityException("Escopo de acesso inválido."),
+    };
 }
 
 public sealed class GetProcessoContratacaoUseCase
@@ -173,30 +183,44 @@ public sealed class GetProcessoContratacaoUseCase
     private readonly ICatalogoRequisitoRepository _catalogo;
     private readonly IItemChecklistRepository _itens;
     private readonly RecalcularSituacaoProcessoUseCase _recalcular;
+    private readonly AccessScopeGuard _scopeGuard;
 
     public GetProcessoContratacaoUseCase(
         IProcessoContratacaoRepository processos,
         IContratoRepository contratos,
         ICatalogoRequisitoRepository catalogo,
         IItemChecklistRepository itens,
-        RecalcularSituacaoProcessoUseCase recalcular)
+        RecalcularSituacaoProcessoUseCase recalcular,
+        AccessScopeGuard scopeGuard)
     {
         _processos = processos;
         _contratos = contratos;
         _catalogo = catalogo;
         _itens = itens;
         _recalcular = recalcular;
+        _scopeGuard = scopeGuard;
     }
 
-    public async Task<ProcessoContratacaoResponse> ExecuteAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<ProcessoContratacaoResponse> ExecuteAsync(
+        Guid id,
+        AccessScope scope,
+        SecurityRequestContext request,
+        CancellationToken cancellationToken = default)
     {
         var processo = await _processos.GetByIdAsync(id, cancellationToken)
             ?? throw new ProcessoException("Processo não encontrado.");
+        var contrato = await _contratos.GetByIdAsync(processo.ContratoId, cancellationToken)
+            ?? throw new ProcessoException("Processo não encontrado.");
+        if (!await _scopeGuard.AllowsCompanyAsync(scope, contrato.EmpresaId, request, cancellationToken))
+        {
+            throw new ProcessoException("Processo não encontrado.");
+        }
+
         await _recalcular.ExecuteAsync(id, cancellationToken);
         processo = await _processos.GetByIdAsync(id, cancellationToken)
             ?? throw new ProcessoException("Processo não encontrado.");
-        var contrato = await _contratos.GetByIdAsync(processo.ContratoId, cancellationToken)
-            ?? throw new ProcessoException("Contrato do processo não encontrado.");
+        contrato = await _contratos.GetByIdAsync(processo.ContratoId, cancellationToken)
+            ?? throw new ProcessoException("Processo não encontrado.");
         var catalogo = await _catalogo.ListAsync(cancellationToken);
         var itens = await _itens.ListByProcessoAsync(processo.Id, cancellationToken);
         return ChecklistMapper.ToResponse(processo, contrato, catalogo, itens);
@@ -211,9 +235,11 @@ public sealed class ListChecklistProcessoUseCase
 
     public async Task<IReadOnlyList<ItemChecklistResponse>> ExecuteAsync(
         Guid processoId,
+        AccessScope scope,
+        SecurityRequestContext request,
         CancellationToken cancellationToken = default)
     {
-        var processo = await _get.ExecuteAsync(processoId, cancellationToken);
+        var processo = await _get.ExecuteAsync(processoId, scope, request, cancellationToken);
         return processo.Checklist;
     }
 }
@@ -344,7 +370,11 @@ public sealed class EncaminharProcessoSetorContratosUseCase
             ?? throw new ProcessoException("Processo não encontrado.");
         processo.EncaminharSetorContratos();
         await _processos.UpdateAsync(processo, cancellationToken);
-        return await _get.ExecuteAsync(id, cancellationToken);
+        return await _get.ExecuteAsync(
+            id,
+            new AccessScope.Internal(),
+            new SecurityRequestContext(string.Empty, "POST", "/api/processos-contratacao/{id}/encaminhar-contratos"),
+            cancellationToken);
     }
 }
 

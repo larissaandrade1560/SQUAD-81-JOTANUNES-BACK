@@ -13,4 +13,6 @@
 
 ## Fora deste MVP
 
-- `/pendencias` agregada (RF18), fila validação real no dashboard (RF20), MO-11 dedicado.
+- ~~`/pendencias` agregada (RF18)~~ — entregue.
+- ~~Fila validação real no dashboard (RF20)~~ — entregue (preview).
+- MO-11 dedicado (opcional).

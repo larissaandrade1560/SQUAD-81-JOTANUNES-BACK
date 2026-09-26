@@ -1,4 +1,5 @@
 using JotaNunesForms.Application.DTOs;
+using JotaNunesForms.Application.Auth;
 using JotaNunesForms.Application.Empresas;
 using JotaNunesForms.Application.Socios;
 using JotaNunesForms.Domain.Entities;
@@ -10,22 +11,42 @@ public sealed class ListSociosUseCase
 {
     private readonly IEmpresaRepository _empresas;
     private readonly ISocioRepository _socios;
+    private readonly AccessScopeGuard _scopeGuard;
 
-    public ListSociosUseCase(IEmpresaRepository empresas, ISocioRepository socios)
+    public ListSociosUseCase(
+        IEmpresaRepository empresas,
+        ISocioRepository socios,
+        AccessScopeGuard scopeGuard)
     {
         _empresas = empresas;
         _socios = socios;
+        _scopeGuard = scopeGuard;
     }
 
     public async Task<IReadOnlyList<SocioResponse>> ExecuteAsync(
         Guid empresaId,
+        AccessScope scope,
+        SecurityRequestContext securityRequest,
         CancellationToken cancellationToken = default)
     {
+        await EnsureCompanyAsync(empresaId, scope, securityRequest, cancellationToken);
         var empresa = await _empresas.GetByIdAsync(empresaId, cancellationToken)
-            ?? throw new EmpresaException("Empresa não encontrada.");
+            ?? throw new SocioException("Recurso não encontrado.", 404);
         _ = empresa;
         var socios = await _socios.ListByEmpresaAsync(empresaId, cancellationToken);
         return socios.OrderBy(s => s.CriadoEm).Select(SocioResponse.FromEntity).ToList();
+    }
+
+    private async Task EnsureCompanyAsync(
+        Guid empresaId,
+        AccessScope scope,
+        SecurityRequestContext securityRequest,
+        CancellationToken cancellationToken)
+    {
+        if (!await _scopeGuard.AllowsCompanyAsync(scope, empresaId, securityRequest, cancellationToken))
+        {
+            throw new SocioException("Recurso não encontrado.", 404);
+        }
     }
 }
 
@@ -35,26 +56,36 @@ public sealed class CreateSocioUseCase
     private readonly ISocioRepository _socios;
     private readonly IProcessoContratacaoRepository _processos;
     private readonly IItemChecklistRepository _itens;
+    private readonly AccessScopeGuard _scopeGuard;
 
     public CreateSocioUseCase(
         IEmpresaRepository empresas,
         ISocioRepository socios,
         IProcessoContratacaoRepository processos,
-        IItemChecklistRepository itens)
+        IItemChecklistRepository itens,
+        AccessScopeGuard scopeGuard)
     {
         _empresas = empresas;
         _socios = socios;
         _processos = processos;
         _itens = itens;
+        _scopeGuard = scopeGuard;
     }
 
     public async Task<SocioResponse> ExecuteAsync(
         Guid empresaId,
         CreateSocioRequest request,
+        AccessScope scope,
+        SecurityRequestContext securityRequest,
         CancellationToken cancellationToken = default)
     {
+        if (!await _scopeGuard.AllowsCompanyAsync(scope, empresaId, securityRequest, cancellationToken))
+        {
+            throw new SocioException("Recurso não encontrado.", 404);
+        }
+
         var empresa = await _empresas.GetByIdAsync(empresaId, cancellationToken)
-            ?? throw new EmpresaException("Empresa não encontrada.");
+            ?? throw new SocioException("Recurso não encontrado.", 404);
 
         string cpf;
         try
@@ -91,24 +122,41 @@ public sealed class UpdateSocioUseCase
 {
     private readonly IEmpresaRepository _empresas;
     private readonly ISocioRepository _socios;
+    private readonly AccessScopeGuard _scopeGuard;
 
-    public UpdateSocioUseCase(IEmpresaRepository empresas, ISocioRepository socios)
+    public UpdateSocioUseCase(
+        IEmpresaRepository empresas,
+        ISocioRepository socios,
+        AccessScopeGuard scopeGuard)
     {
         _empresas = empresas;
         _socios = socios;
+        _scopeGuard = scopeGuard;
     }
 
     public async Task<SocioResponse> ExecuteAsync(
         Guid empresaId,
         Guid socioId,
         UpdateSocioRequest request,
+        AccessScope scope,
+        SecurityRequestContext securityRequest,
         CancellationToken cancellationToken = default)
     {
+        if (!await _scopeGuard.AllowsCompanyAsync(scope, empresaId, securityRequest, cancellationToken))
+        {
+            throw new SocioException("Recurso não encontrado.", 404);
+        }
+
         var empresa = await _empresas.GetByIdAsync(empresaId, cancellationToken)
-            ?? throw new EmpresaException("Empresa não encontrada.");
+            ?? throw new SocioException("Recurso não encontrado.", 404);
 
         var socio = await _socios.GetByIdAsync(socioId, cancellationToken)
             ?? throw new SocioException("Sócio não encontrado.", 404);
+
+        if (!await _scopeGuard.AllowsCompanyAsync(scope, socio.EmpresaId, securityRequest, cancellationToken))
+        {
+            throw new SocioException("Recurso não encontrado.", 404);
+        }
 
         if (socio.EmpresaId != empresa.Id)
         {

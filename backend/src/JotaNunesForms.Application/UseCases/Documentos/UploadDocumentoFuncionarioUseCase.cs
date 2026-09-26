@@ -1,5 +1,6 @@
 using JotaNunesForms.Application.Documentos;
 using JotaNunesForms.Application.DTOs;
+using JotaNunesForms.Application.Auth;
 using JotaNunesForms.Domain.Entities;
 using JotaNunesForms.Domain.Ports;
 
@@ -13,22 +14,26 @@ public sealed class UploadDocumentoFuncionarioUseCase
     private readonly IFuncionarioRepository _funcionarios;
     private readonly IEmpresaRepository _empresas;
     private readonly IObjectStorage _storage;
+    private readonly AccessScopeGuard _scopeGuard;
 
     public UploadDocumentoFuncionarioUseCase(
         IDocumentoFuncionarioRepository documentos,
         IFuncionarioRepository funcionarios,
         IEmpresaRepository empresas,
-        IObjectStorage storage)
+        IObjectStorage storage,
+        AccessScopeGuard scopeGuard)
     {
         _documentos = documentos;
         _funcionarios = funcionarios;
         _empresas = empresas;
         _storage = storage;
+        _scopeGuard = scopeGuard;
     }
 
     public async Task<DocumentoFuncionarioResponse> ExecuteAsync(
         Guid funcionarioId,
-        Guid scopeEmpresaId,
+        AccessScope scope,
+        SecurityRequestContext securityRequest,
         TipoDocumentoFuncionario tipo,
         string nomeArquivo,
         string contentType,
@@ -36,31 +41,36 @@ public sealed class UploadDocumentoFuncionarioUseCase
         Stream conteudo,
         CancellationToken cancellationToken = default)
     {
-        if (!_storage.IsConfigured)
+        if (scope is not AccessScope.Company companyScope || companyScope.Type != TipoEmpresa.MaoDeObra)
         {
-            throw new DocumentoFuncionarioException("Armazenamento de documentos não configurado (R2).");
+            throw new DocumentoFuncionarioException("Acesso não permitido.", 403);
         }
 
         var funcionario = await _funcionarios.GetByIdAsync(funcionarioId, cancellationToken);
         if (funcionario is null)
         {
-            throw new DocumentoFuncionarioException("Funcionário não encontrado.");
+            throw new DocumentoFuncionarioException("Recurso não encontrado.", 404);
         }
 
-        if (funcionario.EmpresaId != scopeEmpresaId)
+        if (!await _scopeGuard.AllowsCompanyAsync(scope, funcionario.EmpresaId, securityRequest, cancellationToken))
         {
-            throw new DocumentoFuncionarioException("Sem permissão para enviar documentos deste funcionário.");
+            throw new DocumentoFuncionarioException("Recurso não encontrado.", 404);
         }
 
         var empresa = await _empresas.GetByIdAsync(funcionario.EmpresaId, cancellationToken);
         if (empresa is null)
         {
-            throw new DocumentoFuncionarioException("Empresa não encontrada.");
+            throw new DocumentoFuncionarioException("Recurso não encontrado.", 404);
         }
 
         if (empresa.Tipo != TipoEmpresa.MaoDeObra)
         {
             throw new DocumentoFuncionarioException("Upload disponível apenas para empresas de Mão de Obra.");
+        }
+
+        if (!_storage.IsConfigured)
+        {
+            throw new DocumentoFuncionarioException("Armazenamento de documentos não configurado (R2).", 503);
         }
 
         if (!Enum.IsDefined(typeof(TipoDocumentoFuncionario), tipo))

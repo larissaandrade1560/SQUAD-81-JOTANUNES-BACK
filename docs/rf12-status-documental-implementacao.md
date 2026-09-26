@@ -57,3 +57,8 @@ Completar o fluxo de status dos documentos empresariais e de funcionários:
 3. Admin aprova → status **Aprovado** com **Válido até**
 4. (Teste) Forçar `valido_ate` no passado no banco → listagem mostra **Vencido**
 5. Terceirizado clica **Nova versão** → volta **Pendente** e entra na fila novamente
+
+## ClickUp / QA
+
+- Card sugerido **Concluído** (código); subtarefa QA para passos 4–5 acima.
+- Texto do card: `docs/clickup/descricoes-tarefas-rf.md` § RF12.

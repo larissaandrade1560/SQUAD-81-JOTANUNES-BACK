@@ -2,7 +2,6 @@ using System.Security.Claims;
 using JotaNunesForms.Application.Auth;
 using JotaNunesForms.Application.Documentos;
 using JotaNunesForms.Application.DTOs;
-using JotaNunesForms.Application.Empresas;
 using JotaNunesForms.Application.Processos;
 using JotaNunesForms.Application.UseCases.Auth;
 using JotaNunesForms.Application.UseCases.Documentos;
@@ -31,29 +30,34 @@ public sealed class ChecklistItensController : ControllerBase
     }
 
     [HttpGet("{itemId:guid}/versoes")]
+    [Authorize(Policy = "InternalOrOwn")]
     public async Task<ActionResult<IReadOnlyList<DocumentoVersaoResponse>>> List(
         Guid itemId,
         CancellationToken cancellationToken)
     {
         try
         {
-            return Ok(await _list.ExecuteAsync(itemId, ScopeEmpresa(), cancellationToken));
+            return Ok(await _list.ExecuteAsync(
+                itemId,
+                UserClaims.GetAccessScope(HttpContext),
+                SecurityRequest("/api/checklist-itens/{itemId}/versoes"),
+                cancellationToken));
         }
         catch (DocumentoVersaoException ex)
         {
-            return StatusCode(ex.StatusCode, new { message = ex.Message });
+            return StatusCode(ex.StatusCode, new
+            {
+                message = ex.StatusCode == 404 ? "Recurso não encontrado." : ex.Message,
+            });
         }
-        catch (EmpresaException)
+        catch (ProcessoException)
         {
-            return Forbid();
-        }
-        catch (ProcessoException ex)
-        {
-            return NotFound(new { message = ex.Message });
+            return NotFound(new { message = "Recurso não encontrado." });
         }
     }
 
     [HttpPost("{itemId:guid}/versoes")]
+    [Authorize(Policy = "InternalOrOwn")]
     [RequestSizeLimit(10 * 1024 * 1024)]
     public async Task<ActionResult<DocumentoVersaoResponse>> Enviar(
         Guid itemId,
@@ -68,7 +72,8 @@ public sealed class ChecklistItensController : ControllerBase
             var created = await _enviar.ExecuteAsync(
                 itemId,
                 usuarioId,
-                ScopeEmpresa(),
+                UserClaims.GetAccessScope(HttpContext),
+                SecurityRequest("/api/checklist-itens/{itemId}/versoes"),
                 arquivo?.FileName,
                 arquivo?.ContentType,
                 arquivo?.Length,
@@ -79,11 +84,10 @@ public sealed class ChecklistItensController : ControllerBase
         }
         catch (DocumentoVersaoException ex)
         {
-            return StatusCode(ex.StatusCode, new { message = ex.Message });
-        }
-        catch (EmpresaException ex)
-        {
-            return StatusCode(403, new { message = ex.Message });
+            return StatusCode(ex.StatusCode, new
+            {
+                message = ex.StatusCode == 404 ? "Recurso não encontrado." : ex.Message,
+            });
         }
         catch (ProcessoException ex)
         {
@@ -95,7 +99,10 @@ public sealed class ChecklistItensController : ControllerBase
         }
     }
 
-    private Guid? ScopeEmpresa() => UserClaims.IsTerceirizado(User) ? UserClaims.GetEmpresaId(User) : null;
+    private SecurityRequestContext SecurityRequest(string route) => new(
+        HttpContext.TraceIdentifier,
+        Request.Method,
+        route);
 
     private async Task<Guid> ResolveUsuarioId(CancellationToken cancellationToken)
     {

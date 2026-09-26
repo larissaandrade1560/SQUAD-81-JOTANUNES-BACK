@@ -43,4 +43,18 @@ public sealed class GetAuthenticatedUserUseCase
 
         return AuthUserResponse.FromUsuario(usuario);
     }
+
+    public async Task<AuthUserResponse> ExecuteAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        var state = await _usuarios.GetSecurityStateByIdAsync(userId, cancellationToken);
+        if (state is null || !state.Usuario.Ativo
+            || (state.Usuario.Perfil == PerfilUsuario.Terceirizado && state.EmpresaAtiva != true))
+        {
+            throw new AuthException("Sessão inválida.");
+        }
+
+        return AuthUserResponse.FromUsuario(state.Usuario, state.EmpresaTipo);
+    }
 }
