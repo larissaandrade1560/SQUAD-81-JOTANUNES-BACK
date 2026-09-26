@@ -1,7 +1,7 @@
-using System.Data;
 using JotaNunesForms.Domain.Entities;
 using JotaNunesForms.Domain.Ports;
 using JotaNunesForms.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
 namespace JotaNunesForms.Infrastructure.Auth;
@@ -29,9 +29,7 @@ public sealed class AdminBootstrapper(
 
         try
         {
-            await using var transaction = await dbContext.Database.BeginTransactionAsync(
-                IsolationLevel.Serializable,
-                cancellationToken);
+            await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
 
             if (await usuarios.AnyAsync(cancellationToken))
             {
