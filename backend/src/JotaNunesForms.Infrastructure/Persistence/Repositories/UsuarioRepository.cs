@@ -19,6 +19,18 @@ public sealed class UsuarioRepository : IUsuarioRepository
             .AsNoTracking()
             .FirstOrDefaultAsync(u => u.Documento == documento, cancellationToken);
 
+    public Task<Usuario?> GetByEmailAsync(string email, CancellationToken cancellationToken = default) =>
+        _dbContext.Usuarios
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
+
+    public Task<Usuario?> GetTerceirizadoByEmpresaAsync(
+        Guid empresaId,
+        CancellationToken cancellationToken = default) =>
+        _dbContext.Usuarios.FirstOrDefaultAsync(
+            u => u.EmpresaId == empresaId && u.Perfil == PerfilUsuario.Terceirizado,
+            cancellationToken);
+
     public Task<Usuario?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
         _dbContext.Usuarios.FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
 
@@ -41,6 +53,20 @@ public sealed class UsuarioRepository : IUsuarioRepository
         if (excludeUserId is not null)
         {
             query = query.Where(u => u.Id != excludeUserId.Value);
+        }
+
+        return query.AnyAsync(cancellationToken);
+    }
+
+    public Task<bool> ExistsEmailAsync(
+        string email,
+        Guid? excludeUsuarioId = null,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _dbContext.Usuarios.AsNoTracking().Where(u => u.Email == email);
+        if (excludeUsuarioId is not null)
+        {
+            query = query.Where(u => u.Id != excludeUsuarioId.Value);
         }
 
         return query.AnyAsync(cancellationToken);

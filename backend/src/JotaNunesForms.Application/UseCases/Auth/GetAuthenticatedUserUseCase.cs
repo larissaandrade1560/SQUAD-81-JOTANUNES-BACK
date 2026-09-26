@@ -1,5 +1,6 @@
 using JotaNunesForms.Application.Auth;
 using JotaNunesForms.Application.DTOs;
+using JotaNunesForms.Domain.Entities;
 using JotaNunesForms.Domain.Ports;
 
 namespace JotaNunesForms.Application.UseCases.Auth;
@@ -14,10 +15,26 @@ public sealed class GetAuthenticatedUserUseCase
     }
 
     public async Task<AuthUserResponse> ExecuteAsync(
-        string documento,
+        string subject,
         CancellationToken cancellationToken = default)
     {
-        var usuario = await _usuarios.GetByDocumentoAsync(documento, cancellationToken);
+        Usuario? usuario;
+        if (subject.Contains('@', StringComparison.Ordinal))
+        {
+            try
+            {
+                var email = Usuario.NormalizeEmail(subject);
+                usuario = await _usuarios.GetByEmailAsync(email, cancellationToken);
+            }
+            catch (ArgumentException)
+            {
+                throw new AuthException("Sessão inválida.");
+            }
+        }
+        else
+        {
+            usuario = await _usuarios.GetByDocumentoAsync(subject, cancellationToken);
+        }
 
         if (usuario is null || !usuario.Ativo)
         {

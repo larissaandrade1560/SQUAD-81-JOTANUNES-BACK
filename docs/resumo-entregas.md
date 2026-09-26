@@ -4,6 +4,10 @@ Documento consolidado até **20/09/2026**. Detalhes por RF em `docs/rf*-implemen
 
 **Repositório:** `SQUAD-81-JOTANUNES-BACK` · branch **`develop`**
 
+Fluxo dinâmico de documentos (US1–US3): spec em `specs/002-fluxo-documentos/` · **como testar:** [`docs/fluxo-documentos-como-testar.md`](./fluxo-documentos-como-testar.md).
+
+Convite de empresas terceirizadas (e-mail, link de senha, login por e-mail): spec em [`specs/003-convite-terceirizadas/spec.md`](../specs/003-convite-terceirizadas/spec.md) · quickstart em `specs/003-convite-terceirizadas/quickstart.md`.
+
 ---
 
 ## Ambiente de produção
@@ -141,14 +145,14 @@ Reenvio de PDF substituindo arquivo rejeitado (empresa e funcionário); estende 
 ### RF18 — Consulta de pendências
 
 - `GET /api/pendencias` + tela `/pendencias` (irregularidades documentais e comprovantes).
-- → `docs/rf18-pendencias-implementacao.md` (**aguarda deploy API + Pages**)
+- → `docs/rf18-pendencias-implementacao.md` — **entregue e validado prod** (`f46eb1f`).
 
-### RF17 / RF19 — pendentes
+### RF17 / RF19 — pendentes (spec no repo)
 
-| RF | Escopo |
-|----|--------|
-| RF17 | `/auditoria` — histórico de versões de documentos |
-| RF19 | Consulta por obra (alocações) |
+| RF | Escopo | Spec |
+|----|--------|------|
+| RF17 | `/auditoria` — eventos documentais | `docs/rf17-auditoria-implementacao.md` |
+| RF19 | Consulta por obra (evoluir `ObrasPage` / T-32) | `docs/rf19-consulta-obra-implementacao.md` |
 
 ---
 
@@ -217,14 +221,12 @@ Reenvio de PDF substituindo arquivo rejeitado (empresa e funcionário); estende 
 
 | Prioridade | Item |
 |------------|------|
-| RF16 | **MVP entregue** — ver `docs/rf16-alertas-comprovante-implementacao.md` |
-| RF20 | **Parcial entregue** — fila + métrica documentos — ver `docs/rf20-dashboard-parcial-implementacao.md` |
-| RF18 | **Implementado local** — ver `docs/rf18-pendencias-implementacao.md` (deploy pendente) |
-| RF17 / RF19 | Auditoria e consulta por obra |
-| RF12 E2E | Cenário vencido + nova versão (seed ou SQL em `valido_ate`) |
-| RF13/14 E2E | Cenários **Em atraso** e **Enviado em atraso** |
-| ClickUp | Atribuir RF11–RF14 concluídos a Matheus — ver `docs/clickup/atribuicao-matheus-2026-09-19.md` e `docs/clickup/kanban-squad81.md` |
-| Produto | Aprovação formal de comprovantes — **PENDENTE** (só consulta/rastreio hoje) |
+| RF17 / RF19 | Spec em `docs/rf17-*` / `docs/rf19-*`; ClickUp: `docs/clickup/descricoes-tarefas-rf.md` |
+| RF20 | Completar indicadores — `docs/rf20-dashboard-parcial-implementacao.md` |
+| RF12 E2E | Cenário vencido + nova versão |
+| RF13/14 E2E | Em atraso / Enviado em atraso |
+| ClickUp | Atualizar status cards RF11–RF18 → Concluído (textos em `docs/clickup/descricoes-tarefas-rf.md`) |
+| Produto | Aprovação formal de comprovantes — **PENDENTE** |
 
 ---
 
@@ -233,3 +235,4 @@ Reenvio de PDF substituindo arquivo rejeitado (empresa e funcionário); estende 
 - Requisitos: `docs/requisitos/requisitos-funcionais.md`
 - Mapa de telas: `docs/requisitos/mapa-de-telas.md`
 - Kanban: `docs/clickup/kanban-squad81.md`
+- **ClickUp (descrições dos cards):** `docs/clickup/descricoes-tarefas-rf.md`

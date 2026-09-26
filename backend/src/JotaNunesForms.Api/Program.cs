@@ -52,6 +52,10 @@ builder.Services.AddAuthorization(options =>
         policy.RequireClaim("perfil", "Administrador"));
     options.AddPolicy("Terceirizado", policy =>
         policy.RequireClaim("perfil", "Terceirizado"));
+    options.AddPolicy("Interno", policy =>
+        policy.RequireAssertion(ctx =>
+            ctx.User.HasClaim("perfil", "Administrador")
+            || ctx.User.HasClaim("perfil", "Analista")));
 });
 
 var corsOrigins = builder.Configuration["Cors:Origins"]?

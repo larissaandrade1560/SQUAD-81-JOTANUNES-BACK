@@ -14,6 +14,8 @@ public sealed class JotaNunesFormsDbContext : DbContext
 
     public DbSet<Usuario> Usuarios => Set<Usuario>();
 
+    public DbSet<ConviteAcesso> ConvitesAcesso => Set<ConviteAcesso>();
+
     public DbSet<Empresa> Empresas => Set<Empresa>();
 
     public DbSet<Obra> Obras => Set<Obra>();

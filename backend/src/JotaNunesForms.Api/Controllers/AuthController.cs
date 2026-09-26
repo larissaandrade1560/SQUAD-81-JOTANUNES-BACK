@@ -1,7 +1,9 @@
 using System.Security.Claims;
 using JotaNunesForms.Application.Auth;
+using JotaNunesForms.Application.Convites;
 using JotaNunesForms.Application.DTOs;
 using JotaNunesForms.Application.UseCases.Auth;
+using JotaNunesForms.Application.UseCases.Convites;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -13,11 +15,19 @@ public sealed class AuthController : ControllerBase
 {
     private readonly LoginUseCase _login;
     private readonly GetAuthenticatedUserUseCase _getAuthenticatedUser;
+    private readonly ValidarTokenConviteUseCase _validarConvite;
+    private readonly DefinirSenhaConviteUseCase _definirSenhaConvite;
 
-    public AuthController(LoginUseCase login, GetAuthenticatedUserUseCase getAuthenticatedUser)
+    public AuthController(
+        LoginUseCase login,
+        GetAuthenticatedUserUseCase getAuthenticatedUser,
+        ValidarTokenConviteUseCase validarConvite,
+        DefinirSenhaConviteUseCase definirSenhaConvite)
     {
         _login = login;
         _getAuthenticatedUser = getAuthenticatedUser;
+        _validarConvite = validarConvite;
+        _definirSenhaConvite = definirSenhaConvite;
     }
 
     [HttpPost("login")]
@@ -57,6 +67,40 @@ public sealed class AuthController : ControllerBase
         catch (AuthException ex)
         {
             return Unauthorized(new { message = ex.Message });
+        }
+    }
+
+    [HttpGet("convites/{token}")]
+    [AllowAnonymous]
+    public async Task<ActionResult<TokenConviteResponse>> ValidarConvite(
+        string token,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return Ok(await _validarConvite.ExecuteAsync(token, cancellationToken));
+        }
+        catch (ConviteException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpPost("convites/{token}/senha")]
+    [AllowAnonymous]
+    public async Task<IActionResult> DefinirSenhaConvite(
+        string token,
+        [FromBody] DefinirSenhaConviteRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _definirSenhaConvite.ExecuteAsync(token, request, cancellationToken);
+            return NoContent();
+        }
+        catch (ConviteException ex)
+        {
+            return BadRequest(new { message = ex.Message });
         }
     }
 }

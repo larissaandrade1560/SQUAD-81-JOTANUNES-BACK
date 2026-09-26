@@ -54,6 +54,14 @@ public sealed class CreateUsuarioUseCaseTests
         public Task<Usuario?> GetByDocumentoAsync(string documento, CancellationToken cancellationToken = default) =>
             Task.FromResult<Usuario?>(null);
 
+        public Task<Usuario?> GetByEmailAsync(string email, CancellationToken cancellationToken = default) =>
+            Task.FromResult<Usuario?>(null);
+
+        public Task<Usuario?> GetTerceirizadoByEmpresaAsync(
+            Guid empresaId,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult<Usuario?>(null);
+
         public Task<Usuario?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
             Task.FromResult<Usuario?>(null);
 
@@ -68,6 +76,12 @@ public sealed class CreateUsuarioUseCaseTests
             Guid? excludeUserId = null,
             CancellationToken cancellationToken = default) =>
             Task.FromResult(_existingDocumento is not null && documento == _existingDocumento);
+
+        public Task<bool> ExistsEmailAsync(
+            string email,
+            Guid? excludeUsuarioId = null,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult(false);
 
         public Task AddAsync(Usuario usuario, CancellationToken cancellationToken = default)
         {

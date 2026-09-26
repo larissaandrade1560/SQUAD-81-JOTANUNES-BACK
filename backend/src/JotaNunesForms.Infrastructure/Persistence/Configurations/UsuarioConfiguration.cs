@@ -23,10 +23,21 @@ public sealed class UsuarioConfiguration : IEntityTypeConfiguration<Usuario>
         builder.HasIndex(u => u.Documento)
             .IsUnique();
 
+        builder.HasIndex(u => u.EmpresaId)
+            .IsUnique()
+            .HasFilter("perfil = 'Terceirizado' AND empresa_id IS NOT NULL");
+
+        builder.Property(u => u.Email)
+            .HasColumnName("email")
+            .HasMaxLength(320);
+
+        builder.HasIndex(u => u.Email)
+            .IsUnique()
+            .HasFilter("email IS NOT NULL");
+
         builder.Property(u => u.PasswordHash)
             .HasColumnName("password_hash")
-            .HasMaxLength(200)
-            .IsRequired();
+            .HasMaxLength(200);
 
         builder.Property(u => u.NomeExibicao)
             .HasColumnName("nome_exibicao")

@@ -12,7 +12,7 @@ describe('LoginCard', () => {
     const user = userEvent.setup()
     const onSubmit = vi.fn()
     render(<LoginCard onSubmit={onSubmit} />)
-    await user.type(screen.getByLabelText(/CPF ou CNPJ/i), '123')
+    await user.type(screen.getByLabelText(/CPF, CNPJ ou e-mail/i), '123')
     await user.type(screen.getByLabelText(/Senha/i), 'secret')
     await user.click(screen.getByRole('button', { name: /Acessar/i }))
     expect(onSubmit).toHaveBeenCalledWith({ document: '123', password: 'secret' })

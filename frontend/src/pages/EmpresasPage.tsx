@@ -11,6 +11,11 @@ import {
   updateEmpresa,
   type EmpresaApi,
 } from '../services/empresasService'
+import {
+  convidarEmpresa,
+  getAcessoEmpresa,
+  type AcessoEmpresaApi,
+} from '../services/convitesService'
 import { createSocio, formatCpf, listSocios, type SocioApi } from '../services/sociosService'
 import { getSession } from '../store/authStorage'
 import './EmpresasPage.css'
@@ -40,9 +45,18 @@ function apiErrorMessage(err: unknown): string {
 }
 
 /** RF02/RF03 — Cadastro e classificação de empresas terceirizadas. */
+function acessoBadgeTone(situacao: AcessoEmpresaApi['situacao']): 'success' | 'warning' | 'neutral' {
+  if (situacao === 'Ativo') return 'success'
+  if (situacao === 'Pendente') return 'warning'
+  return 'neutral'
+}
+
 export function EmpresasPage() {
-  const isAdmin = getSession()?.role === 'admin'
+  const session = getSession()
+  const isAdmin = session?.role === 'admin'
+  const canConvidar = session?.role === 'admin' || session?.role === 'analista'
   const [empresas, setEmpresas] = useState<EmpresaApi[]>([])
+  const [acessos, setAcessos] = useState<Record<string, AcessoEmpresaApi>>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | undefined>()
   const [formMode, setFormMode] = useState<FormMode | null>(null)
@@ -56,18 +70,40 @@ export function EmpresasPage() {
   const [socioCpf, setSocioCpf] = useState('')
   const [socioError, setSocioError] = useState<string | undefined>()
   const [savingSocio, setSavingSocio] = useState(false)
+  const [inviteEmpresa, setInviteEmpresa] = useState<EmpresaApi | null>(null)
+  const [inviteEmail, setInviteEmail] = useState('')
+  const [inviteError, setInviteError] = useState<string | undefined>()
+  const [savingInvite, setSavingInvite] = useState(false)
+
+  const loadAcessos = useCallback(async (lista: EmpresaApi[]) => {
+    const entries = await Promise.all(
+      lista.map(async (empresa) => {
+        try {
+          const acesso = await getAcessoEmpresa(empresa.id)
+          return [empresa.id, acesso] as const
+        } catch {
+          return [empresa.id, { empresaId: empresa.id, email: null, situacao: 'Nenhum' }] as const
+        }
+      }),
+    )
+    setAcessos(Object.fromEntries(entries))
+  }, [])
 
   const load = useCallback(async () => {
     setLoading(true)
     setError(undefined)
     try {
-      setEmpresas(await listEmpresas())
+      const lista = await listEmpresas()
+      setEmpresas(lista)
+      if (canConvidar) {
+        await loadAcessos(lista)
+      }
     } catch (err) {
       setError(apiErrorMessage(err))
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [canConvidar, loadAcessos])
 
   useEffect(() => {
     void load()
@@ -130,6 +166,28 @@ export function EmpresasPage() {
     setEditingId(null)
     setForm(emptyForm)
     setFormError(undefined)
+  }
+
+  function openInvite(empresa: EmpresaApi) {
+    setInviteEmpresa(empresa)
+    setInviteEmail(empresa.emailContato ?? acessos[empresa.id]?.email ?? '')
+    setInviteError(undefined)
+  }
+
+  async function handleInviteSubmit(event: React.FormEvent) {
+    event.preventDefault()
+    if (!inviteEmpresa) return
+    setSavingInvite(true)
+    setInviteError(undefined)
+    try {
+      await convidarEmpresa(inviteEmpresa.id, inviteEmail.trim())
+      setInviteEmpresa(null)
+      await load()
+    } catch (err) {
+      setInviteError(apiErrorMessage(err))
+    } finally {
+      setSavingInvite(false)
+    }
   }
 
   async function handleSubmit(event: React.FormEvent) {
@@ -197,14 +255,18 @@ export function EmpresasPage() {
                 <th scope="col">Tipo</th>
                 <th scope="col">Contato</th>
                 <th scope="col">Status</th>
+                {canConvidar && <th scope="col">Acesso portal</th>}
                 {isAdmin && <th scope="col">Ações</th>}
+                {canConvidar && <th scope="col">Convite</th>}
                 <th scope="col">Quadro</th>
               </tr>
             </thead>
             <tbody>
               {empresas.length === 0 ? (
                 <tr>
-                  <td colSpan={isAdmin ? 7 : 6}>Nenhuma empresa cadastrada.</td>
+                  <td colSpan={isAdmin ? (canConvidar ? 9 : 7) : canConvidar ? 8 : 6}>
+                    Nenhuma empresa cadastrada.
+                  </td>
                 </tr>
               ) : (
                 empresas.map((empresa) => (
@@ -218,10 +280,29 @@ export function EmpresasPage() {
                         {empresa.ativo ? 'Ativa' : 'Inativa'}
                       </Badge>
                     </td>
+                    {canConvidar && (
+                      <td>
+                        <Badge tone={acessoBadgeTone(acessos[empresa.id]?.situacao ?? 'Nenhum')}>
+                          {acessos[empresa.id]?.situacao ?? 'Nenhum'}
+                        </Badge>
+                      </td>
+                    )}
                     {isAdmin && (
                       <td>
                         <Button type="button" variant="ghost" onClick={() => openEdit(empresa)}>
                           Editar
+                        </Button>
+                      </td>
+                    )}
+                    {canConvidar && (
+                      <td>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          onClick={() => openInvite(empresa)}
+                          disabled={!empresa.ativo}
+                        >
+                          {acessos[empresa.id]?.situacao === 'Nenhum' ? 'Convidar' : 'Reenviar convite'}
                         </Button>
                       </td>
                     )}
@@ -342,6 +423,37 @@ export function EmpresasPage() {
               </Button>
               <Button type="submit" variant="primary" disabled={saving}>
                 {saving ? 'Salvando…' : 'Salvar'}
+              </Button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {inviteEmpresa && canConvidar && (
+        <div className="jn-empresas__dialog" role="dialog" aria-modal="true">
+          <form className="jn-empresas__form" onSubmit={(e) => void handleInviteSubmit(e)}>
+            <h2 className="jn-empresas__form-title">
+              {acessos[inviteEmpresa.id]?.situacao === 'Nenhum' ? 'Convidar empresa' : 'Reenviar convite'} —{' '}
+              {inviteEmpresa.razaoSocial}
+            </h2>
+            <FormField
+              id="convite-email"
+              label="E-mail para acesso"
+              error={inviteError}
+              inputProps={{
+                name: 'inviteEmail',
+                type: 'email',
+                required: true,
+                value: inviteEmail,
+                onChange: (e) => setInviteEmail(e.target.value),
+              }}
+            />
+            <div className="jn-empresas__form-actions">
+              <Button type="button" variant="ghost" onClick={() => setInviteEmpresa(null)}>
+                Cancelar
+              </Button>
+              <Button type="submit" variant="primary" disabled={savingInvite}>
+                {savingInvite ? 'Enviando…' : 'Enviar convite'}
               </Button>
             </div>
           </form>

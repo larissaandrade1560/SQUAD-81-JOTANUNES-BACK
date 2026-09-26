@@ -6,6 +6,12 @@ public interface IUsuarioRepository
 {
     Task<Usuario?> GetByDocumentoAsync(string documento, CancellationToken cancellationToken = default);
 
+    Task<Usuario?> GetByEmailAsync(string email, CancellationToken cancellationToken = default);
+
+    Task<Usuario?> GetTerceirizadoByEmpresaAsync(
+        Guid empresaId,
+        CancellationToken cancellationToken = default);
+
     Task<Usuario?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<Usuario>> ListAsync(CancellationToken cancellationToken = default);
@@ -15,6 +21,11 @@ public interface IUsuarioRepository
     Task<bool> ExistsDocumentoAsync(
         string documento,
         Guid? excludeUserId = null,
+        CancellationToken cancellationToken = default);
+
+    Task<bool> ExistsEmailAsync(
+        string email,
+        Guid? excludeUsuarioId = null,
         CancellationToken cancellationToken = default);
 
     Task AddAsync(Usuario usuario, CancellationToken cancellationToken = default);

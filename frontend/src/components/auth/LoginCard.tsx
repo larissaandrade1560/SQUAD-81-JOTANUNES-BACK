@@ -42,11 +42,11 @@ export function LoginCard({ onSubmit, error, submitting = false }: LoginCardProp
       <form className="jn-login-card__form" onSubmit={handleSubmit}>
         <FormField
           id="document"
-          label="CPF ou CNPJ"
+          label="CPF, CNPJ ou e-mail"
           error={error}
           inputProps={{
             name: 'document',
-            placeholder: 'CPF ou CNPJ',
+            placeholder: 'CPF, CNPJ ou e-mail',
             autoComplete: 'username',
             required: true,
             value: documentValue,

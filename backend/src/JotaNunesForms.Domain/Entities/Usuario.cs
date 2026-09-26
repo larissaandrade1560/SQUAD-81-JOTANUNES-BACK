@@ -6,7 +6,9 @@ public sealed class Usuario
 
     public string Documento { get; private set; } = string.Empty;
 
-    public string PasswordHash { get; private set; } = string.Empty;
+    public string? Email { get; private set; }
+
+    public string? PasswordHash { get; private set; }
 
     public string NomeExibicao { get; private set; } = string.Empty;
 
@@ -29,10 +31,51 @@ public sealed class Usuario
     {
         Id = Guid.NewGuid();
         Documento = NormalizeDocumento(documento);
-        PasswordHash = passwordHash;
+        PasswordHash = string.IsNullOrWhiteSpace(passwordHash) ? null : passwordHash;
         NomeExibicao = nomeExibicao.Trim();
         Perfil = perfil;
         DefinirVinculoEmpresa(perfil, empresaId);
+        Ativo = perfil != PerfilUsuario.Terceirizado || PasswordHash is not null;
+    }
+
+    public static Usuario CriarTerceirizadoParaConvite(
+        string cnpj,
+        string nomeExibicao,
+        Guid empresaId) =>
+        new(cnpj, string.Empty, nomeExibicao, PerfilUsuario.Terceirizado, empresaId);
+
+    public bool UsaLoginPorEmail =>
+        Perfil == PerfilUsuario.Terceirizado && !string.IsNullOrWhiteSpace(Email);
+
+    public static string NormalizeEmail(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            throw new ArgumentException("E-mail é obrigatório.", nameof(email));
+        }
+
+        var normalized = email.Trim().ToLowerInvariant();
+        var at = normalized.IndexOf('@');
+        if (at <= 0 || at == normalized.Length - 1 || normalized.IndexOf('@', at + 1) >= 0)
+        {
+            throw new ArgumentException("E-mail inválido.", nameof(email));
+        }
+
+        var domain = normalized[(at + 1)..];
+        if (!domain.Contains('.', StringComparison.Ordinal))
+        {
+            throw new ArgumentException("E-mail inválido.", nameof(email));
+        }
+
+        return normalized;
+    }
+
+    public void DefinirEmailConvite(string email) =>
+        Email = NormalizeEmail(email);
+
+    public void AtivarComSenha(string passwordHash)
+    {
+        AlterarSenha(passwordHash);
         Ativo = true;
     }
 
@@ -91,6 +134,8 @@ public sealed class Usuario
 
         PasswordHash = passwordHash;
     }
+
+    public bool PossuiSenhaDefinida => !string.IsNullOrEmpty(PasswordHash);
 
     public string PerfilRotulo =>
         Perfil switch

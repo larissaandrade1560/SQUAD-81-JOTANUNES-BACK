@@ -8,18 +8,23 @@ namespace JotaNunesForms.Application.UseCases.Auth;
 
 public sealed class LoginUseCase
 {
+    private const string MensagemInvalida = "CPF/CNPJ, e-mail ou senha inválidos.";
+
     private readonly IUsuarioRepository _usuarios;
+    private readonly IEmpresaRepository _empresas;
     private readonly IPasswordHasher _passwordHasher;
     private readonly IJwtTokenGenerator _tokenGenerator;
     private readonly IConfiguration _configuration;
 
     public LoginUseCase(
         IUsuarioRepository usuarios,
+        IEmpresaRepository empresas,
         IPasswordHasher passwordHasher,
         IJwtTokenGenerator tokenGenerator,
         IConfiguration configuration)
     {
         _usuarios = usuarios;
+        _empresas = empresas;
         _passwordHasher = passwordHasher;
         _tokenGenerator = tokenGenerator;
         _configuration = configuration;
@@ -31,15 +36,56 @@ public sealed class LoginUseCase
     {
         if (string.IsNullOrWhiteSpace(request.Documento) || string.IsNullOrWhiteSpace(request.Senha))
         {
-            throw new AuthException("Informe CPF/CNPJ e senha.");
+            throw new AuthException(MensagemInvalida);
         }
 
-        var documento = Usuario.NormalizeDocumento(request.Documento);
-        var usuario = await _usuarios.GetByDocumentoAsync(documento, cancellationToken);
+        var identifier = request.Documento.Trim();
+        Usuario? usuario;
 
-        if (usuario is null || !usuario.Ativo || !_passwordHasher.Verify(request.Senha, usuario.PasswordHash))
+        if (identifier.Contains('@', StringComparison.Ordinal))
         {
-            throw new AuthException("CPF/CNPJ ou senha inválidos.");
+            try
+            {
+                var email = Usuario.NormalizeEmail(identifier);
+                usuario = await _usuarios.GetByEmailAsync(email, cancellationToken);
+            }
+            catch (ArgumentException)
+            {
+                throw new AuthException(MensagemInvalida);
+            }
+        }
+        else
+        {
+            try
+            {
+                var documento = Usuario.NormalizeDocumento(identifier);
+                usuario = await _usuarios.GetByDocumentoAsync(documento, cancellationToken);
+                if (usuario?.UsaLoginPorEmail == true)
+                {
+                    throw new AuthException(MensagemInvalida);
+                }
+            }
+            catch (ArgumentException)
+            {
+                throw new AuthException(MensagemInvalida);
+            }
+        }
+
+        if (usuario is null
+            || !usuario.Ativo
+            || !usuario.PossuiSenhaDefinida
+            || !_passwordHasher.Verify(request.Senha, usuario.PasswordHash!))
+        {
+            throw new AuthException(MensagemInvalida);
+        }
+
+        if (usuario.Perfil == PerfilUsuario.Terceirizado && usuario.EmpresaId is Guid empresaId)
+        {
+            var empresa = await _empresas.GetByIdAsync(empresaId, cancellationToken);
+            if (empresa is null || !empresa.Ativo)
+            {
+                throw new AuthException(MensagemInvalida);
+            }
         }
 
         var utcNow = DateTime.UtcNow;

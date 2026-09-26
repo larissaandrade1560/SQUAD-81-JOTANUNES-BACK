@@ -1,11 +1,14 @@
 using JotaNunesForms.Domain.Ports;
 using JotaNunesForms.Infrastructure.Auth;
+using JotaNunesForms.Infrastructure.Email;
 using JotaNunesForms.Infrastructure.Persistence;
 using JotaNunesForms.Infrastructure.Persistence.Repositories;
 using JotaNunesForms.Infrastructure.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 
 namespace JotaNunesForms.Infrastructure;
 
@@ -32,6 +35,7 @@ public static class DependencyInjection
 
         services.AddScoped<IFormularioRepository, FormularioRepository>();
         services.AddScoped<IUsuarioRepository, UsuarioRepository>();
+        services.AddScoped<IConviteAcessoRepository, ConviteAcessoRepository>();
         services.AddScoped<IEmpresaRepository, EmpresaRepository>();
         services.AddScoped<IObraRepository, ObraRepository>();
         services.AddScoped<IFuncionarioRepository, FuncionarioRepository>();
@@ -47,9 +51,29 @@ public static class DependencyInjection
         services.AddScoped<IDocumentoVersaoRepository, DocumentoVersaoRepository>();
         services.AddScoped<IMobilizacaoRepository, MobilizacaoRepository>();
         services.Configure<R2StorageOptions>(configuration.GetSection("R2"));
+        services.Configure<EmailOptions>(configuration.GetSection("Email"));
         services.AddSingleton<IObjectStorage, R2ObjectStorage>();
         services.AddSingleton<IPasswordHasher, BcryptPasswordHasher>();
         services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
+        services.AddSingleton<IEmailSender>(sp =>
+        {
+            var emailOptions = sp.GetRequiredService<IOptions<EmailOptions>>().Value;
+            if (emailOptions.IsConfigured)
+            {
+                return sp.GetRequiredService<MailKitEmailSender>();
+            }
+
+            var environment = sp.GetRequiredService<IHostEnvironment>();
+            if (environment.IsDevelopment())
+            {
+                return sp.GetRequiredService<LoggingEmailSender>();
+            }
+
+            return sp.GetRequiredService<UnavailableEmailSender>();
+        });
+        services.AddSingleton<MailKitEmailSender>();
+        services.AddSingleton<LoggingEmailSender>();
+        services.AddSingleton<UnavailableEmailSender>();
 
         return services;
     }

@@ -5,6 +5,7 @@ import { DocumentosEmpresaPage } from '../pages/DocumentosEmpresaPage'
 import { FuncionarioDocumentosPage } from '../pages/FuncionarioDocumentosPage'
 import { EmpresasPage } from '../pages/EmpresasPage'
 import { FuncionariosPage } from '../pages/FuncionariosPage'
+import { DefinirSenhaPage } from '../pages/DefinirSenhaPage'
 import { LoginPage } from '../pages/LoginPage'
 import { ModulePlaceholderPage } from '../pages/ModulePlaceholderPage'
 import { PagamentosPage } from '../pages/PagamentosPage'
@@ -31,6 +32,11 @@ export const router = createBrowserRouter([
     path: '/login',
     element: <AuthLayout />,
     children: [{ index: true, element: <LoginPage /> }],
+  },
+  {
+    path: '/definir-senha',
+    element: <AuthLayout />,
+    children: [{ index: true, element: <DefinirSenhaPage /> }],
   },
   {
     element: <ProtectedRoute />,

@@ -1,4 +1,5 @@
 using JotaNunesForms.Application.UseCases.Auth;
+using JotaNunesForms.Application.UseCases.Convites;
 using JotaNunesForms.Application.UseCases.Dashboard;
 using JotaNunesForms.Application.UseCases.Documentos;
 using JotaNunesForms.Application.UseCases.Formularios;
@@ -33,6 +34,10 @@ public static class DependencyInjection
         services.AddScoped<GetEmpresaUseCase>();
         services.AddScoped<CreateEmpresaUseCase>();
         services.AddScoped<UpdateEmpresaUseCase>();
+        services.AddScoped<ConvidarEmpresaUseCase>();
+        services.AddScoped<ValidarTokenConviteUseCase>();
+        services.AddScoped<DefinirSenhaConviteUseCase>();
+        services.AddScoped<GetAcessoEmpresaUseCase>();
         services.AddScoped<ListObrasUseCase>();
         services.AddScoped<GetObraUseCase>();
         services.AddScoped<CreateObraUseCase>();

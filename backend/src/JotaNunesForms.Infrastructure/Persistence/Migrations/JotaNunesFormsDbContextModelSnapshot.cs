@@ -72,6 +72,11 @@ namespace JotaNunesForms.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(32)")
                         .HasColumnName("documento");
 
+                    b.Property<string>("Email")
+                        .HasMaxLength(320)
+                        .HasColumnType("character varying(320)")
+                        .HasColumnName("email");
+
                     b.Property<string>("NomeExibicao")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -79,7 +84,6 @@ namespace JotaNunesForms.Infrastructure.Persistence.Migrations
                         .HasColumnName("nome_exibicao");
 
                     b.Property<string>("PasswordHash")
-                        .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)")
                         .HasColumnName("password_hash");
@@ -95,9 +99,76 @@ namespace JotaNunesForms.Infrastructure.Persistence.Migrations
                     b.HasIndex("Documento")
                         .IsUnique();
 
-                    b.HasIndex("EmpresaId");
+                    b.HasIndex("Email")
+                        .IsUnique()
+                        .HasFilter("email IS NOT NULL");
+
+                    b.HasIndex("EmpresaId")
+                        .IsUnique()
+                        .HasFilter("perfil = 'Terceirizado' AND empresa_id IS NOT NULL");
 
                     b.ToTable("usuarios", (string)null);
+                });
+
+            modelBuilder.Entity("JotaNunesForms.Domain.Entities.ConviteAcesso", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ConvidadoPorUsuarioId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("convidado_por_usuario_id");
+
+                    b.Property<DateTime>("CriadoEm")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("criado_em");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(320)
+                        .HasColumnType("character varying(320)")
+                        .HasColumnName("email");
+
+                    b.Property<Guid>("EmpresaId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("empresa_id");
+
+                    b.Property<DateTime>("ExpiraEm")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expira_em");
+
+                    b.Property<DateTime?>("InvalidadoEm")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("invalidado_em");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("token_hash");
+
+                    b.Property<Guid>("UsuarioId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("usuario_id");
+
+                    b.Property<DateTime?>("UsadoEm")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("usado_em");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.HasIndex("ConvidadoPorUsuarioId");
+
+                    b.HasIndex("EmpresaId", "CriadoEm");
+
+                    b.HasIndex("UsuarioId");
+
+                    b.ToTable("convites_acesso", (string)null);
                 });
 
             modelBuilder.Entity("JotaNunesForms.Domain.Entities.Funcionario", b =>

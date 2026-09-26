@@ -26,9 +26,11 @@ public sealed class JwtTokenGenerator : IJwtTokenGenerator
         var audience = _configuration["Jwt:Audience"] ?? "JotaNunesForms";
         var expirationMinutes = _configuration.GetValue("Jwt:ExpirationMinutes", 480);
 
+        var subject = usuario.UsaLoginPorEmail ? usuario.Email! : usuario.Documento;
+
         var claims = new List<Claim>
         {
-            new(JwtRegisteredClaimNames.Sub, usuario.Documento),
+            new(JwtRegisteredClaimNames.Sub, subject),
             new(JwtRegisteredClaimNames.Name, usuario.NomeExibicao),
             new("perfil", usuario.Perfil.ToString()),
             new("perfil_rotulo", usuario.PerfilRotulo),
