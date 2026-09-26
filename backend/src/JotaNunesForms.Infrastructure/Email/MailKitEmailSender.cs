@@ -38,12 +38,13 @@ public sealed class MailKitEmailSender : IEmailSender
         message.Body = builder.ToMessageBody();
 
         using var client = new SmtpClient();
+        var socketOptions = ResolveSocketOptions(_options.Port, _options.UseStartTls);
         try
         {
             await client.ConnectAsync(
                 _options.Host!,
                 _options.Port,
-                _options.UseStartTls ? SecureSocketOptions.StartTls : SecureSocketOptions.Auto,
+                socketOptions,
                 cancellationToken);
             await client.AuthenticateAsync(_options.User!, _options.Password!, cancellationToken);
             await client.SendAsync(message, cancellationToken);
@@ -55,4 +56,12 @@ public sealed class MailKitEmailSender : IEmailSender
             throw;
         }
     }
+
+    private static SecureSocketOptions ResolveSocketOptions(int port, bool useStartTls) =>
+        port switch
+        {
+            465 => SecureSocketOptions.SslOnConnect,
+            587 => SecureSocketOptions.StartTls,
+            _ => useStartTls ? SecureSocketOptions.StartTls : SecureSocketOptions.Auto,
+        };
 }
