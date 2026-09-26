@@ -9,6 +9,8 @@ namespace JotaNunesForms.Infrastructure.Email;
 
 public sealed class MailKitEmailSender : IEmailSender
 {
+    private static readonly TimeSpan SmtpOperationTimeout = TimeSpan.FromSeconds(90);
+
     private readonly EmailOptions _options;
     private readonly ILogger<MailKitEmailSender> _logger;
 
@@ -37,7 +39,13 @@ public sealed class MailKitEmailSender : IEmailSender
         };
         message.Body = builder.ToMessageBody();
 
-        using var client = new SmtpClient();
+        using var client = new SmtpClient
+        {
+            Timeout = (int)SmtpOperationTimeout.TotalMilliseconds,
+        };
+        using var timeoutCts = new CancellationTokenSource(SmtpOperationTimeout);
+        var smtpToken = timeoutCts.Token;
+
         var socketOptions = ResolveSocketOptions(_options.Port, _options.UseStartTls);
         try
         {
@@ -45,10 +53,10 @@ public sealed class MailKitEmailSender : IEmailSender
                 _options.Host!,
                 _options.Port,
                 socketOptions,
-                cancellationToken);
-            await client.AuthenticateAsync(_options.User!, _options.Password!, cancellationToken);
-            await client.SendAsync(message, cancellationToken);
-            await client.DisconnectAsync(true, cancellationToken);
+                smtpToken);
+            await client.AuthenticateAsync(_options.User!, _options.Password!, smtpToken);
+            await client.SendAsync(message, smtpToken);
+            await client.DisconnectAsync(true, smtpToken);
         }
         catch (Exception ex)
         {

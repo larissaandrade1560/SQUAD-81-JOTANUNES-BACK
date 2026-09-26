@@ -109,7 +109,7 @@ public sealed class ConvidarEmpresaUseCase
                 ConviteEmailComposer.Subject,
                 textBody,
                 htmlBody,
-                cancellationToken);
+                CancellationToken.None);
         }
         catch
         {

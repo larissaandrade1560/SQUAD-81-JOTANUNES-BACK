@@ -14,10 +14,23 @@ public sealed class EmailOptions
 
     public bool UseStartTls { get; set; } = true;
 
-    public bool IsConfigured =>
-        !string.IsNullOrWhiteSpace(Host)
+    /// <summary>
+    /// When true, send via Resend HTTPS API (<c>Email__Password</c> = API key) instead of SMTP.
+    /// </summary>
+    public bool UseHttpApi { get; set; }
+
+    public bool IsHttpApiConfigured =>
+        UseHttpApi
+        && !string.IsNullOrWhiteSpace(Password)
+        && !string.IsNullOrWhiteSpace(From);
+
+    public bool IsSmtpConfigured =>
+        !UseHttpApi
+        && !string.IsNullOrWhiteSpace(Host)
         && Port > 0
         && !string.IsNullOrWhiteSpace(User)
         && !string.IsNullOrWhiteSpace(Password)
         && !string.IsNullOrWhiteSpace(From);
+
+    public bool IsConfigured => IsHttpApiConfigured || IsSmtpConfigured;
 }

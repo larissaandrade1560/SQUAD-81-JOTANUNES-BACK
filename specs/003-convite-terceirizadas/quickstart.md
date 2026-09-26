@@ -33,6 +33,14 @@ Email__User=resend
 Email__Password=<RESEND_API_KEY>
 Email__From=<EMAIL_DO_DOMINIO_VERIFICADO>
 Email__UseStartTls=true
+
+**Render (recomendado)** — SMTP outbound pode falhar com timeout; use a API HTTPS (mesma API key, sem SDK):
+
+```bash
+Email__UseHttpApi=true
+Email__Password=<RESEND_API_KEY>
+Email__From=portal@jotanunesforms.dev
+```
 App__PublicBaseUrl=https://<spa>
 ```
 
