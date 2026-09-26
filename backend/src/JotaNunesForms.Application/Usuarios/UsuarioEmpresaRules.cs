@@ -28,11 +28,6 @@ internal static class UsuarioEmpresaRules
             throw new UsuarioException("Empresa não encontrada.");
         }
 
-        if (empresa.Tipo != TipoEmpresa.MaoDeObra)
-        {
-            throw new UsuarioException("Usuário terceirizado só pode ser vinculado a empresa de Mão de Obra.");
-        }
-
         return empresa.Id;
     }
 }
