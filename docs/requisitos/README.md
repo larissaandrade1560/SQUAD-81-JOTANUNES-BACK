@@ -6,6 +6,8 @@ Documentação de requisitos do **JotaNunesForms** (Squad 81).
 |-----------|----------|
 | [Casos de uso por ator](./casos-de-uso-por-ator.md) | UC por Jotanunes / Mão de Obra / Materiais |
 | [Requisitos funcionais (RF01–RF20)](./requisitos-funcionais.md) | Catálogo de RF |
+| [Fluxo dinâmico de documentos](../../specs/002-fluxo-documentos/spec.md) | Checklist por processo, versão, mobilização e pagamentos |
+| [Como testar o fluxo documental](../fluxo-documentos-como-testar.md) | Roteiro E2E US1–US3 em produção |
 | [Figma v2 — fluxos](./fluxos-figma-v2.md) | Prompt de arquitetura de navegação |
 | [Figma v3 — revisão e correções](./fluxos-figma-v3-e-correcoes.md) | Correções dos shells + Materials Flow v1 |
 | [Figma — revisão e próximos passos](./figma-proximos-passos-e-correcoes.md) | Correções da Auditoria + escopo final do Materials Flow |
