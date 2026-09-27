@@ -7,6 +7,7 @@ import { Button } from '../components/ui/Button'
 import { MetricCard } from '../components/dashboard/MetricCard'
 import { getDashboardResumo, type DashboardResumoApi } from '../services/dashboardService'
 import { listValidacaoFila, type ValidacaoDocumentoItem } from '../services/validacaoService'
+import { DASHBOARD_RESUMO_INVALIDATE_EVENT } from '../utils/dashboardResumoSync'
 import './DashboardPage.css'
 
 const FILA_PREVIEW_LIMIT = 5
@@ -75,10 +76,32 @@ export function DashboardPage() {
       .finally(() => setFilaLoading(false))
   }, [])
 
-  useEffect(() => {
+  const refreshDashboard = useCallback(() => {
     loadResumo()
     loadFila()
   }, [loadResumo, loadFila])
+
+  useEffect(() => {
+    refreshDashboard()
+  }, [refreshDashboard])
+
+  useEffect(() => {
+    function onInvalidate() {
+      refreshDashboard()
+    }
+    window.addEventListener(DASHBOARD_RESUMO_INVALIDATE_EVENT, onInvalidate)
+    return () => window.removeEventListener(DASHBOARD_RESUMO_INVALIDATE_EVENT, onInvalidate)
+  }, [refreshDashboard])
+
+  useEffect(() => {
+    function onVisibilityChange() {
+      if (document.visibilityState === 'visible') {
+        refreshDashboard()
+      }
+    }
+    document.addEventListener('visibilitychange', onVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', onVisibilityChange)
+  }, [refreshDashboard])
 
   const metricValue = (value: number | undefined) => {
     if (resumoLoading) return '…'
@@ -116,9 +139,22 @@ export function DashboardPage() {
       ? 'Falha ao carregar.'
       : `${countOrZero(resumo, 'comprovantesPendentes')} aguardando (no prazo) · ${countOrZero(resumo, 'comprovantesNoPrazo')} no prazo · ${countOrZero(resumo, 'comprovantesEnviadosEmAtraso')} enviados em atraso`
 
-  const documentosFila = resumoOk
-    ? String(countOrZero(resumo, 'documentosValidacaoFila'))
-    : metricValue(resumo?.documentosValidacaoFila)
+  const documentosFilaCount = useMemo(() => {
+    if (!filaLoading && !filaError) {
+      return fila.length
+    }
+    if (resumoOk) {
+      return countOrZero(resumo, 'documentosValidacaoFila')
+    }
+    return undefined
+  }, [fila.length, filaLoading, filaError, resumo, resumoOk])
+
+  const documentosFila =
+    filaLoading && resumoLoading
+      ? '…'
+      : documentosFilaCount === undefined
+        ? '—'
+        : String(documentosFilaCount)
 
   const comprovanteAlerts = useMemo(() => {
     if (resumoLoading || resumoError || !resumo) {
@@ -161,7 +197,7 @@ export function DashboardPage() {
       {resumoError && (
         <p className="jn-dashboard__resumo-error" role="alert">
           Não foi possível carregar as métricas.{' '}
-          <Button type="button" variant="ghost" onClick={loadResumo}>
+          <Button type="button" variant="ghost" onClick={refreshDashboard}>
             Atualizar métricas
           </Button>
         </p>
@@ -179,7 +215,9 @@ export function DashboardPage() {
           label="Documentos em análise"
           value={documentosFila}
           hint="Na fila de validação (RF09)"
-          tone={resumoOk && countOrZero(resumo, 'documentosValidacaoFila') > 0 ? 'warning' : 'default'}
+          tone={
+            documentosFilaCount !== undefined && documentosFilaCount > 0 ? 'warning' : 'default'
+          }
         />
         <MetricCard
           label="Comprovantes em atraso"
