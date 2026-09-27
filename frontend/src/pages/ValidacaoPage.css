@@ -93,27 +93,27 @@
 }
 
 .jn-validacao__col-type {
-  width: 18%;
+  width: 16%;
 }
 
 .jn-validacao__col-solicitante {
-  width: 22%;
+  width: 20%;
 }
 
 .jn-validacao__col-doc {
-  width: 10%;
+  width: 8%;
 }
 
 .jn-validacao__col-date {
-  width: 10%;
+  width: 9.5rem;
 }
 
 .jn-validacao__col-status {
-  width: 11%;
+  width: 9rem;
 }
 
 .jn-validacao__col-actions {
-  width: 7.5rem;
+  width: 5.5rem;
 }
 
 .jn-validacao__table th,
