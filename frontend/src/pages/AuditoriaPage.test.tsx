@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { listAuditoriaEventos, type AuditoriaEventosResponse } from '../services/auditoriaService'
@@ -46,7 +46,8 @@ describe('AuditoriaPage', () => {
     vi.mocked(listAuditoriaEventos).mockResolvedValueOnce(eventResponse).mockResolvedValueOnce(emptyResponse)
     renderPage()
 
-    expect(await screen.findByText('Documento enviado')).toBeTruthy()
+    const table = await screen.findByRole('table')
+    expect(within(table).getByRole('cell', { name: 'Documento enviado' })).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Abrir origem' }).getAttribute('href')).toBe('/documentos')
     expect(screen.getByText('Analista de teste · Analista')).toBeTruthy()
 
@@ -60,7 +61,8 @@ describe('AuditoriaPage', () => {
 
     expect(await screen.findByRole('alert')).toHaveProperty('textContent', 'Falha simuladaTentar novamente')
     fireEvent.click(screen.getByRole('button', { name: 'Tentar novamente' }))
-    expect(await screen.findByText('Documento enviado')).toBeTruthy()
+    const table = await screen.findByRole('table')
+    expect(within(table).getByRole('cell', { name: 'Documento enviado' })).toBeTruthy()
   })
 
   it('converts local period boundaries to UTC and applies all selected filters', async () => {

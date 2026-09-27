@@ -174,15 +174,15 @@ export function AuditoriaPage() {
       <form className="jn-auditoria__filters" onSubmit={applyFilters}>
         <label>
           De
-          <input type="date" aria-label="De" value={filters.de} onChange={(event) => updateFilter('de', event.target.value)} />
+          <input type="date" value={filters.de} onChange={(event) => updateFilter('de', event.target.value)} />
         </label>
         <label>
           Até
-          <input type="date" aria-label="Até" value={filters.ate} onChange={(event) => updateFilter('ate', event.target.value)} />
+          <input type="date" value={filters.ate} onChange={(event) => updateFilter('ate', event.target.value)} />
         </label>
         <label>
           Ação
-          <select aria-label="Ação" value={filters.codigo} onChange={(event) => updateFilter('codigo', event.target.value as FilterState['codigo'])}>
+          <select value={filters.codigo} onChange={(event) => updateFilter('codigo', event.target.value as FilterState['codigo'])}>
             <option value="">Todas</option>
             <option value="documento_enviado">Documento enviado</option>
             <option value="documento_reenviado">Documento reenviado</option>
@@ -193,14 +193,14 @@ export function AuditoriaPage() {
         </label>
         <label>
           Empresa
-          <select aria-label="Empresa" value={filters.empresaId} onChange={(event) => updateFilter('empresaId', event.target.value)}>
+          <select value={filters.empresaId} onChange={(event) => updateFilter('empresaId', event.target.value)}>
             <option value="">Todas</option>
             {companies.map((company) => <option key={company.id} value={company.id}>{company.razaoSocial}</option>)}
           </select>
         </label>
         <label>
           Escopo
-          <select aria-label="Escopo" value={filters.escopo} onChange={(event) => updateFilter('escopo', event.target.value as FilterState['escopo'])}>
+          <select value={filters.escopo} onChange={(event) => updateFilter('escopo', event.target.value as FilterState['escopo'])}>
             <option value="">Todos</option>
             <option value="empresa">Empresa</option>
             <option value="funcionario">Funcionário</option>
