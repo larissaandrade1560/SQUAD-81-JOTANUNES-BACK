@@ -5,6 +5,8 @@ import {
   NAV_SECTION_ORDER,
   navItemsBySection,
   navItemsForRole,
+  type JotanunesNavItem,
+  type NavSectionId,
 } from '../config/jotanunesNav'
 import { Logo } from '../components/ui/Logo'
 import { NAV_ICONS } from '../components/ui/navIcons'
@@ -78,8 +80,8 @@ export function AppShell() {
     }
   }, [session, location.pathname])
 
-  const navSections = useMemo(() => {
-    if (!session) return new Map()
+  const navSections = useMemo((): Map<NavSectionId, JotanunesNavItem[]> => {
+    if (!session) return new Map<NavSectionId, JotanunesNavItem[]>()
     return navItemsBySection(navItemsForRole(session.role, session.tipoEmpresa))
   }, [session])
 
