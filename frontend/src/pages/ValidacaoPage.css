@@ -83,13 +83,42 @@
 
 .jn-validacao__table {
   width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
   font-size: 14px;
 }
 
+.jn-validacao__col-id {
+  width: 3.75rem;
+}
+
+.jn-validacao__col-type {
+  width: 18%;
+}
+
+.jn-validacao__col-solicitante {
+  width: 22%;
+}
+
+.jn-validacao__col-doc {
+  width: 10%;
+}
+
+.jn-validacao__col-date {
+  width: 10%;
+}
+
+.jn-validacao__col-status {
+  width: 11%;
+}
+
+.jn-validacao__col-actions {
+  width: 7.5rem;
+}
+
 .jn-validacao__table th,
 .jn-validacao__table td {
-  padding: 14px 20px;
+  padding: 16px 20px;
   text-align: left;
   border-bottom: 1px solid #f9fafb;
   vertical-align: middle;
@@ -103,6 +132,18 @@
   color: #9ca3af;
   background: #fafafa;
   border-bottom-color: #f3f4f6;
+  white-space: nowrap;
+}
+
+.jn-validacao__table tbody tr {
+  min-height: 3.75rem;
+}
+
+.jn-validacao__cell-solicitante {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #4a5565;
 }
 
 .jn-validacao__cell-id {
@@ -158,27 +199,39 @@
   flex-shrink: 0;
 }
 
+.jn-validacao__cell-actions {
+  padding-right: 16px;
+}
+
 .jn-validacao__actions {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: var(--space-1);
+  align-items: stretch;
+  gap: 4px;
+  width: fit-content;
+  max-width: 100%;
 }
 
-.jn-validacao__validar-btn {
-  min-height: 28px;
-  padding: 6px 12px;
+.jn-validacao__validar-btn.jn-button {
+  width: auto;
+  min-width: 0;
+  height: 28px;
+  padding: 0 12px;
   font-size: 12px;
+  line-height: 16px;
 }
 
 .jn-validacao__reject-link {
   padding: 0;
   border: none;
   background: none;
-  font-size: 12px;
+  font-size: 11px;
+  font-weight: 500;
   color: var(--color-action-primary);
   text-decoration: underline;
+  text-align: center;
   cursor: pointer;
+  line-height: 1.2;
 }
 
 .jn-validacao__reject-link:disabled {
@@ -188,12 +241,17 @@
 
 .jn-validacao__table-footer {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-3);
+  gap: var(--space-4);
+  min-height: 3.75rem;
   padding: 14px 20px;
   border-top: 1px solid #f3f4f6;
+}
+
+.jn-validacao__table-footer .jn-validacao__pagination {
+  flex-shrink: 0;
 }
 
 .jn-validacao__range {

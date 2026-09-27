@@ -253,6 +253,16 @@ export function ValidacaoPage() {
       {!loading && !error && (
         <div className="jn-validacao__table-wrap">
           <table className="jn-validacao__table">
+            <colgroup>
+              <col className="jn-validacao__col-id" />
+              <col className="jn-validacao__col-type" />
+              <col className="jn-validacao__col-solicitante" />
+              <col className="jn-validacao__col-doc" />
+              <col className="jn-validacao__col-date" />
+              <col className="jn-validacao__col-date" />
+              <col className="jn-validacao__col-status" />
+              <col className="jn-validacao__col-actions" />
+            </colgroup>
             <thead>
               <tr>
                 <th scope="col">#</th>
@@ -279,14 +289,16 @@ export function ValidacaoPage() {
                   <tr key={`${item.escopo}-${item.id}`}>
                     <td className="jn-validacao__cell-id">{formatRowIndex(rangeStart + index)}</td>
                     <td className="jn-validacao__cell-type">{item.tipoRotulo}</td>
-                    <td>{solicitanteLabel(item)}</td>
+                    <td className="jn-validacao__cell-solicitante" title={solicitanteLabel(item)}>
+                      {solicitanteLabel(item)}
+                    </td>
                     <td className="jn-validacao__cell-doc">—</td>
                     <td>{formatTableDate(item.enviadoEm)}</td>
                     <td>{formatTableDate(item.enviadoEm)}</td>
                     <td>
                       <ValidacaoStatusPill status={item.status} label={item.statusRotulo} />
                     </td>
-                    <td>
+                    <td className="jn-validacao__cell-actions">
                       <div className="jn-validacao__actions">
                         <Button
                           type="button"
