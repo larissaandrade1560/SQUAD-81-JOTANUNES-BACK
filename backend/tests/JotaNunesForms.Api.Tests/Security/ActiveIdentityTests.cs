@@ -1,5 +1,6 @@
 using System.Net;
 using JotaNunesForms.Api.Tests.Infrastructure;
+using JotaNunesForms.Domain.Entities;
 using JotaNunesForms.Domain.Ports;
 using Microsoft.Extensions.DependencyInjection;
 

@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using Json.Schema;
 
 namespace JotaNunesForms.Api.Tests.Security;
@@ -18,10 +17,13 @@ public sealed class AccessMatrixFixture
         var schemaText = File.ReadAllText(Path.Combine(contracts, "access-matrix.schema.json"));
         var matrixText = File.ReadAllText(Path.Combine(contracts, "access-matrix.json"));
         var schema = JsonSchema.FromText(schemaText);
-        var matrixJson = JsonNode.Parse(matrixText)
-            ?? throw new InvalidDataException("A matriz de acesso está vazia.");
+        using var matrixDocument = JsonDocument.Parse(matrixText);
+        if (matrixDocument.RootElement.ValueKind == JsonValueKind.Undefined)
+        {
+            throw new InvalidDataException("A matriz de acesso está vazia.");
+        }
 
-        var evaluation = schema.Evaluate(matrixJson);
+        var evaluation = schema.Evaluate(matrixDocument.RootElement);
         if (!evaluation.IsValid)
         {
             throw new InvalidDataException("A matriz de acesso não está conforme o JSON Schema Draft 2020-12.");
