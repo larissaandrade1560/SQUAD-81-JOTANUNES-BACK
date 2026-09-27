@@ -53,12 +53,6 @@ public sealed class ListValidacaoFilaUseCase
 
         foreach (var doc in empresaDocs)
         {
-            if (doc.Status == StatusDocumento.Pendente)
-            {
-                doc.IniciarAnalise();
-                await _documentosEmpresa.UpdateAsync(doc, cancellationToken);
-            }
-
             items.Add(new ValidacaoDocumentoItemResponse(
                 "empresa",
                 doc.Id,
@@ -80,12 +74,6 @@ public sealed class ListValidacaoFilaUseCase
             if (funcionario is null)
             {
                 continue;
-            }
-
-            if (doc.Status == StatusDocumento.Pendente)
-            {
-                doc.IniciarAnalise();
-                await _documentosFuncionario.UpdateAsync(doc, cancellationToken);
             }
 
             items.Add(new ValidacaoDocumentoItemResponse(

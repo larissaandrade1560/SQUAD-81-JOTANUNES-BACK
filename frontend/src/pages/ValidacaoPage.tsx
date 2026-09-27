@@ -10,6 +10,7 @@ import {
   rejeitarDocumentoValidacao,
   type ValidacaoDocumentoItem,
 } from '../services/validacaoService'
+import { invalidateDashboardResumo } from '../utils/dashboardResumoSync'
 import {
   computeValidacaoMetrics,
   filterValidacaoFila,
@@ -118,6 +119,7 @@ export function ValidacaoPage() {
     setError(undefined)
     try {
       setFila(await listValidacaoFila())
+      invalidateDashboardResumo()
     } catch (err) {
       setError(apiErrorMessage(err))
     } finally {

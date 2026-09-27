@@ -12,6 +12,7 @@ import { Logo } from '../components/ui/Logo'
 import { NAV_ICONS } from '../components/ui/navIcons'
 import { NavItem } from '../components/ui/NavItem'
 import { getDashboardResumo } from '../services/dashboardService'
+import { DASHBOARD_RESUMO_INVALIDATE_EVENT } from '../utils/dashboardResumoSync'
 import { getSession, logout } from '../store/authStorage'
 import './AppShell.css'
 
@@ -62,21 +63,29 @@ export function AppShell() {
 
   useEffect(() => {
     if (!session || session.role === 'terceirizado') return
+
     let cancelled = false
-    void getDashboardResumo()
-      .then((resumo) => {
-        if (cancelled) return
-        setValidacaoBadge(resumo.documentosValidacaoFila)
-        setPagamentosBadge(resumo.comprovantesPendentes + resumo.comprovantesEmAtraso)
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setValidacaoBadge(0)
-          setPagamentosBadge(0)
-        }
-      })
+
+    function refreshBadges() {
+      void getDashboardResumo()
+        .then((resumo) => {
+          if (cancelled) return
+          setValidacaoBadge(resumo.documentosValidacaoFila)
+          setPagamentosBadge(resumo.comprovantesPendentes + resumo.comprovantesEmAtraso)
+        })
+        .catch(() => {
+          if (!cancelled) {
+            setValidacaoBadge(0)
+            setPagamentosBadge(0)
+          }
+        })
+    }
+
+    refreshBadges()
+    window.addEventListener(DASHBOARD_RESUMO_INVALIDATE_EVENT, refreshBadges)
     return () => {
       cancelled = true
+      window.removeEventListener(DASHBOARD_RESUMO_INVALIDATE_EVENT, refreshBadges)
     }
   }, [session, location.pathname])
 
