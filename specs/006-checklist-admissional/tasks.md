@@ -198,7 +198,7 @@
 - [X] T080 Run frontend clean install, lint, full tests and production build, recording actual results in `specs/006-checklist-admissional/quickstart.md`
 - [X] T081 Execute every local scenario in the feature runbook and record sanitized evidence in `specs/006-checklist-admissional/quickstart.md`
 - [X] T082 Document backup, API-first deployment, additive-schema rollback and forward-fix procedure in `docs/operacao-us4-checklist-admissional.md`
-- [ ] T083 Execute published blocking, release, reversal and access-denial scenarios and record sanitized commit/state/trace evidence in `docs/fluxo-documentos-como-testar.md`
+- [X] T083 Execute published blocking, release, reversal and access-denial scenarios and record sanitized commit/state/trace evidence in `docs/fluxo-documentos-como-testar.md`
 
 ---
 

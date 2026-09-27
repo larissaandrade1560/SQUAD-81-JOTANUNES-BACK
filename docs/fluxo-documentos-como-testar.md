@@ -2,7 +2,7 @@
 
 **Feature:** `002-fluxo-documentos`  
 **Ambiente:** produção (não local)  
-**Última bateria E2E:** 25/09/2026  
+**Última bateria E2E:** 27/09/2026 (tarde — cenários US4 antes pendentes)  
 **Spec:** [`specs/002-fluxo-documentos/spec.md`](../specs/002-fluxo-documentos/spec.md)
 
 Este incremento cobre **US1–US3** e **US4 (checklist admissional / liberação)**: abrir processo, qualificar empresa, mobilizar trabalhador, consultar liberação, registrar EPI (MO) e integração (interno). **US5** (seis status de pagamento) permanece fora deste escopo.
@@ -27,6 +27,8 @@ O plano gratuito do Render pode demorar até ~1 minuto na primeira requisição 
 | Administrador | `00000000001` | `senha123` | Empresas, processos, sócios, mobilização, catálogo, encaminhar |
 | Analista | `12345678900` | `senha123` | Fila `/validacao` — aprovar / rejeitar |
 | Terceirizado (mão de obra) | `11122233344` | `senha123` | Upload no checklist, pagamentos RF13 (legado) |
+
+**MO em produção:** o usuário da empresa *Construtora Teste E2E* foi ativado por **convite**; o login no portal deve usar o **e-mail do convite** (`matheusss821@gmail.com`) e `senha123`. O CPF `11122233344` sozinho retorna “credenciais inválidas” (a API bloqueia login por documento quando há e-mail cadastrado). O documento continua aparecendo na sessão após login por e-mail.
 
 Não há usuário terceirizado de **materiais** no seed. O bloqueio de mobilização para materiais testa-se com **Admin** (API) ou criando empresa tipo Materiais.
 
@@ -240,10 +242,24 @@ Cobre geração de checklist (A vs B, materiais, sócios) e recálculo de situa�
 
 ## US4 — evidência publicada (T083)
 
+**Deploy verificado:** API `200` (`/`), frontend Pages `200`, commit `862db30`+ em `develop` (Render manual deploy).
+
+**Mobilização de referência (produção):** `9461000a-f349-4442-826c-f2ca0b1ce79a` (Joana Extra Catalogo).  
+**Mobilização auxiliar (vencimentos):** `47590616-647d-4da3-9f68-f66736e79eca` (Trabalhador Vencimento E2E).
+
+**Upload admissional em produção:** itens do catálogo com `tipoEntrega` = upload exigem `multipart` com `arquivo` (PDF) **e** `camposJson`; só JSON retorna `400` “Envie um arquivo PDF.”.
+
 | Cenário | Status | Evidência |
 |---------|--------|-----------|
-| Bloqueio sem integração | Pendente execução publicada | Registrar trace id, mobilização e códigos de impedimento após deploy |
-| Liberação completa | Pendente execução publicada | Registrar transição Aguardando → Liberado |
-| Reversão por ASO vencido | Pendente execução publicada | Registrar retorno a Aguardando |
-| Negação cross-tenant / Materials | Coberto localmente via testes de API | Ver `MobilizacaoLiberacaoAuthorizationTests` |
+| Checklist incompleto + impedimentos (quickstart §1, §9) | OK | UI `/mobilizacoes/{id}`: painel **Liberação** lista 8 códigos estáveis (`IDENTIDADE_PENDENTE` … `REQUISITO_ADICIONAL_PENDENTE`); `MOB_CADASTRO` aprovado no checklist; `liberado=false`, situação Aguardando. API `GET /liberacao` alinhada. |
+| Integração interna + idempotência (§5) | OK parcial | `POST /integracao` Admin → `201`; retry mesma `Idempotency-Key` → `200`; `INTEGRACAO_PENDENTE` removido até outros itens pendentes. UI mostra histórico “Instrutor Teste”. |
+| Reversão integração refazer (§6) | OK | `POST /integracao/refazer` → `200`; impedimento `INTEGRACAO_REFAZER` na API e na UI após refresh. |
+| Autorização (§7) | OK | Anônimo `401`; UUID inexistente `404`; Admin `POST /epi` → `403`; MO `POST /integracao` → `403`. MO autentica com e-mail do convite + `senha123`; CPF `11122233344` no formulário → erro (regra `UsaLoginPorEmail`). |
+| Liberação completa Aguardando → Liberado | OK | Mobilização `9461000a-f349-4442-826c-f2ca0b1ce79a`: upload PDF+JSON dos 5 códigos admissionais + `TESTE_EXTRA_ADMISSAO`; Analista aprovou todas as versões; EPI ativo; Admin `POST /integracao` → `201` com `liberado=true`, `impedimentos=[]`, `situacao=2` (Liberado). UI MO: texto **Liberado para acesso** no cabeçalho. |
+| Reversão por ASO/NR-18 vencido | OK | Mobilização auxiliar `47590616-647d-4da3-9f68-f66736e79eca`: ASO com `dataExame` 2020-01-10 aprovado → `GET /liberacao` inclui `ASO_VENCIDO`; NR-18 com `data` 2020-01-01 aprovado → também `NR18_VENCIDA` (reconciliação na leitura). |
+| EPI entrega/substituição/devolução (§4) | OK | Entrega/substituição/idempotência já validados. Devolução parcial (Luva) → `201`, `saldoAtivo=1`, permanece Liberado. Devolução total do saldo ativo (Capacete Novo) → `201`, `saldoAtivo=0`, `liberado=false`, `EPI_SEM_ENTREGA_ATIVA`; nova entrega (Bota) restaura `liberado=true`. **Nota:** devolução com `movimentoOrigemId` inválido (ex.: entrega já zerada por substituição) retornou `500` em um tentativa — usar origem com saldo ativo. |
+| Validadores admissionais §2 (5 códigos) | OK | Produção exige **PDF + `camposJson`**. Inválidos: CPF divergente → `400` “CPF não corresponde…”; NR-18 carga 1h → `400` “Carga horária abaixo…”. Válidos: `DOC_OFICIAL_FOTO`, `ESOCIAL_VINCULO` (S-2200), `ASO_ADMISSIONAL`, `NR18_BASICA`, `ORDEM_SERVICO` enviados e aprovados na mobilização de referência. |
+| Negação Materials / cross-tenant MO A×B | OK parcial | Terceirizado Materiais (`matsss821@gmail.com` / `senha123`): `GET /mobilizacoes/{id}`, `GET /liberacao`, `POST /mobilizacoes` → **403**. MO com UUID inexistente → **404** corpo genérico. **MO empresa B:** não há segunda empresa MO em produção; isolamento entre tenants MO não foi exercitado (apenas Materials × mobilização MO). |
+| Cenário S-2190 preliminar (quickstart §3) | Não executado | Exige mobilização isolada com S-2190 e prazo normativo; fora da tabela original T083, registrado para rodada futura. |
+
 - Entregas gerais: `docs/resumo-entregas.md`
