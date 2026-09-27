@@ -16,6 +16,20 @@ public sealed class DocumentoFuncionarioRepository : IDocumentoFuncionarioReposi
     public Task<DocumentoFuncionario?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
         _dbContext.DocumentosFuncionario.FirstOrDefaultAsync(d => d.Id == id, cancellationToken);
 
+    public async Task<DocumentoFuncionario?> GetByIdForUpdateAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var tracked = _dbContext.ChangeTracker.Entries<DocumentoFuncionario>()
+            .FirstOrDefault(entry => entry.Entity.Id == id);
+        if (tracked is not null)
+        {
+            tracked.State = EntityState.Detached;
+        }
+
+        return await _dbContext.DocumentosFuncionario
+            .FromSqlInterpolated($"SELECT * FROM documentos_funcionario WHERE id = {id} FOR UPDATE")
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
     public async Task<IReadOnlyList<DocumentoFuncionario>> ListByFuncionarioAsync(
         Guid funcionarioId,
         CancellationToken cancellationToken = default) =>

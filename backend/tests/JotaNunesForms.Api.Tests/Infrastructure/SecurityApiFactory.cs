@@ -29,7 +29,9 @@ public sealed class SecurityApiFactory : WebApplicationFactory<Program>, IAsyncL
 
     public InMemoryLogProvider SecurityLogs { get; } = new();
     public TestObjectStorage Storage { get; } = new();
+    public AuditRepositoryFailureSwitch AuditFailureSwitch { get; } = new();
     public SecurityIdentityQueryCounter IdentityQueryCounter { get; } = new();
+    public DatabaseCommandCounter DatabaseCommandCounter { get; } = new();
 
     public HttpClient CreateSecurityClient() => CreateClient();
 
@@ -78,8 +80,13 @@ public sealed class SecurityApiFactory : WebApplicationFactory<Program>, IAsyncL
             services.RemoveAll<IObjectStorage>();
             services.AddSingleton(Storage);
             services.AddSingleton<IObjectStorage>(Storage);
+            services.RemoveAll<IEventoAuditoriaDocumentoRepository>();
+            services.AddSingleton(AuditFailureSwitch);
+            services.AddScoped<IEventoAuditoriaDocumentoRepository, SwitchableEventoAuditoriaDocumentoRepository>();
             services.AddSingleton(IdentityQueryCounter);
             services.AddSingleton<IInterceptor>(IdentityQueryCounter);
+            services.AddSingleton(DatabaseCommandCounter);
+            services.AddSingleton<IInterceptor>(DatabaseCommandCounter);
         });
         builder.ConfigureAppConfiguration((_, configuration) =>
         {

@@ -13,6 +13,9 @@ namespace JotaNunesForms.Infrastructure.Persistence.Migrations
     [DbContext(typeof(JotaNunesFormsDbContext))]
     partial class JotaNunesFormsDbContextModelSnapshot : ModelSnapshot
     {
+        internal static void PopulateTargetModel(ModelBuilder modelBuilder) =>
+            new JotaNunesFormsDbContextModelSnapshot().BuildModel(modelBuilder);
+
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
@@ -538,6 +541,120 @@ namespace JotaNunesForms.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("pagamentos_funcionario", (string)null);
+                });
+
+            modelBuilder.Entity("JotaNunesForms.Domain.Entities.EventoAuditoriaDocumento", b =>
+                {
+                    b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid").HasColumnName("id");
+                    b.Property<string>("ChaveNegocio").IsRequired().HasMaxLength(200).HasColumnType("character varying(200)").HasColumnName("chave_negocio");
+                    b.Property<string>("Codigo").IsRequired().HasMaxLength(40).HasColumnType("character varying(40)").HasColumnName("codigo");
+                    b.Property<DateTime>("OcorreuEm").HasColumnType("timestamp with time zone").HasColumnName("ocorreu_em");
+                    b.Property<string>("AtorTipo").IsRequired().HasMaxLength(16).HasColumnType("character varying(16)").HasColumnName("ator_tipo");
+                    b.Property<Guid?>("AtorUsuarioId").HasColumnType("uuid").HasColumnName("ator_usuario_id");
+                    b.Property<string>("AtorNome").IsRequired().HasMaxLength(200).HasColumnType("character varying(200)").HasColumnName("ator_nome");
+                    b.Property<string>("AtorPerfil").HasMaxLength(40).HasColumnType("character varying(40)").HasColumnName("ator_perfil");
+                    b.Property<string>("Escopo").IsRequired().HasMaxLength(20).HasColumnType("character varying(20)").HasColumnName("escopo");
+                    b.Property<string>("OrigemTipo").IsRequired().HasMaxLength(32).HasColumnType("character varying(32)").HasColumnName("origem_tipo");
+                    b.Property<Guid>("DocumentoId").HasColumnType("uuid").HasColumnName("documento_id");
+                    b.Property<Guid?>("VersaoId").IsRequired().HasColumnType("uuid").HasColumnName("versao_id");
+                    b.Property<int?>("VersaoNumero").IsRequired().HasColumnType("integer").HasColumnName("versao_numero");
+                    b.Property<Guid?>("VersaoAnteriorId").HasColumnType("uuid").HasColumnName("versao_anterior_id");
+                    b.Property<int?>("VersaoAnteriorNumero").HasColumnType("integer").HasColumnName("versao_anterior_numero");
+                    b.Property<Guid>("EmpresaId").HasColumnType("uuid").HasColumnName("empresa_id");
+                    b.Property<string>("EmpresaRazaoSocial").IsRequired().HasMaxLength(200).HasColumnType("character varying(200)").HasColumnName("empresa_razao_social");
+                    b.Property<Guid?>("FuncionarioId").HasColumnType("uuid").HasColumnName("funcionario_id");
+                    b.Property<string>("FuncionarioNome").HasMaxLength(200).HasColumnType("character varying(200)").HasColumnName("funcionario_nome");
+                    b.Property<Guid?>("ProcessoId").HasColumnType("uuid").HasColumnName("processo_id");
+                    b.Property<Guid?>("ItemChecklistId").HasColumnType("uuid").HasColumnName("item_checklist_id");
+                    b.Property<string>("TipoDocumentoRotulo").IsRequired().HasMaxLength(160).HasColumnType("character varying(160)").HasColumnName("tipo_documento_rotulo");
+                    b.Property<string>("Motivo").HasMaxLength(2000).HasColumnType("character varying(2000)").HasColumnName("motivo");
+                    b.Property<string>("Comentario").HasMaxLength(2000).HasColumnType("character varying(2000)").HasColumnName("comentario");
+                    b.Property<DateTime?>("ValidoAte").HasColumnType("timestamp with time zone").HasColumnName("valido_ate");
+                    b.HasKey("Id");
+                    b.HasIndex("ChaveNegocio").IsUnique().HasDatabaseName("ux_auditoria_eventos_documentais_chave_negocio");
+                    b.HasIndex("OcorreuEm", "Id").IsDescending(true, true).HasDatabaseName("ix_auditoria_eventos_documentais_ocorreu_em_id");
+                    b.HasIndex("EmpresaId", "OcorreuEm", "Id").IsDescending(false, true, true).HasDatabaseName("ix_auditoria_eventos_documentais_empresa_data_id");
+                    b.HasIndex("Codigo", "OcorreuEm", "Id").IsDescending(false, true, true).HasDatabaseName("ix_auditoria_eventos_documentais_codigo_data_id");
+                    b.HasIndex("Escopo", "OcorreuEm", "Id").IsDescending(false, true, true).HasDatabaseName("ix_auditoria_eventos_documentais_escopo_data_id");
+                    b.HasIndex("OrigemTipo", "DocumentoId", "OcorreuEm").IsDescending(false, false, true).HasDatabaseName("ix_auditoria_eventos_documentais_origem_documento_data");
+                    b.ToTable("auditoria_eventos_documentais", table =>
+                    {
+                        table.HasCheckConstraint("ck_auditoria_eventos_documentais_version_positive", "versao_numero > 0");
+                        table.HasCheckConstraint("ck_auditoria_eventos_documentais_previous_version_pair", "(versao_anterior_id IS NULL) = (versao_anterior_numero IS NULL)");
+                        table.HasCheckConstraint("ck_auditoria_eventos_documentais_reason_action", "(codigo = 'DocumentoRejeitado' AND motivo IS NOT NULL) OR (codigo <> 'DocumentoRejeitado' AND motivo IS NULL)");
+                        table.HasCheckConstraint("ck_auditoria_eventos_documentais_employee_snapshot", "(escopo = 'Funcionario' AND funcionario_id IS NOT NULL AND funcionario_nome IS NOT NULL) OR (escopo <> 'Funcionario' AND funcionario_id IS NULL AND funcionario_nome IS NULL)");
+                        table.HasCheckConstraint("ck_auditoria_eventos_documentais_actor_snapshot", "(ator_tipo = 'Usuario' AND ator_usuario_id IS NOT NULL AND ator_perfil IS NOT NULL) OR (ator_tipo = 'Sistema' AND ator_usuario_id IS NULL AND ator_perfil IS NULL AND ator_nome = 'Sistema')");
+                    });
+                });
+
+            modelBuilder.Entity("JotaNunesForms.Domain.Entities.DocumentoArquivoVersao", b =>
+                {
+                    b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid").HasColumnName("id");
+                    b.Property<Guid?>("DocumentoEmpresaId").HasColumnType("uuid").HasColumnName("documento_empresa_id");
+                    b.Property<Guid?>("DocumentoFuncionarioId").HasColumnType("uuid").HasColumnName("documento_funcionario_id");
+                    b.Property<int>("Numero").HasColumnType("integer").HasColumnName("numero");
+                    b.Property<string>("NomeArquivo").IsRequired().HasMaxLength(260).HasColumnType("character varying(260)").HasColumnName("nome_arquivo");
+                    b.Property<string>("StorageKey").IsRequired().HasMaxLength(512).HasColumnType("character varying(512)").HasColumnName("storage_key");
+                    b.Property<string>("ContentType").IsRequired().HasMaxLength(128).HasColumnType("character varying(128)").HasColumnName("content_type");
+                    b.Property<long>("TamanhoBytes").HasColumnType("bigint").HasColumnName("tamanho_bytes");
+                    b.Property<Guid?>("EnviadoPorUsuarioId").HasColumnType("uuid").HasColumnName("enviado_por_usuario_id");
+                    b.Property<DateTime>("EnviadoEm").HasColumnType("timestamp with time zone").HasColumnName("enviado_em");
+                    b.Property<bool>("Vigente").HasColumnType("boolean").HasColumnName("vigente");
+                    b.HasKey("Id");
+                    b.HasIndex("DocumentoEmpresaId", "Numero").IsUnique().HasDatabaseName("ux_documentos_arquivos_versoes_empresa_numero").HasFilter("documento_empresa_id IS NOT NULL");
+                    b.HasIndex("DocumentoFuncionarioId", "Numero").IsUnique().HasDatabaseName("ux_documentos_arquivos_versoes_funcionario_numero").HasFilter("documento_funcionario_id IS NOT NULL");
+                    b.HasIndex("DocumentoEmpresaId").IsUnique().HasDatabaseName("ux_documentos_arquivos_versoes_empresa_vigente").HasFilter("vigente = TRUE AND documento_empresa_id IS NOT NULL");
+                    b.HasIndex("DocumentoFuncionarioId").IsUnique().HasDatabaseName("ux_documentos_arquivos_versoes_funcionario_vigente").HasFilter("vigente = TRUE AND documento_funcionario_id IS NOT NULL");
+                    b.HasIndex("EnviadoPorUsuarioId");
+                    b.ToTable("documentos_arquivos_versoes", table =>
+                    {
+                        table.HasCheckConstraint("ck_documentos_arquivos_versoes_origin_xor", "num_nonnulls(documento_empresa_id, documento_funcionario_id) = 1");
+                        table.HasCheckConstraint("ck_documentos_arquivos_versoes_numero_positive", "numero > 0");
+                        table.HasCheckConstraint("ck_documentos_arquivos_versoes_size_positive", "tamanho_bytes > 0");
+                    });
+                });
+
+            modelBuilder.Entity("JotaNunesForms.Domain.Entities.DocumentoVersao", b =>
+                {
+                    b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("uuid").HasColumnName("id");
+                    b.Property<Guid>("ItemChecklistId").HasColumnType("uuid").HasColumnName("item_checklist_id");
+                    b.Property<int>("Numero").HasColumnType("integer").HasColumnName("numero");
+                    b.Property<string>("NomeArquivo").HasMaxLength(260).HasColumnType("character varying(260)").HasColumnName("nome_arquivo");
+                    b.Property<string>("StorageKey").HasMaxLength(512).HasColumnType("character varying(512)").HasColumnName("storage_key");
+                    b.Property<string>("ContentType").HasMaxLength(128).HasColumnType("character varying(128)").HasColumnName("content_type");
+                    b.Property<long?>("TamanhoBytes").HasColumnType("bigint").HasColumnName("tamanho_bytes");
+                    b.Property<string>("HashSha256").HasMaxLength(64).HasColumnType("character varying(64)").HasColumnName("hash_sha256");
+                    b.Property<string>("CamposJson").HasColumnType("text").HasColumnName("campos_json");
+                    b.Property<Guid>("EnviadoPorUsuarioId").HasColumnType("uuid").HasColumnName("enviado_por_usuario_id");
+                    b.Property<DateTime>("EnviadoEm").HasColumnType("timestamp with time zone").HasColumnName("enviado_em");
+                    b.Property<bool>("Vigente").HasColumnType("boolean").HasColumnName("vigente");
+                    b.HasKey("Id");
+                    b.HasIndex("ItemChecklistId");
+                    b.HasIndex("ItemChecklistId", "Numero")
+                        .IsUnique()
+                        .HasDatabaseName("ux_documentos_versoes_item_numero");
+                    b.HasIndex("ItemChecklistId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_documentos_versoes_item_vigente")
+                        .HasFilter("vigente = TRUE");
+                    b.HasIndex("HashSha256");
+                    b.ToTable("documentos_versoes", (string)null);
+                });
+
+            modelBuilder.Entity("JotaNunesForms.Domain.Entities.DocumentoArquivoVersao", b =>
+                {
+                    b.HasOne("JotaNunesForms.Domain.Entities.DocumentoEmpresa", null)
+                        .WithMany()
+                        .HasForeignKey("DocumentoEmpresaId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                    b.HasOne("JotaNunesForms.Domain.Entities.DocumentoFuncionario", null)
+                        .WithMany()
+                        .HasForeignKey("DocumentoFuncionarioId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                    b.HasOne("JotaNunesForms.Domain.Entities.Usuario", null)
+                        .WithMany()
+                        .HasForeignKey("EnviadoPorUsuarioId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 #pragma warning restore 612, 618
         }

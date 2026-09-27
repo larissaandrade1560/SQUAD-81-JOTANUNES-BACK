@@ -151,11 +151,14 @@ Reenvio de PDF substituindo arquivo rejeitado (empresa e funcionário); estende 
 - `GET /api/pendencias` + tela `/pendencias` (irregularidades documentais e comprovantes).
 - → `docs/rf18-pendencias-implementacao.md` — **entregue e validado prod** (`f46eb1f`).
 
-### RF17 / RF19 — pendentes (spec no repo)
+### RF17 — Auditoria documental (implementação no repositório; validação pendente)
+
+Captura transacional das cinco ações documentais, versionamento de arquivos legados, trilha append-only, consulta global restrita a Admin/Analista e tela `/auditoria` estão implementados no worktree. Testes, migrations PostgreSQL, staging e produção ainda não foram validados; não considerar liberado para deploy até concluir os gates de [tasks](../specs/005-auditoria-documental/tasks.md) e [quickstart](../specs/005-auditoria-documental/quickstart.md). Evidências e limitações: [RF17 implementação](./rf17-auditoria-implementacao.md).
+
+### RF19 — pendente (spec no repo)
 
 | RF | Escopo | Spec |
 |----|--------|------|
-| RF17 | `/auditoria` — eventos documentais | `docs/rf17-auditoria-implementacao.md` |
 | RF19 | Consulta por obra (evoluir `ObrasPage` / T-32) | `docs/rf19-consulta-obra-implementacao.md` |
 
 ---

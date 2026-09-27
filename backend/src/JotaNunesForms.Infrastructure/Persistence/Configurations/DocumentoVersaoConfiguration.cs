@@ -23,6 +23,13 @@ public sealed class DocumentoVersaoConfiguration : IEntityTypeConfiguration<Docu
         builder.Property(v => v.EnviadoEm).HasColumnName("enviado_em").IsRequired();
         builder.Property(v => v.Vigente).HasColumnName("vigente").IsRequired();
         builder.HasIndex(v => v.ItemChecklistId);
+        builder.HasIndex(v => new { v.ItemChecklistId, v.Numero })
+            .IsUnique()
+            .HasDatabaseName("ux_documentos_versoes_item_numero");
+        builder.HasIndex(v => v.ItemChecklistId)
+            .IsUnique()
+            .HasFilter("vigente = TRUE")
+            .HasDatabaseName("ux_documentos_versoes_item_vigente");
         builder.HasIndex(v => v.HashSha256);
         builder.HasOne<ItemChecklist>().WithMany().HasForeignKey(v => v.ItemChecklistId).OnDelete(DeleteBehavior.Cascade);
         builder.HasOne<Usuario>().WithMany().HasForeignKey(v => v.EnviadoPorUsuarioId).OnDelete(DeleteBehavior.Restrict);

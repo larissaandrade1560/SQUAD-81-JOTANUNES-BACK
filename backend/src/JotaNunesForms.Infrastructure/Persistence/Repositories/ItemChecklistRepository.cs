@@ -13,6 +13,20 @@ public sealed class ItemChecklistRepository : IItemChecklistRepository
     public Task<ItemChecklist?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
         _db.ItensChecklist.FirstOrDefaultAsync(i => i.Id == id, cancellationToken);
 
+    public async Task<ItemChecklist?> GetByIdForUpdateAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var tracked = _db.ChangeTracker.Entries<ItemChecklist>()
+            .FirstOrDefault(entry => entry.Entity.Id == id);
+        if (tracked is not null)
+        {
+            tracked.State = EntityState.Detached;
+        }
+
+        return await _db.ItensChecklist
+            .FromSqlInterpolated($"SELECT * FROM itens_checklist WHERE id = {id} FOR UPDATE")
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
     public async Task<IReadOnlyList<ItemChecklist>> ListByProcessoAsync(
         Guid processoId,
         CancellationToken cancellationToken = default) =>

@@ -7,7 +7,7 @@ import { EmpresasPage } from '../pages/EmpresasPage'
 import { FuncionariosPage } from '../pages/FuncionariosPage'
 import { DefinirSenhaPage } from '../pages/DefinirSenhaPage'
 import { LoginPage } from '../pages/LoginPage'
-import { ModulePlaceholderPage } from '../pages/ModulePlaceholderPage'
+import { AuditoriaPage } from '../pages/AuditoriaPage'
 import { PagamentosPage } from '../pages/PagamentosPage'
 import { PendenciasPage } from '../pages/PendenciasPage'
 import { ValidacaoPage } from '../pages/ValidacaoPage'
@@ -21,8 +21,6 @@ import { InternalRoute } from './InternalRoute'
 import { ProtectedRoute } from './ProtectedRoute'
 import { RoleHome } from './RoleHome'
 import { CompanyTypeRoute } from './CompanyTypeRoute'
-
-const moduleRoutes = [{ path: 'auditoria' }] as const
 
 /**
  * Application route tree.
@@ -66,14 +64,11 @@ export const router = createBrowserRouter([
               { path: 'obras', element: <ObrasPage /> },
               { path: 'validacao', element: <ValidacaoPage /> },
               { path: 'pendencias', element: <PendenciasPage /> },
+              { path: 'auditoria', element: <AuditoriaPage /> },
               {
                 element: <AdminRoute />,
                 children: [{ path: 'usuarios', element: <UsuariosPage /> }],
               },
-              ...moduleRoutes.map(({ path }) => ({
-                path,
-                element: <ModulePlaceholderPage />,
-              })),
             ],
           },
         ],

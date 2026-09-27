@@ -2,9 +2,11 @@ using JotaNunesForms.Application.Documentos;
 using JotaNunesForms.Application.DTOs;
 using JotaNunesForms.Application.Auth;
 using JotaNunesForms.Application.Processos;
+using JotaNunesForms.Application.UseCases.Auditoria;
 using JotaNunesForms.Domain.Entities;
 using JotaNunesForms.Domain.Ports;
 using JotaNunesForms.Domain.Services;
+using Microsoft.Extensions.Logging;
 
 namespace JotaNunesForms.Application.UseCases.Documentos;
 
@@ -19,6 +21,9 @@ public sealed class EnviarVersaoDocumentoUseCase
     private readonly IDocumentoVersaoRepository _versoes;
     private readonly IObjectStorage _storage;
     private readonly AccessScopeGuard _scopeGuard;
+    private readonly ITransactionalExecutor _transactions;
+    private readonly AuditoriaDocumentoService _auditoria;
+    private readonly ILogger<EnviarVersaoDocumentoUseCase> _logger;
 
     public EnviarVersaoDocumentoUseCase(
         IItemChecklistRepository itens,
@@ -27,7 +32,10 @@ public sealed class EnviarVersaoDocumentoUseCase
         ICatalogoRequisitoRepository catalogo,
         IDocumentoVersaoRepository versoes,
         IObjectStorage storage,
-        AccessScopeGuard scopeGuard)
+        AccessScopeGuard scopeGuard,
+        ITransactionalExecutor transactions,
+        AuditoriaDocumentoService auditoria,
+        ILogger<EnviarVersaoDocumentoUseCase> logger)
     {
         _itens = itens;
         _processos = processos;
@@ -36,6 +44,9 @@ public sealed class EnviarVersaoDocumentoUseCase
         _versoes = versoes;
         _storage = storage;
         _scopeGuard = scopeGuard;
+        _transactions = transactions;
+        _auditoria = auditoria;
+        _logger = logger;
     }
 
     public async Task<DocumentoVersaoResponse> ExecuteAsync(
@@ -94,6 +105,7 @@ public sealed class EnviarVersaoDocumentoUseCase
         long? tamanho = null;
         var versaoId = Guid.NewGuid();
 
+        var uploaded = false;
         if (temArquivo)
         {
             if (!_storage.IsConfigured)
@@ -120,36 +132,106 @@ public sealed class EnviarVersaoDocumentoUseCase
 
             storageKey = $"processos/{processo.Id:D}/itens/{item.Id:D}/versoes/{versaoId:D}.pdf";
             await _storage.UploadAsync(storageKey, buffer, "application/pdf", cancellationToken);
+            uploaded = true;
             nome = nomeArquivo;
             tipo = "application/pdf";
             tamanho = tamanhoBytes;
         }
 
-        var existentes = await _versoes.ListByItemAsync(item.Id, cancellationToken);
-        foreach (var anterior in existentes.Where(v => v.Vigente))
+        try
         {
-            anterior.MarcarNaoVigente();
-            await _versoes.UpdateAsync(anterior, cancellationToken);
+            var versao = await _transactions.ExecuteAsync(async transactionToken =>
+            {
+                var currentItem = await _itens.GetByIdForUpdateAsync(item.Id, transactionToken)
+                    ?? throw new DocumentoVersaoException("Recurso não encontrado.", 404);
+                if (!currentItem.Ativo)
+                {
+                    throw new DocumentoVersaoException("Item inativo não recebe novas versões.", 409);
+                }
+
+                var existentes = await _versoes.ListByItemAsync(currentItem.Id, transactionToken);
+                var anterior = existentes.FirstOrDefault(version => version.Vigente);
+                var reenviar = existentes.Count > 0;
+                if (reenviar && currentItem.Situacao is not SituacaoItemChecklist.Rejeitado and not SituacaoItemChecklist.Vencido)
+                {
+                    throw new DocumentoVersaoException(AuditoriaConflictException.StableCode, 409);
+                }
+
+                if (reenviar && anterior is null)
+                {
+                    throw new DocumentoVersaoException("Versão vigente não encontrada.", 409);
+                }
+
+                var numero = existentes.Count == 0 ? 1 : existentes.Max(version => version.Numero) + 1;
+                var next = new DocumentoVersao(
+                    currentItem.Id,
+                    numero,
+                    enviadoPorUsuarioId,
+                    nome,
+                    storageKey,
+                    tipo,
+                    tamanho,
+                    hash,
+                    camposJson,
+                    versaoId);
+
+                if (anterior is not null)
+                {
+                    anterior.MarcarNaoVigente();
+                    await _versoes.UpdateAsync(anterior, transactionToken);
+                }
+
+                await _versoes.AddAsync(next, transactionToken);
+                currentItem.DefinirSituacao(SituacaoItemChecklist.PendenteAnalise);
+                await _itens.UpdateAsync(currentItem, transactionToken);
+                await _auditoria.RegisterAsync(new RegistrarEventoAuditoriaDocumento(
+                    reenviar ? CodigoAuditoriaDocumento.DocumentoReenviado : CodigoAuditoriaDocumento.DocumentoEnviado,
+                    enviadoPorUsuarioId,
+                    OrigemDocumentoAuditoria.DocumentoVersao,
+                    currentItem.Id,
+                    next.Id,
+                    next.Numero,
+                    anterior?.Id,
+                    anterior?.Numero,
+                    OcorreuEm: next.EnviadoEm), transactionToken);
+                return next;
+            }, cancellationToken);
+
+            return DocumentoVersaoResponse.FromEntity(versao);
         }
+        catch (Exception failure)
+        {
+            if (uploaded && storageKey is not null)
+            {
+                await TryCompensateAsync(storageKey);
+            }
 
-        var numero = existentes.Count == 0 ? 1 : existentes.Max(v => v.Numero) + 1;
-        var versao = new DocumentoVersao(
-            item.Id,
-            numero,
-            enviadoPorUsuarioId,
-            nome,
-            storageKey,
-            tipo,
-            tamanho,
-            hash,
-            camposJson,
-            versaoId);
+            if (failure is OperationCanceledException or DocumentoVersaoException)
+            {
+                throw;
+            }
 
-        await _versoes.AddAsync(versao, cancellationToken);
-        item.DefinirSituacao(SituacaoItemChecklist.PendenteAnalise);
-        await _itens.UpdateAsync(item, cancellationToken);
+            if (failure is AuditoriaConflictException)
+            {
+                throw new DocumentoVersaoException(AuditoriaConflictException.StableCode, 409);
+            }
 
-        return DocumentoVersaoResponse.FromEntity(versao);
+            throw new DocumentoVersaoException("Não foi possível concluir o registro da versão.", 500);
+        }
+    }
+
+    private async Task TryCompensateAsync(string storageKey)
+    {
+        try
+        {
+            await _storage.DeleteAsync(storageKey, CancellationToken.None);
+        }
+        catch (Exception failure)
+        {
+            _logger.LogWarning(
+                "Compensating storage cleanup failed. FailureType={FailureType}",
+                failure.GetType().Name);
+        }
     }
 }
 

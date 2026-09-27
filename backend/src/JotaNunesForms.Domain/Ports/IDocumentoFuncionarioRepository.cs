@@ -6,6 +6,8 @@ public interface IDocumentoFuncionarioRepository
 {
     Task<DocumentoFuncionario?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
+    Task<DocumentoFuncionario?> GetByIdForUpdateAsync(Guid id, CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<DocumentoFuncionario>> ListByFuncionarioAsync(
         Guid funcionarioId,
         CancellationToken cancellationToken = default);

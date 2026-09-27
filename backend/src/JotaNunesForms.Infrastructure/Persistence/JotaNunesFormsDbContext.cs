@@ -48,6 +48,10 @@ public sealed class JotaNunesFormsDbContext : DbContext
 
     public DbSet<AnaliseDocumento> AnalisesDocumento => Set<AnaliseDocumento>();
 
+    public DbSet<EventoAuditoriaDocumento> EventosAuditoriaDocumental => Set<EventoAuditoriaDocumento>();
+
+    public DbSet<DocumentoArquivoVersao> DocumentosArquivosVersoes => Set<DocumentoArquivoVersao>();
+
     public DbSet<Mobilizacao> Mobilizacoes => Set<Mobilizacao>();
 
     public DbSet<HistoricoLotacao> HistoricoLotacoes => Set<HistoricoLotacao>();

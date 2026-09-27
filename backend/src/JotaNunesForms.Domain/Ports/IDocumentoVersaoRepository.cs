@@ -6,6 +6,8 @@ public interface IDocumentoVersaoRepository
 {
     Task<DocumentoVersao?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
+    Task<DocumentoVersao?> GetByIdForUpdateAsync(Guid id, CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<DocumentoVersao>> ListByItemAsync(Guid itemChecklistId, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<DocumentoVersao>> ListVigentesPendentesAsync(CancellationToken cancellationToken = default);

@@ -1,5 +1,6 @@
 using JotaNunesForms.Application.DTOs;
 using JotaNunesForms.Application.Validacao;
+using JotaNunesForms.Application.UseCases.Auditoria;
 using JotaNunesForms.Domain.Entities;
 using JotaNunesForms.Domain.Ports;
 
@@ -156,33 +157,71 @@ public sealed class AprovarDocumentoEmpresaValidacaoUseCase
 {
     private readonly IDocumentoEmpresaRepository _documentos;
     private readonly IEmpresaRepository _empresas;
+    private readonly IDocumentoArquivoVersaoRepository _versoes;
+    private readonly ITransactionalExecutor _transactions;
+    private readonly AuditoriaDocumentoService _auditoria;
 
     public AprovarDocumentoEmpresaValidacaoUseCase(
         IDocumentoEmpresaRepository documentos,
-        IEmpresaRepository empresas)
+        IEmpresaRepository empresas,
+        IDocumentoArquivoVersaoRepository versoes,
+        ITransactionalExecutor transactions,
+        AuditoriaDocumentoService auditoria)
     {
         _documentos = documentos;
         _empresas = empresas;
+        _versoes = versoes;
+        _transactions = transactions;
+        _auditoria = auditoria;
     }
 
-    public async Task<DocumentoEmpresaResponse> ExecuteAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<DocumentoEmpresaResponse> ExecuteAsync(
+        Guid id,
+        Guid analistaUsuarioId,
+        CancellationToken cancellationToken = default)
     {
-        var documento = await _documentos.GetByIdAsync(id, cancellationToken);
-        if (documento is null)
+        var documento = await _transactions.ExecuteAsync(async transactionToken =>
         {
-            throw new ValidacaoException("Documento não encontrado.");
-        }
+            var current = await _documentos.GetByIdForUpdateAsync(id, transactionToken)
+                ?? throw new ValidacaoException("Documento não encontrado.");
+            var version = await _versoes.GetCurrentForEmpresaAsync(id, transactionToken)
+                ?? throw new ValidacaoException("Versão vigente não encontrada.", 409);
 
-        try
-        {
-            documento.Aprovar();
-        }
-        catch (InvalidOperationException ex)
-        {
-            throw new ValidacaoException(ex.Message);
-        }
+            if (current.Status is not StatusDocumento.Pendente and not StatusDocumento.EmAnalise)
+            {
+                var previousEvent = await _auditoria.FindExistingTransitionAsync(
+                    CodigoAuditoriaDocumento.DocumentoAprovado,
+                    OrigemDocumentoAuditoria.DocumentoEmpresa,
+                    version.Id,
+                    transactionToken);
+                if (previousEvent?.Codigo == CodigoAuditoriaDocumento.DocumentoAprovado)
+                {
+                    return current;
+                }
 
-        await _documentos.UpdateAsync(documento, cancellationToken);
+                throw new ValidacaoException(AuditoriaConflictException.StableCode, 409);
+            }
+
+            try
+            {
+                current.Aprovar();
+            }
+            catch (InvalidOperationException)
+            {
+                throw new ValidacaoException(AuditoriaConflictException.StableCode, 409);
+            }
+
+            await _documentos.UpdateAsync(current, transactionToken);
+            await _auditoria.RegisterAsync(new RegistrarEventoAuditoriaDocumento(
+                CodigoAuditoriaDocumento.DocumentoAprovado,
+                analistaUsuarioId,
+                OrigemDocumentoAuditoria.DocumentoEmpresa,
+                current.Id,
+                version.Id,
+                version.Numero,
+                ValidoAte: current.ValidoAte), transactionToken);
+            return current;
+        }, cancellationToken);
         var empresa = await _empresas.GetByIdAsync(documento.EmpresaId, cancellationToken);
         return DocumentoEmpresaResponse.FromEntity(documento, empresa?.RazaoSocial ?? "—");
     }
@@ -192,17 +231,27 @@ public sealed class RejeitarDocumentoEmpresaValidacaoUseCase
 {
     private readonly IDocumentoEmpresaRepository _documentos;
     private readonly IEmpresaRepository _empresas;
+    private readonly IDocumentoArquivoVersaoRepository _versoes;
+    private readonly ITransactionalExecutor _transactions;
+    private readonly AuditoriaDocumentoService _auditoria;
 
     public RejeitarDocumentoEmpresaValidacaoUseCase(
         IDocumentoEmpresaRepository documentos,
-        IEmpresaRepository empresas)
+        IEmpresaRepository empresas,
+        IDocumentoArquivoVersaoRepository versoes,
+        ITransactionalExecutor transactions,
+        AuditoriaDocumentoService auditoria)
     {
         _documentos = documentos;
         _empresas = empresas;
+        _versoes = versoes;
+        _transactions = transactions;
+        _auditoria = auditoria;
     }
 
     public async Task<DocumentoEmpresaResponse> ExecuteAsync(
         Guid id,
+        Guid analistaUsuarioId,
         RejeitarDocumentoRequest request,
         CancellationToken cancellationToken = default)
     {
@@ -211,26 +260,57 @@ public sealed class RejeitarDocumentoEmpresaValidacaoUseCase
             throw new ValidacaoException("Informe o motivo da rejeição (RF10).");
         }
 
-        var documento = await _documentos.GetByIdAsync(id, cancellationToken);
-        if (documento is null)
+        if (request.Motivo.Length > 2000)
         {
-            throw new ValidacaoException("Documento não encontrado.");
+            throw new ValidacaoException("O motivo não pode exceder 2000 caracteres.");
         }
 
-        try
+        var documento = await _transactions.ExecuteAsync(async transactionToken =>
         {
-            documento.Rejeitar(request.Motivo);
-        }
-        catch (ArgumentException ex)
-        {
-            throw new ValidacaoException(ex.Message);
-        }
-        catch (InvalidOperationException ex)
-        {
-            throw new ValidacaoException(ex.Message);
-        }
+            var current = await _documentos.GetByIdForUpdateAsync(id, transactionToken)
+                ?? throw new ValidacaoException("Documento não encontrado.");
+            var version = await _versoes.GetCurrentForEmpresaAsync(id, transactionToken)
+                ?? throw new ValidacaoException("Versão vigente não encontrada.", 409);
 
-        await _documentos.UpdateAsync(documento, cancellationToken);
+            if (current.Status is not StatusDocumento.Pendente and not StatusDocumento.EmAnalise)
+            {
+                var previousEvent = await _auditoria.FindExistingTransitionAsync(
+                    CodigoAuditoriaDocumento.DocumentoRejeitado,
+                    OrigemDocumentoAuditoria.DocumentoEmpresa,
+                    version.Id,
+                    transactionToken);
+                if (previousEvent?.Codigo == CodigoAuditoriaDocumento.DocumentoRejeitado)
+                {
+                    return current;
+                }
+
+                throw new ValidacaoException(AuditoriaConflictException.StableCode, 409);
+            }
+
+            try
+            {
+                current.Rejeitar(request.Motivo);
+            }
+            catch (ArgumentException)
+            {
+                throw new ValidacaoException("Informe um motivo de rejeição válido.");
+            }
+            catch (InvalidOperationException)
+            {
+                throw new ValidacaoException(AuditoriaConflictException.StableCode, 409);
+            }
+
+            await _documentos.UpdateAsync(current, transactionToken);
+            await _auditoria.RegisterAsync(new RegistrarEventoAuditoriaDocumento(
+                CodigoAuditoriaDocumento.DocumentoRejeitado,
+                analistaUsuarioId,
+                OrigemDocumentoAuditoria.DocumentoEmpresa,
+                current.Id,
+                version.Id,
+                version.Numero,
+                Motivo: request.Motivo), transactionToken);
+            return current;
+        }, cancellationToken);
         var empresa = await _empresas.GetByIdAsync(documento.EmpresaId, cancellationToken);
         return DocumentoEmpresaResponse.FromEntity(documento, empresa?.RazaoSocial ?? "—");
     }
@@ -241,41 +321,75 @@ public sealed class AprovarDocumentoFuncionarioValidacaoUseCase
     private readonly IDocumentoFuncionarioRepository _documentos;
     private readonly IFuncionarioRepository _funcionarios;
     private readonly IEmpresaRepository _empresas;
+    private readonly IDocumentoArquivoVersaoRepository _versoes;
+    private readonly ITransactionalExecutor _transactions;
+    private readonly AuditoriaDocumentoService _auditoria;
 
     public AprovarDocumentoFuncionarioValidacaoUseCase(
         IDocumentoFuncionarioRepository documentos,
         IFuncionarioRepository funcionarios,
-        IEmpresaRepository empresas)
+        IEmpresaRepository empresas,
+        IDocumentoArquivoVersaoRepository versoes,
+        ITransactionalExecutor transactions,
+        AuditoriaDocumentoService auditoria)
     {
         _documentos = documentos;
         _funcionarios = funcionarios;
         _empresas = empresas;
+        _versoes = versoes;
+        _transactions = transactions;
+        _auditoria = auditoria;
     }
 
-    public async Task<DocumentoFuncionarioResponse> ExecuteAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<DocumentoFuncionarioResponse> ExecuteAsync(
+        Guid id,
+        Guid analistaUsuarioId,
+        CancellationToken cancellationToken = default)
     {
-        var documento = await _documentos.GetByIdAsync(id, cancellationToken);
-        if (documento is null)
+        var (documento, funcionario) = await _transactions.ExecuteAsync(async transactionToken =>
         {
-            throw new ValidacaoException("Documento não encontrado.");
-        }
+            var current = await _documentos.GetByIdForUpdateAsync(id, transactionToken)
+                ?? throw new ValidacaoException("Documento não encontrado.");
+            var person = await _funcionarios.GetByIdAsync(current.FuncionarioId, transactionToken)
+                ?? throw new ValidacaoException("Funcionário não encontrado.");
+            var version = await _versoes.GetCurrentForFuncionarioAsync(id, transactionToken)
+                ?? throw new ValidacaoException("Versão vigente não encontrada.", 409);
 
-        var funcionario = await _funcionarios.GetByIdAsync(documento.FuncionarioId, cancellationToken);
-        if (funcionario is null)
-        {
-            throw new ValidacaoException("Funcionário não encontrado.");
-        }
+            if (current.Status is not StatusDocumento.Pendente and not StatusDocumento.EmAnalise)
+            {
+                var previousEvent = await _auditoria.FindExistingTransitionAsync(
+                    CodigoAuditoriaDocumento.DocumentoAprovado,
+                    OrigemDocumentoAuditoria.DocumentoFuncionario,
+                    version.Id,
+                    transactionToken);
+                if (previousEvent?.Codigo == CodigoAuditoriaDocumento.DocumentoAprovado)
+                {
+                    return (current, person);
+                }
 
-        try
-        {
-            documento.Aprovar();
-        }
-        catch (InvalidOperationException ex)
-        {
-            throw new ValidacaoException(ex.Message);
-        }
+                throw new ValidacaoException(AuditoriaConflictException.StableCode, 409);
+            }
 
-        await _documentos.UpdateAsync(documento, cancellationToken);
+            try
+            {
+                current.Aprovar();
+            }
+            catch (InvalidOperationException)
+            {
+                throw new ValidacaoException(AuditoriaConflictException.StableCode, 409);
+            }
+
+            await _documentos.UpdateAsync(current, transactionToken);
+            await _auditoria.RegisterAsync(new RegistrarEventoAuditoriaDocumento(
+                CodigoAuditoriaDocumento.DocumentoAprovado,
+                analistaUsuarioId,
+                OrigemDocumentoAuditoria.DocumentoFuncionario,
+                current.Id,
+                version.Id,
+                version.Numero,
+                ValidoAte: current.ValidoAte), transactionToken);
+            return (current, person);
+        }, cancellationToken);
         var empresa = await _empresas.GetByIdAsync(funcionario.EmpresaId, cancellationToken);
         return DocumentoFuncionarioResponse.FromEntity(documento, funcionario, empresa?.RazaoSocial ?? "—");
     }
@@ -286,19 +400,29 @@ public sealed class RejeitarDocumentoFuncionarioValidacaoUseCase
     private readonly IDocumentoFuncionarioRepository _documentos;
     private readonly IFuncionarioRepository _funcionarios;
     private readonly IEmpresaRepository _empresas;
+    private readonly IDocumentoArquivoVersaoRepository _versoes;
+    private readonly ITransactionalExecutor _transactions;
+    private readonly AuditoriaDocumentoService _auditoria;
 
     public RejeitarDocumentoFuncionarioValidacaoUseCase(
         IDocumentoFuncionarioRepository documentos,
         IFuncionarioRepository funcionarios,
-        IEmpresaRepository empresas)
+        IEmpresaRepository empresas,
+        IDocumentoArquivoVersaoRepository versoes,
+        ITransactionalExecutor transactions,
+        AuditoriaDocumentoService auditoria)
     {
         _documentos = documentos;
         _funcionarios = funcionarios;
         _empresas = empresas;
+        _versoes = versoes;
+        _transactions = transactions;
+        _auditoria = auditoria;
     }
 
     public async Task<DocumentoFuncionarioResponse> ExecuteAsync(
         Guid id,
+        Guid analistaUsuarioId,
         RejeitarDocumentoRequest request,
         CancellationToken cancellationToken = default)
     {
@@ -307,32 +431,59 @@ public sealed class RejeitarDocumentoFuncionarioValidacaoUseCase
             throw new ValidacaoException("Informe o motivo da rejeição (RF10).");
         }
 
-        var documento = await _documentos.GetByIdAsync(id, cancellationToken);
-        if (documento is null)
+        if (request.Motivo.Length > 2000)
         {
-            throw new ValidacaoException("Documento não encontrado.");
+            throw new ValidacaoException("O motivo não pode exceder 2000 caracteres.");
         }
 
-        var funcionario = await _funcionarios.GetByIdAsync(documento.FuncionarioId, cancellationToken);
-        if (funcionario is null)
+        var (documento, funcionario) = await _transactions.ExecuteAsync(async transactionToken =>
         {
-            throw new ValidacaoException("Funcionário não encontrado.");
-        }
+            var current = await _documentos.GetByIdForUpdateAsync(id, transactionToken)
+                ?? throw new ValidacaoException("Documento não encontrado.");
+            var person = await _funcionarios.GetByIdAsync(current.FuncionarioId, transactionToken)
+                ?? throw new ValidacaoException("Funcionário não encontrado.");
+            var version = await _versoes.GetCurrentForFuncionarioAsync(id, transactionToken)
+                ?? throw new ValidacaoException("Versão vigente não encontrada.", 409);
 
-        try
-        {
-            documento.Rejeitar(request.Motivo);
-        }
-        catch (ArgumentException ex)
-        {
-            throw new ValidacaoException(ex.Message);
-        }
-        catch (InvalidOperationException ex)
-        {
-            throw new ValidacaoException(ex.Message);
-        }
+            if (current.Status is not StatusDocumento.Pendente and not StatusDocumento.EmAnalise)
+            {
+                var previousEvent = await _auditoria.FindExistingTransitionAsync(
+                    CodigoAuditoriaDocumento.DocumentoRejeitado,
+                    OrigemDocumentoAuditoria.DocumentoFuncionario,
+                    version.Id,
+                    transactionToken);
+                if (previousEvent?.Codigo == CodigoAuditoriaDocumento.DocumentoRejeitado)
+                {
+                    return (current, person);
+                }
 
-        await _documentos.UpdateAsync(documento, cancellationToken);
+                throw new ValidacaoException(AuditoriaConflictException.StableCode, 409);
+            }
+
+            try
+            {
+                current.Rejeitar(request.Motivo);
+            }
+            catch (ArgumentException)
+            {
+                throw new ValidacaoException("Informe um motivo de rejeição válido.");
+            }
+            catch (InvalidOperationException)
+            {
+                throw new ValidacaoException(AuditoriaConflictException.StableCode, 409);
+            }
+
+            await _documentos.UpdateAsync(current, transactionToken);
+            await _auditoria.RegisterAsync(new RegistrarEventoAuditoriaDocumento(
+                CodigoAuditoriaDocumento.DocumentoRejeitado,
+                analistaUsuarioId,
+                OrigemDocumentoAuditoria.DocumentoFuncionario,
+                current.Id,
+                version.Id,
+                version.Numero,
+                Motivo: request.Motivo), transactionToken);
+            return (current, person);
+        }, cancellationToken);
         var empresa = await _empresas.GetByIdAsync(funcionario.EmpresaId, cancellationToken);
         return DocumentoFuncionarioResponse.FromEntity(documento, funcionario, empresa?.RazaoSocial ?? "—");
     }

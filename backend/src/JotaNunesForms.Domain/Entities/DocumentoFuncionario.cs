@@ -57,6 +57,11 @@ public sealed class DocumentoFuncionario
             throw new ArgumentException("Motivo da rejeição é obrigatório.", nameof(motivo));
         }
 
+        if (motivo.Trim().Length > 2000)
+        {
+            throw new ArgumentException("Motivo não pode exceder 2000 caracteres.", nameof(motivo));
+        }
+
         if (Status is not StatusDocumento.Pendente and not StatusDocumento.EmAnalise)
         {
             throw new InvalidOperationException("Somente documentos pendentes podem ser rejeitados.");

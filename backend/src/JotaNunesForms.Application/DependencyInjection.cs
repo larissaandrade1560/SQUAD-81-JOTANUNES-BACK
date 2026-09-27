@@ -1,4 +1,5 @@
 using JotaNunesForms.Application.UseCases.Auth;
+using JotaNunesForms.Application.UseCases.Auditoria;
 using JotaNunesForms.Application.Auth;
 using JotaNunesForms.Application.UseCases.Convites;
 using JotaNunesForms.Application.UseCases.Dashboard;
@@ -25,6 +26,9 @@ public static class DependencyInjection
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
         services.AddScoped<AccessScopeGuard>();
+        services.AddScoped<AuditoriaDocumentoService>();
+        services.AddScoped<RegistrarVencimentoDocumentoUseCase>();
+        services.AddScoped<ListEventosAuditoriaDocumentoUseCase>();
         services.AddScoped<ListFormulariosUseCase>();
         services.AddScoped<LoginUseCase>();
         services.AddScoped<GetAuthenticatedUserUseCase>();

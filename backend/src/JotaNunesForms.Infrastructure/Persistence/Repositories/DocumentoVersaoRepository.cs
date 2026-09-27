@@ -13,6 +13,20 @@ public sealed class DocumentoVersaoRepository : IDocumentoVersaoRepository
     public Task<DocumentoVersao?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
         _db.DocumentosVersoes.FirstOrDefaultAsync(v => v.Id == id, cancellationToken);
 
+    public async Task<DocumentoVersao?> GetByIdForUpdateAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var tracked = _db.ChangeTracker.Entries<DocumentoVersao>()
+            .FirstOrDefault(entry => entry.Entity.Id == id);
+        if (tracked is not null)
+        {
+            tracked.State = EntityState.Detached;
+        }
+
+        return await _db.DocumentosVersoes
+            .FromSqlInterpolated($"SELECT * FROM documentos_versoes WHERE id = {id} FOR UPDATE")
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
     public async Task<IReadOnlyList<DocumentoVersao>> ListByItemAsync(
         Guid itemChecklistId,
         CancellationToken cancellationToken = default) =>

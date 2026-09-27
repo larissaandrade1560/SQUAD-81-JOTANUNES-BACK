@@ -1,4 +1,5 @@
 using JotaNunesForms.Application.DTOs;
+using JotaNunesForms.Application.UseCases.Auditoria;
 using JotaNunesForms.Domain.Entities;
 using JotaNunesForms.Domain.Ports;
 
@@ -11,19 +12,22 @@ public sealed class ListPendenciasUseCase
     private readonly IPagamentoFuncionarioRepository _pagamentos;
     private readonly IEmpresaRepository _empresas;
     private readonly IFuncionarioRepository _funcionarios;
+    private readonly RegistrarVencimentoDocumentoUseCase _vencimento;
 
     public ListPendenciasUseCase(
         IDocumentoEmpresaRepository documentosEmpresa,
         IDocumentoFuncionarioRepository documentosFuncionario,
         IPagamentoFuncionarioRepository pagamentos,
         IEmpresaRepository empresas,
-        IFuncionarioRepository funcionarios)
+        IFuncionarioRepository funcionarios,
+        RegistrarVencimentoDocumentoUseCase vencimento)
     {
         _documentosEmpresa = documentosEmpresa;
         _documentosFuncionario = documentosFuncionario;
         _pagamentos = pagamentos;
         _empresas = empresas;
         _funcionarios = funcionarios;
+        _vencimento = vencimento;
     }
 
     public async Task<IReadOnlyList<PendenciaItemResponse>> ExecuteAsync(
@@ -41,44 +45,46 @@ public sealed class ListPendenciasUseCase
         var docsEmpresa = await _documentosEmpresa.ListAsync(cancellationToken: cancellationToken);
         foreach (var doc in docsEmpresa)
         {
-            var statusAnterior = doc.Status;
-            doc.AtualizarVencimentoSeExpirado(utcNow);
-            if (doc.Status != statusAnterior)
+            var current = doc;
+            if (current.Status == StatusDocumento.Aprovado
+                && current.ValidoAte is DateTime validoAte
+                && validoAte <= utcNow)
             {
-                await _documentosEmpresa.UpdateAsync(doc, cancellationToken);
+                current = await _vencimento.ExpireCompanyIfDueAsync(current.Id, utcNow, cancellationToken);
             }
 
-            if (!IsIrregularDocumento(doc.Status))
+            if (!IsIrregularDocumento(current.Status))
             {
                 continue;
             }
 
-            items.Add(MapDocumentoEmpresa(doc, nomesEmpresa));
+            items.Add(MapDocumentoEmpresa(current, nomesEmpresa));
         }
 
         var docsFuncionario = await _documentosFuncionario.ListAsync(cancellationToken: cancellationToken);
         foreach (var doc in docsFuncionario)
         {
-            var statusAnterior = doc.Status;
-            doc.AtualizarVencimentoSeExpirado(utcNow);
-            if (doc.Status != statusAnterior)
+            var current = doc;
+            if (current.Status == StatusDocumento.Aprovado
+                && current.ValidoAte is DateTime validoAte
+                && validoAte <= utcNow)
             {
-                await _documentosFuncionario.UpdateAsync(doc, cancellationToken);
+                current = await _vencimento.ExpireEmployeeIfDueAsync(current.Id, utcNow, cancellationToken);
             }
 
-            if (!IsIrregularDocumento(doc.Status))
+            if (!IsIrregularDocumento(current.Status))
             {
                 continue;
             }
 
-            var funcionario = funcionarios.FirstOrDefault(f => f.Id == doc.FuncionarioId);
+            var funcionario = funcionarios.FirstOrDefault(f => f.Id == current.FuncionarioId);
             if (funcionario is null)
             {
                 continue;
             }
 
             items.Add(MapDocumentoFuncionario(
-                doc,
+                current,
                 funcionario,
                 nomesEmpresa.GetValueOrDefault(funcionario.EmpresaId, "—")));
         }

@@ -1,0 +1,244 @@
+openapi: 3.0.3
+info:
+  title: JotaNunesForms - RF17 Auditoria Documental
+  version: 1.0.0
+paths:
+  /api/auditoria/eventos:
+    get:
+      summary: Lista eventos de auditoria documental
+      description: Disponível somente para Administrador e Analista ativos da Jotanunes.
+      operationId: listAuditoriaEventos
+      parameters:
+        - name: de
+          in: query
+          description: Instante inicial inclusivo em RFC 3339.
+          schema:
+            type: string
+            format: date-time
+        - name: ate
+          in: query
+          description: Instante final exclusivo em RFC 3339; deve ser maior que de.
+          schema:
+            type: string
+            format: date-time
+        - name: codigo
+          in: query
+          schema:
+            $ref: '#/components/schemas/AuditoriaCodigo'
+        - name: empresaId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: escopo
+          in: query
+          schema:
+            $ref: '#/components/schemas/AuditoriaEscopo'
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+      responses:
+        '200':
+          description: Página de eventos ordenada por ocorridoEm e id, ambos decrescentes.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditoriaPage'
+        '400':
+          description: Intervalo, enum ou paginação inválidos.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Identidade ausente ou inválida; não retorna eventos nem contagem.
+        '403':
+          description: Perfil não interno; não retorna eventos nem contagem.
+components:
+  schemas:
+    AuditoriaCodigo:
+      type: string
+      enum:
+        - documento_enviado
+        - documento_reenviado
+        - documento_aprovado
+        - documento_rejeitado
+        - documento_vencido
+    AuditoriaEscopo:
+      type: string
+      enum: [empresa, funcionario, requisito]
+    AuditoriaPage:
+      type: object
+      required: [items, page, pageSize, total, totalPages]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuditoriaEvento'
+        page:
+          type: integer
+          minimum: 1
+        pageSize:
+          type: integer
+          minimum: 1
+          maximum: 100
+        total:
+          type: integer
+          format: int64
+          minimum: 0
+        totalPages:
+          type: integer
+          minimum: 0
+    AuditoriaEvento:
+      type: object
+      required:
+        - id
+        - codigo
+        - acaoRotulo
+        - ocorridoEm
+        - escopo
+        - escopoRotulo
+        - automatico
+        - ator
+        - empresa
+        - funcionario
+        - documento
+        - origem
+        - detalhes
+      properties:
+        id:
+          type: string
+          format: uuid
+        codigo:
+          $ref: '#/components/schemas/AuditoriaCodigo'
+        acaoRotulo:
+          type: string
+        ocorridoEm:
+          type: string
+          format: date-time
+        escopo:
+          $ref: '#/components/schemas/AuditoriaEscopo'
+        escopoRotulo:
+          type: string
+        automatico:
+          type: boolean
+        ator:
+          $ref: '#/components/schemas/AtorSnapshot'
+        empresa:
+          $ref: '#/components/schemas/EmpresaSnapshot'
+        funcionario:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/FuncionarioSnapshot'
+        documento:
+          $ref: '#/components/schemas/DocumentoReferencia'
+        origem:
+          $ref: '#/components/schemas/OrigemReferencia'
+        detalhes:
+          $ref: '#/components/schemas/AuditoriaDetalhes'
+    AtorSnapshot:
+      type: object
+      required: [nome]
+      properties:
+        id:
+          type: string
+          format: uuid
+          nullable: true
+        nome:
+          type: string
+          maxLength: 200
+        perfil:
+          type: string
+          maxLength: 40
+          nullable: true
+    EmpresaSnapshot:
+      type: object
+      required: [id, razaoSocial]
+      properties:
+        id:
+          type: string
+          format: uuid
+        razaoSocial:
+          type: string
+          maxLength: 200
+    FuncionarioSnapshot:
+      type: object
+      required: [id, nome]
+      properties:
+        id:
+          type: string
+          format: uuid
+        nome:
+          type: string
+          maxLength: 200
+    DocumentoReferencia:
+      type: object
+      required: [id, tipoRotulo]
+      properties:
+        id:
+          type: string
+          format: uuid
+        tipoRotulo:
+          type: string
+          maxLength: 160
+        versaoId:
+          type: string
+          format: uuid
+          nullable: true
+        versaoNumero:
+          type: integer
+          minimum: 1
+          nullable: true
+        versaoAnteriorId:
+          type: string
+          format: uuid
+          nullable: true
+        versaoAnteriorNumero:
+          type: integer
+          minimum: 1
+          nullable: true
+    OrigemReferencia:
+      type: object
+      required: [disponivel]
+      properties:
+        disponivel:
+          type: boolean
+        processoId:
+          type: string
+          format: uuid
+          nullable: true
+        itemId:
+          type: string
+          format: uuid
+          nullable: true
+    AuditoriaDetalhes:
+      type: object
+      properties:
+        motivo:
+          type: string
+          maxLength: 2000
+          nullable: true
+        comentario:
+          type: string
+          maxLength: 2000
+          nullable: true
+        validoAte:
+          type: string
+          format: date-time
+          nullable: true
+    Error:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string

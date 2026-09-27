@@ -31,3 +31,5 @@ Um identificador inexistente e um identificador de outro tenant percorrem o mesm
 O teste de inventário descobre as operações em runtime por `EndpointDataSource`, normaliza constraints de rota e compara o conjunto `(method, route)` com o JSON. Operação ausente, duplicada ou anônima fora da allowlist falha.
 
 Testes de perfil e tenant usam o mesmo JSON para selecionar os cenários. A fixture rejeita qualquer combinação diferente de `200/filtered` em coleção escopada, `404/generic-not-found` em recurso identificado ou `null/not-applicable` em operação pública/global. A documentação não mantém uma segunda tabela manual de permissões ou vocabulário duplicado.
+
+O endpoint `GET /api/auditoria/eventos` da RF17 está classificado na fonte canônica como `Internal` e `global`: somente Administrador e Analista ativos podem consultar a trilha documental.

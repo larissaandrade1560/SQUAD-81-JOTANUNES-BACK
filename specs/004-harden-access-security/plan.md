@@ -30,14 +30,13 @@ Fechar a API por padrão, revalidar a identidade corrente em toda requisição p
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-A constituição é um template ainda não ratificado, logo não contém gates executáveis. Foram aplicados os limites documentados do projeto:
+O planejamento inicial foi criado antes da ratificação da constituição. Nesta revisão, os gates abaixo são avaliados contra `.specify/memory/constitution.md`:
 
-- **PASS — hexagonal**: HTTP em Api/Infrastructure; contexto neutro em Application; ownership nos casos de uso/repositórios.
-- **PASS — controllers finos**: controllers selecionam policy/contexto, sem regra de negócio.
-- **PASS — fail-closed**: fallback policy e allowlist pública explícita.
-- **PASS — persistência**: nenhuma nova entidade persistida.
-- **PASS — testes por risco**: matriz, tenant, startup, CORS, Swagger e logs são gates.
-- **PASS — compatibilidade**: frontend mantém guards de UX; `401` descarta sessão.
+- **PASS — princípios I–II (segurança e fronteiras)**: HTTP na borda; contexto neutro na Application; ownership nos casos de uso; políticas explícitas e negação por padrão.
+- **PASS — princípio III (testes)**: matriz, tenant, startup, CORS, Swagger e logs têm testes previstos; a execução é acompanhada nas tarefas e CI, não presumida por este gate de desenho.
+- **PASS — princípio IV (contratos)**: matriz de acesso e contratos HTTP fazem parte dos artefatos da feature.
+- **PASS — princípio V (evolução segura)**: nenhuma nova entidade persistida; deploy/configuração e comportamento de negação estão documentados.
+- **PASS — compatibilidade**: frontend mantém guards apenas como UX; `401` descarta sessão.
 
 ### Post-design re-check
 

@@ -42,7 +42,7 @@ public static class RecalcularSituacaoProcesso
             return;
         }
 
-        if (item.Situacao == SituacaoItemChecklist.Aprovado && validoAte.Value.ToUniversalTime() < utcNow)
+        if (item.Situacao == SituacaoItemChecklist.Aprovado && validoAte.Value.ToUniversalTime() <= utcNow)
         {
             item.DefinirSituacao(SituacaoItemChecklist.Vencido);
         }

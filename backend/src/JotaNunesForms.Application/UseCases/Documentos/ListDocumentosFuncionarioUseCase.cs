@@ -1,6 +1,7 @@
 using JotaNunesForms.Application.Documentos;
 using JotaNunesForms.Application.DTOs;
 using JotaNunesForms.Application.Auth;
+using JotaNunesForms.Application.UseCases.Auditoria;
 using JotaNunesForms.Domain.Entities;
 using JotaNunesForms.Domain.Ports;
 
@@ -12,17 +13,20 @@ public sealed class ListDocumentosFuncionarioUseCase
     private readonly IFuncionarioRepository _funcionarios;
     private readonly IEmpresaRepository _empresas;
     private readonly AccessScopeGuard _scopeGuard;
+    private readonly RegistrarVencimentoDocumentoUseCase _vencimento;
 
     public ListDocumentosFuncionarioUseCase(
         IDocumentoFuncionarioRepository documentos,
         IFuncionarioRepository funcionarios,
         IEmpresaRepository empresas,
-        AccessScopeGuard scopeGuard)
+        AccessScopeGuard scopeGuard,
+        RegistrarVencimentoDocumentoUseCase vencimento)
     {
         _documentos = documentos;
         _funcionarios = funcionarios;
         _empresas = empresas;
         _scopeGuard = scopeGuard;
+        _vencimento = vencimento;
     }
 
     public async Task<IReadOnlyList<DocumentoFuncionarioResponse>> ExecuteAsync(
@@ -52,16 +56,17 @@ public sealed class ListDocumentosFuncionarioUseCase
         var empresa = await _empresas.GetByIdAsync(funcionario.EmpresaId, cancellationToken);
         var empresaNome = empresa?.RazaoSocial ?? "—";
 
-        var list = await _documentos.ListByFuncionarioAsync(funcionarioId, cancellationToken);
+        var list = (await _documentos.ListByFuncionarioAsync(funcionarioId, cancellationToken)).ToList();
         var utcNow = DateTime.UtcNow;
 
-        foreach (var documento in list)
+        for (var index = 0; index < list.Count; index++)
         {
-            var statusAnterior = documento.Status;
-            documento.AtualizarVencimentoSeExpirado(utcNow);
-            if (documento.Status != statusAnterior)
+            var documento = list[index];
+            if (documento.Status == StatusDocumento.Aprovado
+                && documento.ValidoAte is DateTime validoAte
+                && validoAte <= utcNow)
             {
-                await _documentos.UpdateAsync(documento, cancellationToken);
+                list[index] = await _vencimento.ExpireEmployeeIfDueAsync(documento.Id, utcNow, cancellationToken);
             }
         }
 

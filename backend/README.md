@@ -2,6 +2,8 @@
 
 API ASP.NET Core 8 em arquitetura hexagonal (ports and adapters), com PostgreSQL e EF Core.
 
+As regras que governam segurança, privacidade, dependências e validação estão em [`.specify/memory/constitution.md`](../.specify/memory/constitution.md).
+
 ## Projetos
 
 | Projeto | Camada | Responsabilidade |

@@ -51,6 +51,9 @@ public static class DependencyInjection
         services.AddScoped<ISocioRepository, SocioRepository>();
         services.AddScoped<IItemChecklistRepository, ItemChecklistRepository>();
         services.AddScoped<IDocumentoVersaoRepository, DocumentoVersaoRepository>();
+        services.AddScoped<IEventoAuditoriaDocumentoRepository, EventoAuditoriaDocumentoRepository>();
+        services.AddScoped<IDocumentoArquivoVersaoRepository, DocumentoArquivoVersaoRepository>();
+        services.AddScoped<ITransactionalExecutor, EfTransactionalExecutor>();
         services.AddScoped<IMobilizacaoRepository, MobilizacaoRepository>();
         services.Configure<R2StorageOptions>(configuration.GetSection("R2"));
         services.Configure<EmailOptions>(configuration.GetSection("Email"));

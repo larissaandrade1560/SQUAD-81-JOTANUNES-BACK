@@ -51,6 +51,16 @@ public sealed class AnaliseDocumento
             throw new ArgumentException("Motivo da rejeição é obrigatório.", nameof(motivo));
         }
 
+        if (motivo?.Trim().Length > 2000)
+        {
+            throw new ArgumentException("Motivo não pode exceder 2000 caracteres.", nameof(motivo));
+        }
+
+        if (comentario?.Trim().Length > 2000)
+        {
+            throw new ArgumentException("Comentário não pode exceder 2000 caracteres.", nameof(comentario));
+        }
+
         Id = Guid.NewGuid();
         DocumentoVersaoId = documentoVersaoId;
         Decisao = decisao;

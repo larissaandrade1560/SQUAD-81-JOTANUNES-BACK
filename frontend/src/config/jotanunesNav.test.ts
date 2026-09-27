@@ -24,4 +24,11 @@ describe('navigation access hints', () => {
     expect(paths).toContain('/mobilizacoes')
     expect(paths).toContain('/pagamentos')
   })
+
+  it('exposes document audit only to internal roles', () => {
+    expect(navItemsForRole('admin').map((item) => item.to)).toContain('/auditoria')
+    expect(navItemsForRole('analista').map((item) => item.to)).toContain('/auditoria')
+    expect(navItemsForRole('terceirizado', 1).map((item) => item.to)).not.toContain('/auditoria')
+    expect(navItemsForRole('terceirizado', 2).map((item) => item.to)).not.toContain('/auditoria')
+  })
 })

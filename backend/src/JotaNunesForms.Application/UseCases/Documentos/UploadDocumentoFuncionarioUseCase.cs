@@ -1,8 +1,10 @@
 using JotaNunesForms.Application.Documentos;
 using JotaNunesForms.Application.DTOs;
 using JotaNunesForms.Application.Auth;
+using JotaNunesForms.Application.UseCases.Auditoria;
 using JotaNunesForms.Domain.Entities;
 using JotaNunesForms.Domain.Ports;
+using Microsoft.Extensions.Logging;
 
 namespace JotaNunesForms.Application.UseCases.Documentos;
 
@@ -15,19 +17,31 @@ public sealed class UploadDocumentoFuncionarioUseCase
     private readonly IEmpresaRepository _empresas;
     private readonly IObjectStorage _storage;
     private readonly AccessScopeGuard _scopeGuard;
+    private readonly IDocumentoArquivoVersaoRepository _versoes;
+    private readonly ITransactionalExecutor _transactions;
+    private readonly AuditoriaDocumentoService _auditoria;
+    private readonly ILogger<UploadDocumentoFuncionarioUseCase> _logger;
 
     public UploadDocumentoFuncionarioUseCase(
         IDocumentoFuncionarioRepository documentos,
         IFuncionarioRepository funcionarios,
         IEmpresaRepository empresas,
         IObjectStorage storage,
-        AccessScopeGuard scopeGuard)
+        AccessScopeGuard scopeGuard,
+        IDocumentoArquivoVersaoRepository versoes,
+        ITransactionalExecutor transactions,
+        AuditoriaDocumentoService auditoria,
+        ILogger<UploadDocumentoFuncionarioUseCase> logger)
     {
         _documentos = documentos;
         _funcionarios = funcionarios;
         _empresas = empresas;
         _storage = storage;
         _scopeGuard = scopeGuard;
+        _versoes = versoes;
+        _transactions = transactions;
+        _auditoria = auditoria;
+        _logger = logger;
     }
 
     public async Task<DocumentoFuncionarioResponse> ExecuteAsync(
@@ -93,12 +107,6 @@ public sealed class UploadDocumentoFuncionarioUseCase
         var storageKey =
             $"empresas/{funcionario.EmpresaId:D}/funcionarios/{funcionarioId:D}/documentos/{documentoId:D}.pdf";
 
-        await _storage.UploadAsync(
-            storageKey,
-            conteudo,
-            "application/pdf",
-            cancellationToken);
-
         var documento = new DocumentoFuncionario(
             documentoId,
             funcionarioId,
@@ -108,8 +116,72 @@ public sealed class UploadDocumentoFuncionarioUseCase
             "application/pdf",
             tamanhoBytes);
 
-        await _documentos.AddAsync(documento, cancellationToken);
+        var actorId = companyScope.UserId;
+        var occurredAt = DateTime.UtcNow;
+        var version = DocumentoArquivoVersao.ForFuncionario(
+            documento.Id,
+            1,
+            nomeArquivo,
+            storageKey,
+            "application/pdf",
+            tamanhoBytes,
+            actorId,
+            occurredAt);
+        var uploaded = false;
+
+        try
+        {
+            await _storage.UploadAsync(storageKey, conteudo, "application/pdf", cancellationToken);
+            uploaded = true;
+            await _transactions.ExecuteAsync(async transactionToken =>
+            {
+                await _documentos.AddAsync(documento, transactionToken);
+                await _versoes.AddAsync(version, transactionToken);
+                await _auditoria.RegisterAsync(new RegistrarEventoAuditoriaDocumento(
+                    CodigoAuditoriaDocumento.DocumentoEnviado,
+                    actorId,
+                    OrigemDocumentoAuditoria.DocumentoFuncionario,
+                    documento.Id,
+                    version.Id,
+                    version.Numero,
+                    OcorreuEm: occurredAt), transactionToken);
+                return true;
+            }, cancellationToken);
+        }
+        catch (Exception failure)
+        {
+            if (uploaded)
+            {
+                await TryCompensateAsync(storageKey);
+            }
+
+            if (failure is OperationCanceledException)
+            {
+                throw;
+            }
+
+            if (failure is DocumentoFuncionarioException)
+            {
+                throw;
+            }
+
+            throw new DocumentoFuncionarioException("Não foi possível concluir o registro do documento.", 500);
+        }
 
         return DocumentoFuncionarioResponse.FromEntity(documento, funcionario, empresa.RazaoSocial);
+    }
+
+    private async Task TryCompensateAsync(string storageKey)
+    {
+        try
+        {
+            await _storage.DeleteAsync(storageKey, CancellationToken.None);
+        }
+        catch (Exception failure)
+        {
+            _logger.LogWarning(
+                "Compensating storage cleanup failed. FailureType={FailureType}",
+                failure.GetType().Name);
+        }
     }
 }

@@ -74,6 +74,7 @@
     {"method": "POST", "route": "/api/validacao/funcionario/{id}/rejeitar", "access": "Internal", "scope": "global", "tenantBoundaryOutcome": {"status": null, "behavior": "not-applicable"}},
     {"method": "POST", "route": "/api/validacao/versoes/{versaoId}/aprovar", "access": "Internal", "scope": "global", "tenantBoundaryOutcome": {"status": null, "behavior": "not-applicable"}},
     {"method": "POST", "route": "/api/validacao/versoes/{versaoId}/rejeitar", "access": "Internal", "scope": "global", "tenantBoundaryOutcome": {"status": null, "behavior": "not-applicable"}},
-    {"method": "GET", "route": "/api/pendencias", "access": "Internal", "scope": "global", "tenantBoundaryOutcome": {"status": null, "behavior": "not-applicable"}}
+    {"method": "GET", "route": "/api/pendencias", "access": "Internal", "scope": "global", "tenantBoundaryOutcome": {"status": null, "behavior": "not-applicable"}},
+    {"method": "GET", "route": "/api/auditoria/eventos", "access": "Internal", "scope": "global", "tenantBoundaryOutcome": {"status": null, "behavior": "not-applicable"}}
   ]
 }

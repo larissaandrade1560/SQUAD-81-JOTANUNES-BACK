@@ -6,6 +6,8 @@ public interface IDocumentoEmpresaRepository
 {
     Task<DocumentoEmpresa?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
+    Task<DocumentoEmpresa?> GetByIdForUpdateAsync(Guid id, CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<DocumentoEmpresa>> ListAsync(
         Guid? empresaId = null,
         CancellationToken cancellationToken = default);

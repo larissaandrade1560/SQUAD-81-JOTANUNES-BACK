@@ -55,11 +55,12 @@ public sealed class ValidacaoController : ControllerBase
     {
         try
         {
-            return Ok(await _aprovarEmpresa.ExecuteAsync(id, cancellationToken));
+            var analistaId = await ResolveUsuarioId(cancellationToken);
+            return Ok(await _aprovarEmpresa.ExecuteAsync(id, analistaId, cancellationToken));
         }
         catch (ValidacaoException ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return StatusCode(ex.StatusCode, new { message = ex.Message });
         }
     }
 
@@ -71,11 +72,12 @@ public sealed class ValidacaoController : ControllerBase
     {
         try
         {
-            return Ok(await _rejeitarEmpresa.ExecuteAsync(id, request, cancellationToken));
+            var analistaId = await ResolveUsuarioId(cancellationToken);
+            return Ok(await _rejeitarEmpresa.ExecuteAsync(id, analistaId, request, cancellationToken));
         }
         catch (ValidacaoException ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return StatusCode(ex.StatusCode, new { message = ex.Message });
         }
     }
 
@@ -86,11 +88,12 @@ public sealed class ValidacaoController : ControllerBase
     {
         try
         {
-            return Ok(await _aprovarFuncionario.ExecuteAsync(id, cancellationToken));
+            var analistaId = await ResolveUsuarioId(cancellationToken);
+            return Ok(await _aprovarFuncionario.ExecuteAsync(id, analistaId, cancellationToken));
         }
         catch (ValidacaoException ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return StatusCode(ex.StatusCode, new { message = ex.Message });
         }
     }
 
@@ -102,11 +105,12 @@ public sealed class ValidacaoController : ControllerBase
     {
         try
         {
-            return Ok(await _rejeitarFuncionario.ExecuteAsync(id, request, cancellationToken));
+            var analistaId = await ResolveUsuarioId(cancellationToken);
+            return Ok(await _rejeitarFuncionario.ExecuteAsync(id, analistaId, request, cancellationToken));
         }
         catch (ValidacaoException ex)
         {
-            return BadRequest(new { message = ex.Message });
+            return StatusCode(ex.StatusCode, new { message = ex.Message });
         }
     }
 

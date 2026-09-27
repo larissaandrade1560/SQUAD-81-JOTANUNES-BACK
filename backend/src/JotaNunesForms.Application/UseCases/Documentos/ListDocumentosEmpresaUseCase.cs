@@ -1,6 +1,7 @@
 using JotaNunesForms.Application.Documentos;
 using JotaNunesForms.Application.DTOs;
 using JotaNunesForms.Application.Auth;
+using JotaNunesForms.Application.UseCases.Auditoria;
 using JotaNunesForms.Domain.Entities;
 using JotaNunesForms.Domain.Ports;
 
@@ -10,13 +11,16 @@ public sealed class ListDocumentosEmpresaUseCase
 {
     private readonly IDocumentoEmpresaRepository _documentos;
     private readonly IEmpresaRepository _empresas;
+    private readonly RegistrarVencimentoDocumentoUseCase _vencimento;
 
     public ListDocumentosEmpresaUseCase(
         IDocumentoEmpresaRepository documentos,
-        IEmpresaRepository empresas)
+        IEmpresaRepository empresas,
+        RegistrarVencimentoDocumentoUseCase vencimento)
     {
         _documentos = documentos;
         _empresas = empresas;
+        _vencimento = vencimento;
     }
 
     public async Task<IReadOnlyList<DocumentoEmpresaResponse>> ExecuteAsync(
@@ -24,16 +28,17 @@ public sealed class ListDocumentosEmpresaUseCase
         CancellationToken cancellationToken = default)
     {
         var scopeEmpresaId = scope is AccessScope.Company company ? company.CompanyId : (Guid?)null;
-        var list = await _documentos.ListAsync(scopeEmpresaId, cancellationToken);
+        var list = (await _documentos.ListAsync(scopeEmpresaId, cancellationToken)).ToList();
         var utcNow = DateTime.UtcNow;
 
-        foreach (var documento in list)
+        for (var index = 0; index < list.Count; index++)
         {
-            var statusAnterior = documento.Status;
-            documento.AtualizarVencimentoSeExpirado(utcNow);
-            if (documento.Status != statusAnterior)
+            var documento = list[index];
+            if (documento.Status == StatusDocumento.Aprovado
+                && documento.ValidoAte is DateTime validoAte
+                && validoAte <= utcNow)
             {
-                await _documentos.UpdateAsync(documento, cancellationToken);
+                list[index] = await _vencimento.ExpireCompanyIfDueAsync(documento.Id, utcNow, cancellationToken);
             }
         }
 

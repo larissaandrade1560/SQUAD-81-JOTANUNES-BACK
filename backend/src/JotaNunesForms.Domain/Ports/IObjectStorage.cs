@@ -8,6 +8,10 @@ public interface IObjectStorage
         string contentType,
         CancellationToken cancellationToken = default);
 
+    Task DeleteAsync(
+        string key,
+        CancellationToken cancellationToken = default);
+
     Task<string> GetDownloadUrlAsync(
         string key,
         TimeSpan validFor,

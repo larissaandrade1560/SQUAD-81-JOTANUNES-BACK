@@ -27,6 +27,8 @@ Sistema web para gerenciamento de formulários e gestão de terceirizados.
 
 Requisitos funcionais (RF01–RF20): [docs/requisitos/requisitos-funcionais.md](docs/requisitos/requisitos-funcionais.md).
 
+Princípios obrigatórios de arquitetura, segurança e qualidade: [Constituição do projeto](.specify/memory/constitution.md).
+
 ### Organização do frontend
 
 A estrutura interna de pastas (`src/api`, `src/services`, `src/pages`, etc.), convenções de nomes e regras de dependência estão documentadas em [frontend/README.md](frontend/README.md).

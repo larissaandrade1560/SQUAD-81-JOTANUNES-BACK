@@ -60,6 +60,18 @@ public sealed class R2ObjectStorage : IObjectStorage, IDisposable
         return Task.FromResult(url);
     }
 
+    public async Task DeleteAsync(string key, CancellationToken cancellationToken = default)
+    {
+        var client = RequireClient();
+        await client.DeleteObjectAsync(
+            new DeleteObjectRequest
+            {
+                BucketName = _options.BucketName,
+                Key = key,
+            },
+            cancellationToken);
+    }
+
     private IAmazonS3 RequireClient()
     {
         if (_client.Value is null)

@@ -16,6 +16,20 @@ public sealed class DocumentoEmpresaRepository : IDocumentoEmpresaRepository
     public Task<DocumentoEmpresa?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
         _dbContext.DocumentosEmpresa.FirstOrDefaultAsync(d => d.Id == id, cancellationToken);
 
+    public async Task<DocumentoEmpresa?> GetByIdForUpdateAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var tracked = _dbContext.ChangeTracker.Entries<DocumentoEmpresa>()
+            .FirstOrDefault(entry => entry.Entity.Id == id);
+        if (tracked is not null)
+        {
+            tracked.State = EntityState.Detached;
+        }
+
+        return await _dbContext.DocumentosEmpresa
+            .FromSqlInterpolated($"SELECT * FROM documentos_empresa WHERE id = {id} FOR UPDATE")
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
     public async Task<IReadOnlyList<DocumentoEmpresa>> ListAsync(
         Guid? empresaId = null,
         CancellationToken cancellationToken = default)
