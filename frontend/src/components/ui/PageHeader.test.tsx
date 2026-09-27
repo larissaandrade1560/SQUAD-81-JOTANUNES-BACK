@@ -9,4 +9,16 @@ describe('PageHeader', () => {
     expect(screen.getByRole('heading', { name: 'Formulários' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Novo' })).toBeInTheDocument()
   })
+
+  it('shows breadcrumb and meta date when provided', () => {
+    render(
+      <PageHeader
+        breadcrumb="Operações / Validação"
+        title="Validação Documental"
+        metaDate="15 de março de 2026"
+      />,
+    )
+    expect(screen.getByText('Operações / Validação')).toBeInTheDocument()
+    expect(screen.getByText('15 de março de 2026')).toBeInTheDocument()
+  })
 })

@@ -4,7 +4,7 @@ export type MetricCardProps = {
   label: string
   value: string
   hint?: string
-  tone?: 'default' | 'warning' | 'danger'
+  tone?: 'default' | 'info' | 'warning' | 'danger'
 }
 
 export function MetricCard({ label, value, hint, tone = 'default' }: MetricCardProps) {

@@ -28,6 +28,11 @@
   color: var(--color-text-secondary);
 }
 
+.jn-metric-card--info {
+  border-color: var(--color-badge-info-fg);
+  background: var(--color-badge-info-bg);
+}
+
 .jn-metric-card--warning {
   border-color: var(--color-badge-warning-fg);
   background: var(--color-badge-warning-bg);

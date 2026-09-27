@@ -1,6 +1,8 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { MetricCard } from '../components/dashboard/MetricCard'
 import { Badge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
+import { Input } from '../components/ui/Input'
 import { PageHeader } from '../components/ui/PageHeader'
 import type { ApiError } from '../types/api'
 import {
@@ -10,6 +12,11 @@ import {
   rejeitarDocumentoValidacao,
   type ValidacaoDocumentoItem,
 } from '../services/validacaoService'
+import {
+  computeValidacaoMetrics,
+  filterValidacaoFila,
+  type ValidacaoStatusFilter,
+} from '../utils/validacaoFilaUtils'
 import './ValidacaoPage.css'
 
 function apiErrorMessage(err: unknown): string {
@@ -38,15 +45,44 @@ function statusTone(status: number): 'success' | 'warning' | 'neutral' | 'danger
   return 'info'
 }
 
+function formatHeaderDate(date: Date): string {
+  return date.toLocaleDateString('pt-BR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })
+}
+
+function solicitanteLabel(item: ValidacaoDocumentoItem): string {
+  if (item.funcionarioNome) {
+    return `${item.empresaRazaoSocial} · ${item.funcionarioNome}`
+  }
+  return item.empresaRazaoSocial
+}
+
+const STATUS_FILTERS: { id: ValidacaoStatusFilter; label: string }[] = [
+  { id: 'todos', label: 'Todos' },
+  { id: 'aguardando', label: 'Aguardando' },
+  { id: 'em_analise', label: 'Em análise' },
+]
+
 /** RF09 / RF10 / RF12 — Fila de validação documental. */
 export function ValidacaoPage() {
   const [fila, setFila] = useState<ValidacaoDocumentoItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | undefined>()
+  const [searchQuery, setSearchQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState<ValidacaoStatusFilter>('todos')
   const [rejectTarget, setRejectTarget] = useState<ValidacaoDocumentoItem | null>(null)
   const [motivo, setMotivo] = useState('')
   const [rejectError, setRejectError] = useState<string | undefined>()
   const [actingId, setActingId] = useState<string | null>(null)
+
+  const metrics = useMemo(() => computeValidacaoMetrics(fila), [fila])
+  const filaVisivel = useMemo(
+    () => filterValidacaoFila(fila, searchQuery, statusFilter),
+    [fila, searchQuery, statusFilter],
+  )
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -64,7 +100,7 @@ export function ValidacaoPage() {
     void load()
   }, [load])
 
-  async function handleAprovar(item: ValidacaoDocumentoItem) {
+  async function handleValidar(item: ValidacaoDocumentoItem) {
     setActingId(item.id)
     setError(undefined)
     try {
@@ -103,17 +139,69 @@ export function ValidacaoPage() {
     }
   }
 
+  const tableColSpan = 6
+
   return (
     <section className="jn-validacao">
       <PageHeader
-        title="Validação documental"
-        subtitle="RF09 — Aprove ou rejeite documentos pendentes. RF10 — Rejeição exige motivo. RF12 — Ao abrir a fila, documentos passam para Em análise."
+        breadcrumb="Operações / Validação documental"
+        title="Validação Documental"
+        metaDate={formatHeaderDate(new Date())}
         action={
           <Button type="button" variant="ghost" onClick={() => void load()} disabled={loading}>
             Atualizar fila
           </Button>
         }
       />
+
+      {!loading && !error && (
+        <>
+          <div className="jn-validacao__metrics">
+            <MetricCard
+              label="Total de documentos"
+              value={String(metrics.totalDocumentos)}
+              tone="default"
+            />
+            <MetricCard
+              label="Aguardando validação"
+              value={String(metrics.aguardandoValidacao)}
+              tone="warning"
+            />
+            <MetricCard
+              label="Em análise"
+              value={String(metrics.emAnalise)}
+              tone="info"
+            />
+          </div>
+
+          <div className="jn-validacao__toolbar">
+            <label className="jn-validacao__search">
+              <span className="jn-validacao__search-label">Buscar por nome</span>
+              <Input
+                type="search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Buscar por nome…"
+              />
+            </label>
+            <div className="jn-validacao__filters" role="group" aria-label="Filtrar por status">
+              {STATUS_FILTERS.map((filter) => (
+                <Button
+                  key={filter.id}
+                  type="button"
+                  variant={statusFilter === filter.id ? 'secondary' : 'ghost'}
+                  className={
+                    statusFilter === filter.id ? 'jn-validacao__filter jn-validacao__filter--active' : 'jn-validacao__filter'
+                  }
+                  onClick={() => setStatusFilter(filter.id)}
+                >
+                  {filter.label}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
 
       {loading && <p className="jn-validacao__status">Carregando…</p>}
       {error && (
@@ -127,14 +215,10 @@ export function ValidacaoPage() {
           <table className="jn-validacao__table">
             <thead>
               <tr>
-                <th scope="col">Escopo</th>
-                <th scope="col">Empresa</th>
-                <th scope="col">Funcionário</th>
-                <th scope="col">Tipo</th>
-                <th scope="col">Código</th>
-                <th scope="col">Arquivo</th>
-                <th scope="col">Tamanho</th>
-                <th scope="col">Enviado em</th>
+                <th scope="col">#</th>
+                <th scope="col">Tipo de documento</th>
+                <th scope="col">Solicitante</th>
+                <th scope="col">Data solicitação</th>
                 <th scope="col">Status</th>
                 <th scope="col">Ações</th>
               </tr>
@@ -142,20 +226,23 @@ export function ValidacaoPage() {
             <tbody>
               {fila.length === 0 ? (
                 <tr>
-                    <td colSpan={10}>Nenhum documento pendente de validação.</td>
+                  <td colSpan={tableColSpan}>Nenhum documento pendente de validação.</td>
+                </tr>
+              ) : filaVisivel.length === 0 ? (
+                <tr>
+                  <td colSpan={tableColSpan}>Nenhum resultado para os filtros aplicados.</td>
                 </tr>
               ) : (
-                fila.map((item) => (
+                filaVisivel.map((item, index) => (
                   <tr key={`${item.escopo}-${item.id}`}>
+                    <td>{index + 1}</td>
                     <td>
-                      <Badge tone="info">{escopoLabel(item.escopo)}</Badge>
+                      <span className="jn-validacao__doc-type">{item.tipoRotulo}</span>
+                      <span className="jn-validacao__doc-meta">
+                        {escopoLabel(item.escopo)} · {item.nomeArquivo} · {formatFileSize(item.tamanhoBytes)}
+                      </span>
                     </td>
-                    <td>{item.empresaRazaoSocial}</td>
-                    <td>{item.funcionarioNome ?? '—'}</td>
-                    <td>{item.tipoRotulo}</td>
-                    <td>{item.catalogoCodigo ?? '—'}</td>
-                    <td>{item.nomeArquivo}</td>
-                    <td>{formatFileSize(item.tamanhoBytes)}</td>
+                    <td>{solicitanteLabel(item)}</td>
                     <td>{new Date(item.enviadoEm).toLocaleString('pt-BR')}</td>
                     <td>
                       <Badge tone={statusTone(item.status)}>{item.statusRotulo}</Badge>
@@ -166,9 +253,9 @@ export function ValidacaoPage() {
                           type="button"
                           variant="primary"
                           disabled={actingId === item.id}
-                          onClick={() => void handleAprovar(item)}
+                          onClick={() => void handleValidar(item)}
                         >
-                          Aprovar
+                          Validar
                         </Button>
                         <Button
                           type="button"

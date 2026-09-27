@@ -57,4 +57,30 @@ describe('InternalRoute', () => {
     expect(await screen.findByText('área permitida')).toBeTruthy()
     expect(screen.queryByText('histórico interno')).toBeNull()
   })
+
+  it('does not render the validation queue for a labor company', async () => {
+    saveSession({
+      accessToken: 'token',
+      document: '12345678901234',
+      displayName: 'Mão de Obra',
+      profileLabel: 'Terceirizado',
+      role: 'terceirizado',
+      tipoEmpresa: 1,
+      expiresAtUtc: new Date(Date.now() + 60_000).toISOString(),
+    })
+
+    render(
+      <MemoryRouter initialEntries={['/validacao']}>
+        <Routes>
+          <Route element={<InternalRoute />}>
+            <Route path="/validacao" element={<p>fila validação</p>} />
+          </Route>
+          <Route path="/funcionarios" element={<p>área permitida</p>} />
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    expect(await screen.findByText('área permitida')).toBeTruthy()
+    expect(screen.queryByText('fila validação')).toBeNull()
+  })
 })
