@@ -6,9 +6,13 @@ export type NavItemProps = {
   to: string
   label: string
   icon?: ReactNode
+  badgeCount?: number
+  badgeTone?: 'solid' | 'soft'
 }
 
-export function NavItem({ to, label, icon }: NavItemProps) {
+export function NavItem({ to, label, icon, badgeCount, badgeTone = 'solid' }: NavItemProps) {
+  const showBadge = typeof badgeCount === 'number' && badgeCount > 0
+
   return (
     <NavLink
       to={to}
@@ -18,7 +22,19 @@ export function NavItem({ to, label, icon }: NavItemProps) {
       }
     >
       {icon ? <span className="jn-nav-item__icon">{icon}</span> : null}
-      <span>{label}</span>
+      <span className="jn-nav-item__label">{label}</span>
+      {showBadge ? (
+        <span
+          className={[
+            'jn-nav-item__badge',
+            badgeTone === 'soft' ? 'jn-nav-item__badge--soft' : '',
+          ]
+            .filter(Boolean)
+            .join(' ')}
+        >
+          {badgeCount > 99 ? '99+' : badgeCount}
+        </span>
+      ) : null}
     </NavLink>
   )
 }

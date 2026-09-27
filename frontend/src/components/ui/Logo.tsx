@@ -1,11 +1,23 @@
 import './Logo.css'
 
 export type LogoProps = {
-  variant?: 'full' | 'mark' | 'on-dark'
+  variant?: 'full' | 'mark' | 'on-dark' | 'ds-sidebar'
   title?: string
 }
 
 export function Logo({ variant = 'full', title = 'JotaNunesForms' }: LogoProps) {
+  if (variant === 'ds-sidebar') {
+    return (
+      <div className="jn-logo jn-logo--ds-sidebar" role="img" aria-label={title}>
+        <span className="jn-logo__ds-mark" aria-hidden="true">JN</span>
+        <div className="jn-logo__text">
+          <span className="jn-logo__ds-title">JotaNunes</span>
+          <span className="jn-logo__ds-subtitle">Forms</span>
+        </div>
+      </div>
+    )
+  }
+
   const showText = variant === 'full' || variant === 'on-dark'
   const className = [
     'jn-logo',

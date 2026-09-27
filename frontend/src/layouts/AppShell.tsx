@@ -1,17 +1,47 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router'
-import { navItemsForRole } from '../config/jotanunesNav'
+import {
+  NAV_SECTION_LABELS,
+  NAV_SECTION_ORDER,
+  navItemsBySection,
+  navItemsForRole,
+} from '../config/jotanunesNav'
 import { Logo } from '../components/ui/Logo'
+import { NAV_ICONS } from '../components/ui/navIcons'
 import { NavItem } from '../components/ui/NavItem'
+import { getDashboardResumo } from '../services/dashboardService'
 import { getSession, logout } from '../store/authStorage'
 import './AppShell.css'
 
-/** Shell interno Jotanunes (Admin / Analista) — Figma `05 — Shell Jotanunes`. */
+function userInitials(displayName: string): string {
+  const parts = displayName.trim().split(/\s+/).filter(Boolean)
+  if (parts.length === 0) return 'JN'
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
+  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase()
+}
+
+function LogoutIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <path
+        d="M6 2.5H3.5a1 1 0 0 0-1 1V12.5a1 1 0 0 0 1 1H6M10.5 11.5 13.5 8 10.5 4.5M13.5 8H6.5"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+/** Shell interno — sidebar DS Figma `174:7`. */
 export function AppShell() {
   const navigate = useNavigate()
   const location = useLocation()
   const session = getSession()
   const [navOpen, setNavOpen] = useState(false)
+  const [validacaoBadge, setValidacaoBadge] = useState(0)
+  const [pagamentosBadge, setPagamentosBadge] = useState(0)
 
   useEffect(() => {
     setNavOpen(false)
@@ -28,15 +58,44 @@ export function AppShell() {
     }
   }, [navOpen])
 
+  useEffect(() => {
+    if (!session || session.role === 'terceirizado') return
+    let cancelled = false
+    void getDashboardResumo()
+      .then((resumo) => {
+        if (cancelled) return
+        setValidacaoBadge(resumo.documentosValidacaoFila)
+        setPagamentosBadge(resumo.comprovantesPendentes + resumo.comprovantesEmAtraso)
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setValidacaoBadge(0)
+          setPagamentosBadge(0)
+        }
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [session, location.pathname])
+
+  const navSections = useMemo(() => {
+    if (!session) return new Map()
+    return navItemsBySection(navItemsForRole(session.role, session.tipoEmpresa))
+  }, [session])
+
   if (!session) {
     return null
   }
 
-  const navItems = navItemsForRole(session.role, session.tipoEmpresa)
-
   function handleLogout() {
     logout()
     navigate('/login', { replace: true })
+  }
+
+  function badgeForItem(badge?: 'validacao' | 'pagamentos') {
+    if (badge === 'validacao') return validacaoBadge
+    if (badge === 'pagamentos') return pagamentosBadge
+    return undefined
   }
 
   return (
@@ -60,21 +119,49 @@ export function AppShell() {
         aria-label="Navegação principal"
       >
         <div className="jn-app-shell__brand">
-          <Logo variant="on-dark" />
-          <p className="jn-app-shell__context">
-            {session.role === 'terceirizado'
-              ? `Empresa parceira (${session.tipoEmpresa === 1 ? 'MO' : 'Materiais'})`
-              : 'Equipe Jotanunes'}
-          </p>
+          <Logo variant="ds-sidebar" />
         </div>
         <nav className="jn-app-shell__nav">
-          {navItems.map((item) => (
-            <NavItem key={item.to} to={item.to} label={item.label} />
-          ))}
+          {NAV_SECTION_ORDER.map((sectionId) => {
+            const items = navSections.get(sectionId)
+            if (!items?.length) return null
+            return (
+              <div key={sectionId} className="jn-app-shell__nav-section">
+                <p className="jn-app-shell__nav-heading">{NAV_SECTION_LABELS[sectionId]}</p>
+                <div className="jn-app-shell__nav-items">
+                  {items.map((item) => (
+                    <NavItem
+                      key={item.to}
+                      to={item.to}
+                      label={item.label}
+                      icon={NAV_ICONS[item.icon]}
+                      badgeCount={badgeForItem(item.badge)}
+                      badgeTone={item.badge === 'pagamentos' ? 'soft' : 'solid'}
+                    />
+                  ))}
+                </div>
+              </div>
+            )
+          })}
         </nav>
         <footer className="jn-app-shell__user">
-          <p className="jn-app-shell__user-name">{session.displayName}</p>
-          <p className="jn-app-shell__user-role">{session.profileLabel}</p>
+          <div className="jn-app-shell__user-row">
+            <span className="jn-app-shell__avatar" aria-hidden="true">
+              {userInitials(session.displayName)}
+            </span>
+            <div className="jn-app-shell__user-text">
+              <p className="jn-app-shell__user-name">{session.displayName}</p>
+              <p className="jn-app-shell__user-role">{session.profileLabel}</p>
+            </div>
+            <button
+              type="button"
+              className="jn-app-shell__logout"
+              aria-label="Sair"
+              onClick={handleLogout}
+            >
+              <LogoutIcon />
+            </button>
+          </div>
         </footer>
       </aside>
       <div className="jn-app-shell__main">

@@ -6,6 +6,68 @@
   min-height: 112px;
 }
 
+.jn-metric-card--inline {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  min-height: 0;
+  border-radius: 12px;
+  border-color: rgb(0 0 0 / 5%);
+  background: #f9fafb;
+}
+
+.jn-metric-card--inline.jn-metric-card--warning {
+  background: #fffbeb;
+}
+
+.jn-metric-card--inline.jn-metric-card--info {
+  background: #eff6ff;
+}
+
+.jn-metric-card--inline .jn-metric-card__value {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  margin: 0;
+  border-radius: 8px;
+  background: rgb(255 255 255 / 80%);
+  font-size: 1.125rem;
+  font-weight: 700;
+  line-height: 1.75rem;
+}
+
+.jn-metric-card--inline.jn-metric-card--default .jn-metric-card__value {
+  color: #6b7280;
+}
+
+.jn-metric-card--inline.jn-metric-card--warning .jn-metric-card__value {
+  color: #92400e;
+}
+
+.jn-metric-card--inline.jn-metric-card--warning .jn-metric-card__label {
+  color: #92400e;
+}
+
+.jn-metric-card--inline.jn-metric-card--info .jn-metric-card__value {
+  color: #1e40af;
+}
+
+.jn-metric-card--inline.jn-metric-card--info .jn-metric-card__label {
+  color: #1e40af;
+}
+
+.jn-metric-card--inline .jn-metric-card__label {
+  font-weight: 500;
+  font-size: var(--font-size-body);
+}
+
+.jn-metric-card--stack .jn-metric-card__text {
+  display: contents;
+}
+
 .jn-metric-card__value {
   margin: 0 0 var(--space-2);
   font-size: var(--font-size-display);

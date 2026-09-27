@@ -38,3 +38,35 @@
 .jn-logo--on-dark .jn-logo__subtitle {
   color: var(--color-text-muted-on-sidebar);
 }
+
+.jn-logo--ds-sidebar {
+  gap: var(--space-3);
+}
+
+.jn-logo__ds-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: #c41230;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  flex-shrink: 0;
+}
+
+.jn-logo__ds-title {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: #fff;
+}
+
+.jn-logo__ds-subtitle {
+  font-size: 12px;
+  line-height: 1.25;
+  color: #6b7280;
+}

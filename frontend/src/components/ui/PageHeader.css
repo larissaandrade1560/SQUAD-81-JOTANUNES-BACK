@@ -26,11 +26,44 @@
   color: var(--color-text-secondary);
 }
 
+.jn-page-header--meta-aside .jn-page-header__text {
+  flex: 1;
+}
+
+.jn-page-header__title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  width: 100%;
+}
+
 .jn-page-header__title {
   margin: 0;
   font-size: var(--font-size-h1);
   line-height: var(--line-height-h1);
   font-weight: 500;
+}
+
+.jn-page-header--meta-aside .jn-page-header__title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.75rem;
+  color: #101828;
+}
+
+.jn-page-header__meta--aside {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+  margin-top: var(--space-1);
+  color: #6a7282;
+}
+
+.jn-page-header__calendar-icon {
+  flex-shrink: 0;
+  color: #6a7282;
 }
 
 .jn-page-header__subtitle {

@@ -8,37 +8,61 @@
 .jn-validacao__toolbar {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
-  gap: var(--space-4);
-  margin-bottom: var(--space-4);
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
   padding: var(--space-4);
-  border: 1px solid var(--color-border-default);
-  border-radius: var(--radius-sm);
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
   background: var(--color-bg-surface);
 }
 
 .jn-validacao__search {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
+  position: relative;
   flex: 1 1 16rem;
-  max-width: 28rem;
+  max-width: 20rem;
 }
 
-.jn-validacao__search-label {
-  font-size: var(--font-size-label);
-  color: var(--color-text-secondary);
+.jn-validacao__search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.jn-validacao__search .jn-input {
+  padding-left: 2.25rem;
+  background: #f9fafb;
+  border-color: #e5e7eb;
+  border-radius: 8px;
 }
 
 .jn-validacao__filters {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2);
+  gap: var(--space-1);
+}
+
+.jn-validacao__filter {
+  padding: 6px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: var(--color-bg-surface);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  color: #6b7280;
+  cursor: pointer;
 }
 
 .jn-validacao__filter--active {
-  font-weight: 600;
+  border-color: var(--color-action-primary);
+  background: var(--color-action-primary);
+  color: var(--color-text-on-brand);
 }
 
 .jn-validacao__status {
@@ -52,47 +76,164 @@
 
 .jn-validacao__table-wrap {
   overflow-x: auto;
-  border: 1px solid var(--color-border-default);
-  border-radius: var(--radius-sm);
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
   background: var(--color-bg-surface);
 }
 
 .jn-validacao__table {
   width: 100%;
   border-collapse: collapse;
-  font-size: var(--font-size-tab);
+  font-size: 14px;
 }
 
 .jn-validacao__table th,
 .jn-validacao__table td {
-  padding: var(--space-3) var(--space-4);
+  padding: 14px 20px;
   text-align: left;
-  border-bottom: 1px solid var(--color-border-default);
-  vertical-align: top;
+  border-bottom: 1px solid #f9fafb;
+  vertical-align: middle;
 }
 
 .jn-validacao__table th {
+  font-size: 12px;
   font-weight: 600;
-  color: var(--color-text-secondary);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #9ca3af;
+  background: #fafafa;
+  border-bottom-color: #f3f4f6;
 }
 
-.jn-validacao__doc-type {
-  display: block;
+.jn-validacao__cell-id {
+  font-family: ui-monospace, 'Consolas', monospace;
+  font-size: 12px;
+  color: #99a1af;
+}
+
+.jn-validacao__cell-type {
   font-weight: 500;
-  color: var(--color-text-primary);
+  color: #101828;
 }
 
-.jn-validacao__doc-meta {
-  display: block;
-  margin-top: var(--space-1);
-  font-size: var(--font-size-label);
-  color: var(--color-text-secondary);
+.jn-validacao__cell-doc {
+  font-family: ui-monospace, 'Consolas', monospace;
+  font-size: 12px;
+  color: #6a7282;
+}
+
+.jn-validacao__status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+}
+
+.jn-validacao__status-pill--aguardando {
+  background: #fffbeb;
+  color: #92400e;
+}
+
+.jn-validacao__status-pill--aguardando .jn-validacao__status-dot {
+  background: #f59e0b;
+}
+
+.jn-validacao__status-pill--analise {
+  background: #eff6ff;
+  color: #1e40af;
+}
+
+.jn-validacao__status-pill--analise .jn-validacao__status-dot {
+  background: #3b82f6;
+}
+
+.jn-validacao__status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  flex-shrink: 0;
 }
 
 .jn-validacao__actions {
   display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-1);
+}
+
+.jn-validacao__validar-btn {
+  min-height: 28px;
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+.jn-validacao__reject-link {
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: 12px;
+  color: var(--color-action-primary);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.jn-validacao__reject-link:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.jn-validacao__table-footer {
+  display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2);
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 14px 20px;
+  border-top: 1px solid #f3f4f6;
+}
+
+.jn-validacao__range {
+  margin: 0;
+  font-size: 12px;
+  color: #99a1af;
+}
+
+.jn-validacao__range strong {
+  font-weight: 500;
+  color: #4a5565;
+}
+
+.jn-validacao__pagination {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.jn-validacao__page-btn {
+  padding: 6px 12px;
+  min-width: 28px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: var(--color-bg-surface);
+  font-size: 12px;
+  font-weight: 500;
+  color: #6b7280;
+  cursor: pointer;
+}
+
+.jn-validacao__page-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.jn-validacao__page-btn--current {
+  border-color: var(--color-action-primary);
+  background: var(--color-action-primary);
+  color: var(--color-text-on-brand);
 }
 
 .jn-validacao__dialog {
@@ -163,9 +304,14 @@
     max-width: none;
   }
 
-  .jn-validacao__actions {
+  .jn-validacao__table-footer {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .jn-validacao__pagination {
+    justify-content: center;
+    flex-wrap: wrap;
   }
 
   .jn-validacao__dialog {

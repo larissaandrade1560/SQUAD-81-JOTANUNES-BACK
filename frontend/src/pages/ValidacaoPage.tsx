@@ -1,13 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { MetricCard } from '../components/dashboard/MetricCard'
-import { Badge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { PageHeader } from '../components/ui/PageHeader'
 import type { ApiError } from '../types/api'
 import {
   aprovarDocumentoValidacao,
-  formatFileSize,
   listValidacaoFila,
   rejeitarDocumentoValidacao,
   type ValidacaoDocumentoItem,
@@ -18,6 +16,14 @@ import {
   type ValidacaoStatusFilter,
 } from '../utils/validacaoFilaUtils'
 import './ValidacaoPage.css'
+
+const PAGE_SIZE = 10
+
+const STATUS_FILTERS: { id: ValidacaoStatusFilter; label: string }[] = [
+  { id: 'todos', label: 'Todos' },
+  { id: 'aguardando', label: 'Aguardando' },
+  { id: 'em_analise', label: 'Em análise' },
+]
 
 function apiErrorMessage(err: unknown): string {
   if (
@@ -31,20 +37,6 @@ function apiErrorMessage(err: unknown): string {
   return 'Não foi possível concluir a operação.'
 }
 
-function escopoLabel(escopo: string): string {
-  if (escopo === 'funcionario') return 'Funcionário'
-  if (escopo === 'versao') return 'Checklist'
-  return 'Empresa'
-}
-
-function statusTone(status: number): 'success' | 'warning' | 'neutral' | 'danger' | 'info' {
-  if (status === 2) return 'success'
-  if (status === 3) return 'danger'
-  if (status === 1) return 'info'
-  if (status === 4) return 'warning'
-  return 'info'
-}
-
 function formatHeaderDate(date: Date): string {
   return date.toLocaleDateString('pt-BR', {
     day: 'numeric',
@@ -53,26 +45,45 @@ function formatHeaderDate(date: Date): string {
   })
 }
 
+function formatTableDate(iso: string): string {
+  return new Date(iso).toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  })
+}
+
+function formatRowIndex(displayIndex: number): string {
+  return String(displayIndex).padStart(3, '0')
+}
+
 function solicitanteLabel(item: ValidacaoDocumentoItem): string {
-  if (item.funcionarioNome) {
-    return `${item.empresaRazaoSocial} · ${item.funcionarioNome}`
-  }
+  if (item.funcionarioNome) return item.funcionarioNome
   return item.empresaRazaoSocial
 }
 
-const STATUS_FILTERS: { id: ValidacaoStatusFilter; label: string }[] = [
-  { id: 'todos', label: 'Todos' },
-  { id: 'aguardando', label: 'Aguardando' },
-  { id: 'em_analise', label: 'Em análise' },
-]
+function statusPillClass(status: number): string {
+  if (status === 1) return 'jn-validacao__status-pill jn-validacao__status-pill--analise'
+  return 'jn-validacao__status-pill jn-validacao__status-pill--aguardando'
+}
 
-/** RF09 / RF10 / RF12 — Fila de validação documental. */
+function ValidacaoStatusPill({ status, label }: { status: number; label: string }) {
+  return (
+    <span className={statusPillClass(status)}>
+      <span className="jn-validacao__status-dot" aria-hidden="true" />
+      {label}
+    </span>
+  )
+}
+
+/** RF09 / RF10 / RF12 — Fila de validação documental (DS Figma 174:6). */
 export function ValidacaoPage() {
   const [fila, setFila] = useState<ValidacaoDocumentoItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | undefined>()
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<ValidacaoStatusFilter>('todos')
+  const [page, setPage] = useState(1)
   const [rejectTarget, setRejectTarget] = useState<ValidacaoDocumentoItem | null>(null)
   const [motivo, setMotivo] = useState('')
   const [rejectError, setRejectError] = useState<string | undefined>()
@@ -83,6 +94,24 @@ export function ValidacaoPage() {
     () => filterValidacaoFila(fila, searchQuery, statusFilter),
     [fila, searchQuery, statusFilter],
   )
+
+  const totalPages = Math.max(1, Math.ceil(filaVisivel.length / PAGE_SIZE))
+
+  useEffect(() => {
+    setPage(1)
+  }, [searchQuery, statusFilter])
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages)
+  }, [page, totalPages])
+
+  const pageItems = useMemo(() => {
+    const start = (page - 1) * PAGE_SIZE
+    return filaVisivel.slice(start, start + PAGE_SIZE)
+  }, [filaVisivel, page])
+
+  const rangeStart = filaVisivel.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1
+  const rangeEnd = Math.min(page * PAGE_SIZE, filaVisivel.length)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -139,35 +168,34 @@ export function ValidacaoPage() {
     }
   }
 
-  const tableColSpan = 6
+  const tableColSpan = 8
 
   return (
     <section className="jn-validacao">
       <PageHeader
-        breadcrumb="Operações / Validação documental"
+        breadcrumb="Operações / Validação Documental"
         title="Validação Documental"
         metaDate={formatHeaderDate(new Date())}
-        action={
-          <Button type="button" variant="ghost" onClick={() => void load()} disabled={loading}>
-            Atualizar fila
-          </Button>
-        }
+        metaDatePosition="aside"
       />
 
       {!loading && !error && (
         <>
           <div className="jn-validacao__metrics">
             <MetricCard
+              layout="inline"
               label="Total de documentos"
               value={String(metrics.totalDocumentos)}
               tone="default"
             />
             <MetricCard
+              layout="inline"
               label="Aguardando validação"
               value={String(metrics.aguardandoValidacao)}
               tone="warning"
             />
             <MetricCard
+              layout="inline"
               label="Em análise"
               value={String(metrics.emAnalise)}
               tone="info"
@@ -176,27 +204,39 @@ export function ValidacaoPage() {
 
           <div className="jn-validacao__toolbar">
             <label className="jn-validacao__search">
-              <span className="jn-validacao__search-label">Buscar por nome</span>
+              <span className="jn-validacao__search-icon" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path
+                    d="M7 12.5a5.5 5.5 0 1 0 0-11 5.5 5.5 0 0 0 0 11Zm7.5 1.5-3.6-3.6"
+                    stroke="currentColor"
+                    strokeWidth="1.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </span>
               <Input
                 type="search"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Buscar por nome…"
+                placeholder="Buscar por nome, CPF/CNPJ..."
+                aria-label="Buscar por nome, CPF ou CNPJ"
               />
             </label>
             <div className="jn-validacao__filters" role="group" aria-label="Filtrar por status">
               {STATUS_FILTERS.map((filter) => (
-                <Button
+                <button
                   key={filter.id}
                   type="button"
-                  variant={statusFilter === filter.id ? 'secondary' : 'ghost'}
                   className={
-                    statusFilter === filter.id ? 'jn-validacao__filter jn-validacao__filter--active' : 'jn-validacao__filter'
+                    statusFilter === filter.id
+                      ? 'jn-validacao__filter jn-validacao__filter--active'
+                      : 'jn-validacao__filter'
                   }
                   onClick={() => setStatusFilter(filter.id)}
                 >
                   {filter.label}
-                </Button>
+                </button>
               ))}
             </div>
           </div>
@@ -218,7 +258,9 @@ export function ValidacaoPage() {
                 <th scope="col">#</th>
                 <th scope="col">Tipo de documento</th>
                 <th scope="col">Solicitante</th>
+                <th scope="col">CPF / CNPJ</th>
                 <th scope="col">Data solicitação</th>
+                <th scope="col">Atualização</th>
                 <th scope="col">Status</th>
                 <th scope="col">Ações</th>
               </tr>
@@ -233,38 +275,36 @@ export function ValidacaoPage() {
                   <td colSpan={tableColSpan}>Nenhum resultado para os filtros aplicados.</td>
                 </tr>
               ) : (
-                filaVisivel.map((item, index) => (
+                pageItems.map((item, index) => (
                   <tr key={`${item.escopo}-${item.id}`}>
-                    <td>{index + 1}</td>
-                    <td>
-                      <span className="jn-validacao__doc-type">{item.tipoRotulo}</span>
-                      <span className="jn-validacao__doc-meta">
-                        {escopoLabel(item.escopo)} · {item.nomeArquivo} · {formatFileSize(item.tamanhoBytes)}
-                      </span>
-                    </td>
+                    <td className="jn-validacao__cell-id">{formatRowIndex(rangeStart + index)}</td>
+                    <td className="jn-validacao__cell-type">{item.tipoRotulo}</td>
                     <td>{solicitanteLabel(item)}</td>
-                    <td>{new Date(item.enviadoEm).toLocaleString('pt-BR')}</td>
+                    <td className="jn-validacao__cell-doc">—</td>
+                    <td>{formatTableDate(item.enviadoEm)}</td>
+                    <td>{formatTableDate(item.enviadoEm)}</td>
                     <td>
-                      <Badge tone={statusTone(item.status)}>{item.statusRotulo}</Badge>
+                      <ValidacaoStatusPill status={item.status} label={item.statusRotulo} />
                     </td>
                     <td>
                       <div className="jn-validacao__actions">
                         <Button
                           type="button"
                           variant="primary"
+                          className="jn-validacao__validar-btn"
                           disabled={actingId === item.id}
                           onClick={() => void handleValidar(item)}
                         >
                           Validar
                         </Button>
-                        <Button
+                        <button
                           type="button"
-                          variant="ghost"
+                          className="jn-validacao__reject-link"
                           disabled={actingId === item.id}
                           onClick={() => openReject(item)}
                         >
                           Rejeitar
-                        </Button>
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -272,6 +312,48 @@ export function ValidacaoPage() {
               )}
             </tbody>
           </table>
+
+          {filaVisivel.length > 0 && (
+            <footer className="jn-validacao__table-footer">
+              <p className="jn-validacao__range">
+                Mostrando <strong>{rangeEnd - rangeStart + 1}</strong> de{' '}
+                <strong>{filaVisivel.length}</strong> documentos
+              </p>
+              <nav className="jn-validacao__pagination" aria-label="Paginação da fila">
+                <button
+                  type="button"
+                  className="jn-validacao__page-btn"
+                  disabled={page <= 1}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                >
+                  Anterior
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNumber) => (
+                  <button
+                    key={pageNumber}
+                    type="button"
+                    className={
+                      pageNumber === page
+                        ? 'jn-validacao__page-btn jn-validacao__page-btn--current'
+                        : 'jn-validacao__page-btn'
+                    }
+                    aria-current={pageNumber === page ? 'page' : undefined}
+                    onClick={() => setPage(pageNumber)}
+                  >
+                    {pageNumber}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  className="jn-validacao__page-btn"
+                  disabled={page >= totalPages}
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                >
+                  Próximo
+                </button>
+              </nav>
+            </footer>
+          )}
         </div>
       )}
 
@@ -280,8 +362,7 @@ export function ValidacaoPage() {
           <form className="jn-validacao__dialog-form" onSubmit={confirmReject}>
             <h2>Rejeitar documento</h2>
             <p className="jn-validacao__dialog-meta">
-              {escopoLabel(rejectTarget.escopo)} · {rejectTarget.tipoRotulo} ·{' '}
-              {rejectTarget.nomeArquivo}
+              {rejectTarget.tipoRotulo} · {rejectTarget.nomeArquivo}
             </p>
             <label className="jn-validacao__motivo">
               <span>Motivo (obrigatório)</span>
