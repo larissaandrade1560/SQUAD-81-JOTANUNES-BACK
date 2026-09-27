@@ -250,8 +250,9 @@ public sealed class ListMobilizacoesUseCase
         var lista = await _mobilizacoes.ListAsync(empresaId, obraId, contratoId, situacao, cancellationToken);
         var catalogo = await _catalogo.ListAsync(cancellationToken);
         var resultado = new List<MobilizacaoResponse>();
-        foreach (var mobilizacao in lista)
+        foreach (var item in lista)
         {
+            var mobilizacao = item;
             var funcionario = await _funcionarios.GetByIdAsync(mobilizacao.FuncionarioId, cancellationToken);
             if (funcionario is null)
             {

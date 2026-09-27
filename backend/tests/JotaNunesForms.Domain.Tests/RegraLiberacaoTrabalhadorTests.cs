@@ -149,10 +149,10 @@ public sealed class RegraLiberacaoTrabalhadorTests
             cadastroCompleto,
             requisitos,
             saldoEpi,
-            integracaoRefazer: false,
-            integracaoVencida: false,
-            integracaoValida: integracaoValida,
-            AvaliadoEm);
+            IntegracaoRefazer: false,
+            IntegracaoVencida: false,
+            IntegracaoValida: integracaoValida,
+            AvaliadoEmUtc: AvaliadoEm);
 
     private static List<RequisitoLiberacaoEntrada> TodosAprovados(Guid mobilizacaoId) =>
     [

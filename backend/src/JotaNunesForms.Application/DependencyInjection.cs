@@ -1,6 +1,7 @@
 using JotaNunesForms.Application.UseCases.Auth;
 using JotaNunesForms.Application.UseCases.Auditoria;
 using JotaNunesForms.Application.Auth;
+using JotaNunesForms.Application.Mobilizacoes;
 using JotaNunesForms.Application.UseCases.Convites;
 using JotaNunesForms.Application.UseCases.Dashboard;
 using JotaNunesForms.Application.UseCases.Documentos;
