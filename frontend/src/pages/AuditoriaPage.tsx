@@ -171,7 +171,7 @@ export function AuditoriaPage() {
         action={<Button type="button" variant="ghost" onClick={retryLoad} disabled={loading}>Atualizar</Button>}
       />
 
-      <form className="jn-auditoria__filters" onSubmit={applyFilters}>
+      <form className="jn-auditoria__filters" aria-label="Filtros da auditoria" onSubmit={applyFilters}>
         <label>
           De
           <input type="date" value={filters.de} onChange={(event) => updateFilter('de', event.target.value)} />
