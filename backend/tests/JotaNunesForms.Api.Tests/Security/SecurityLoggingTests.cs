@@ -31,4 +31,16 @@ public sealed class SecurityLoggingTests(SecurityApiFactory factory)
         Assert.DoesNotContain("Bearer", securityEvents, StringComparison.Ordinal);
         Assert.DoesNotContain(data.CompanyB.Id.ToString(), securityEvents, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public async Task LiberacaoResponse_DoesNotLeakWorkerCpfInPayload()
+    {
+        var data = await factory.SeedCanonicalDataAsync();
+        using var client = factory.CreateAuthenticatedClient(data.MoA);
+        var response = await client.GetAsync($"/api/mobilizacoes/{data.MobilizationA.Id}/liberacao");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.DoesNotContain("camposJson", body, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain(data.EmployeeA.Cpf, body, StringComparison.Ordinal);
+    }
 }

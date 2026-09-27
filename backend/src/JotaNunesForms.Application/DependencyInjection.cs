@@ -17,6 +17,7 @@ using JotaNunesForms.Application.UseCases.Processos;
 using JotaNunesForms.Application.UseCases.Socios;
 using JotaNunesForms.Application.UseCases.Usuarios;
 using JotaNunesForms.Application.UseCases.Validacao;
+using JotaNunesForms.Application.Documentos.Validadores;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace JotaNunesForms.Application;
@@ -97,6 +98,16 @@ public static class DependencyInjection
         services.AddScoped<ListMobilizacoesUseCase>();
         services.AddScoped<GetMobilizacaoUseCase>();
         services.AddScoped<UpdateMobilizacaoUseCase>();
+        services.AddScoped<MobilizacaoAccessService>();
+        services.AddScoped<LiberacaoSnapshotBuilder>();
+        services.AddScoped<RecalcularLiberacaoMobilizacaoUseCase>();
+        services.AddScoped<GetLiberacaoMobilizacaoUseCase>();
+        services.AddScoped<ValidadorAdmissionalDispatcher>();
+        services.AddScoped<ListMovimentosEpiUseCase>();
+        services.AddScoped<RegistrarMovimentoEpiUseCase>();
+        services.AddScoped<ListIntegracoesObraUseCase>();
+        services.AddScoped<RegistrarIntegracaoObraUseCase>();
+        services.AddScoped<MarcarIntegracaoRefazerUseCase>();
         return services;
     }
 }

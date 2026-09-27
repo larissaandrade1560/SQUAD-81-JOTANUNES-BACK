@@ -1,4 +1,5 @@
 using JotaNunesForms.Application.Documentos;
+using JotaNunesForms.Application.Documentos.Validadores;
 using JotaNunesForms.Application.DTOs;
 using JotaNunesForms.Application.Auth;
 using JotaNunesForms.Application.Processos;
@@ -22,6 +23,10 @@ public sealed class EnviarVersaoDocumentoUseCase
     private readonly IObjectStorage _storage;
     private readonly AccessScopeGuard _scopeGuard;
     private readonly ITransactionalExecutor _transactions;
+    private readonly IMobilizacaoRepository _mobilizacoes;
+    private readonly IFuncionarioRepository _funcionarios;
+    private readonly IEmpresaRepository _empresas;
+    private readonly ValidadorAdmissionalDispatcher _validadorAdmissional;
     private readonly AuditoriaDocumentoService _auditoria;
     private readonly ILogger<EnviarVersaoDocumentoUseCase> _logger;
 
@@ -34,6 +39,10 @@ public sealed class EnviarVersaoDocumentoUseCase
         IObjectStorage storage,
         AccessScopeGuard scopeGuard,
         ITransactionalExecutor transactions,
+        IMobilizacaoRepository mobilizacoes,
+        IFuncionarioRepository funcionarios,
+        IEmpresaRepository empresas,
+        ValidadorAdmissionalDispatcher validadorAdmissional,
         AuditoriaDocumentoService auditoria,
         ILogger<EnviarVersaoDocumentoUseCase> logger)
     {
@@ -45,6 +54,10 @@ public sealed class EnviarVersaoDocumentoUseCase
         _storage = storage;
         _scopeGuard = scopeGuard;
         _transactions = transactions;
+        _mobilizacoes = mobilizacoes;
+        _funcionarios = funcionarios;
+        _empresas = empresas;
+        _validadorAdmissional = validadorAdmissional;
         _auditoria = auditoria;
         _logger = logger;
     }
@@ -96,6 +109,18 @@ public sealed class EnviarVersaoDocumentoUseCase
         if (requisito.TipoEntrega == TipoEntregaRequisito.Formulario && string.IsNullOrWhiteSpace(camposJson) && !temArquivo)
         {
             throw new DocumentoVersaoException("Informe os campos do formulário.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(camposJson)
+            && item.TitularTipo == TitularRequisito.Trabalhador
+            && item.TitularId is Guid mobilizacaoId
+            && ValidadorAdmissionalDispatcher.EhCodigoAdmissional(requisito.Codigo))
+        {
+            camposJson = await ValidarAdmissionalAsync(
+                requisito.Codigo,
+                camposJson,
+                mobilizacaoId,
+                cancellationToken);
         }
 
         string? storageKey = null;
@@ -232,6 +257,39 @@ public sealed class EnviarVersaoDocumentoUseCase
                 "Compensating storage cleanup failed. FailureType={FailureType}",
                 failure.GetType().Name);
         }
+    }
+
+    private async Task<string> ValidarAdmissionalAsync(
+        string requisitoCodigo,
+        string camposJson,
+        Guid mobilizacaoId,
+        CancellationToken cancellationToken)
+    {
+        var mobilizacao = await _mobilizacoes.GetByIdAsync(mobilizacaoId, cancellationToken)
+            ?? throw new DocumentoVersaoException("Mobilização do item não encontrada.", 404);
+        var funcionario = await _funcionarios.GetByIdAsync(mobilizacao.FuncionarioId, cancellationToken)
+            ?? throw new DocumentoVersaoException("Trabalhador não encontrado.", 404);
+        var empresa = await _empresas.GetByIdAsync(funcionario.EmpresaId, cancellationToken)
+            ?? throw new DocumentoVersaoException("Empresa não encontrada.", 404);
+
+        var resultado = await _validadorAdmissional.ValidarAsync(
+            requisitoCodigo,
+            camposJson,
+            mobilizacao,
+            funcionario,
+            empresa,
+            cancellationToken);
+
+        if (!resultado.Valido)
+        {
+            var mensagem = resultado.Erros.Count == 1
+                ? resultado.Erros[0].Mensagem
+                : string.Join("; ", resultado.Erros.Select(e => $"{e.Campo}: {e.Mensagem}"));
+            throw new DocumentoVersaoException(mensagem, 400);
+        }
+
+        return resultado.CamposJsonCanonico
+            ?? throw new DocumentoVersaoException("Não foi possível canonicalizar os metadados.", 500);
     }
 }
 

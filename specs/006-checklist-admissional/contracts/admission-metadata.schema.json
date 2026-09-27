@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:jotanunes:schemas:admission-metadata",
+  "title": "Admission document metadata",
+  "description": "Canonical CamposJson definitions selected by CatalogoRequisito.Codigo.",
+  "$defs": {
+    "DOC_OFICIAL_FOTO": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tipoDocumento", "legivel", "nome", "cpf"],
+      "properties": {
+        "tipoDocumento": { "enum": ["RG", "CIN", "CNH"] },
+        "legivel": { "const": true },
+        "nome": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "cpf": { "type": "string", "pattern": "^[0-9]{11}$" }
+      }
+    },
+    "ESOCIAL_VINCULO": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["evento", "cnpjEmpregador", "cpfTrabalhador", "funcaoCategoria", "dataAdmissao", "situacaoVinculo"],
+      "properties": {
+        "evento": { "enum": ["S2200", "S2190"] },
+        "cnpjEmpregador": { "type": "string", "pattern": "^[0-9]{14}$" },
+        "cpfTrabalhador": { "type": "string", "pattern": "^[0-9]{11}$" },
+        "funcaoCategoria": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "dataAdmissao": { "type": "string", "format": "date" },
+        "situacaoVinculo": { "type": "string", "minLength": 1, "maxLength": 100 }
+      }
+    },
+    "ASO_ADMISSIONAL": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["trabalhador", "empresa", "funcao", "riscos", "dataExame", "medico", "crm", "conclusao", "atividadesEspecificas", "validacaoAssinatura"],
+      "properties": {
+        "trabalhador": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "empresa": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "funcao": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "riscos": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1, "maxLength": 300 } },
+        "dataExame": { "type": "string", "format": "date" },
+        "medico": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "crm": { "type": "string", "minLength": 1, "maxLength": 50 },
+        "conclusao": { "enum": ["Apto", "AptoComRestricao", "Inapto"] },
+        "restricao": { "type": ["string", "null"], "maxLength": 1000 },
+        "restricaoCompativel": { "type": ["boolean", "null"] },
+        "atividadesEspecificas": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1, "maxLength": 300 } },
+        "validacaoAssinatura": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "proximoExame": { "type": ["string", "null"], "format": "date" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "conclusao": { "const": "AptoComRestricao" } }, "required": ["conclusao"] },
+          "then": { "required": ["restricao", "restricaoCompativel"] }
+        }
+      ]
+    },
+    "NR18_BASICA": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["trabalhador", "treinamentoInicial", "conteudo", "cargaHorariaHoras", "data", "local", "instrutor", "responsavelTecnico", "assinatura"],
+      "properties": {
+        "trabalhador": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "treinamentoInicial": { "const": true },
+        "conteudo": { "type": "string", "minLength": 1, "maxLength": 4000 },
+        "cargaHorariaHoras": { "type": "number", "exclusiveMinimum": 0 },
+        "data": { "type": "string", "format": "date" },
+        "local": { "type": "string", "minLength": 1, "maxLength": 300 },
+        "instrutor": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "responsavelTecnico": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "assinatura": { "type": "string", "minLength": 1, "maxLength": 500 }
+      }
+    },
+    "ORDEM_SERVICO": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["funcaoAtividades", "riscos", "medidasPreventivas", "proibicoes", "emergencia", "usoEpi", "data", "cienciaTrabalhador"],
+      "properties": {
+        "funcaoAtividades": { "type": "string", "minLength": 1, "maxLength": 2000 },
+        "riscos": { "type": "string", "minLength": 1, "maxLength": 2000 },
+        "medidasPreventivas": { "type": "string", "minLength": 1, "maxLength": 2000 },
+        "proibicoes": { "type": "string", "minLength": 1, "maxLength": 2000 },
+        "emergencia": { "type": "string", "minLength": 1, "maxLength": 2000 },
+        "usoEpi": { "type": "string", "minLength": 1, "maxLength": 2000 },
+        "data": { "type": "string", "format": "date" },
+        "cienciaTrabalhador": { "const": true }
+      }
+    }
+  }
+}

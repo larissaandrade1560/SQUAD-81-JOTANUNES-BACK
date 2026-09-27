@@ -13,6 +13,20 @@ public sealed class MobilizacaoRepository : IMobilizacaoRepository
     public Task<Mobilizacao?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
         _db.Mobilizacoes.FirstOrDefaultAsync(m => m.Id == id, cancellationToken);
 
+    public async Task<Mobilizacao?> GetByIdForUpdateAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var tracked = _db.ChangeTracker.Entries<Mobilizacao>()
+            .FirstOrDefault(entry => entry.Entity.Id == id);
+        if (tracked is not null)
+        {
+            tracked.State = EntityState.Detached;
+        }
+
+        return await _db.Mobilizacoes
+            .FromSqlInterpolated($"SELECT * FROM mobilizacoes WHERE id = {id} FOR UPDATE")
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
     public async Task<IReadOnlyList<Mobilizacao>> ListAsync(
         Guid? empresaId = null,
         Guid? obraId = null,

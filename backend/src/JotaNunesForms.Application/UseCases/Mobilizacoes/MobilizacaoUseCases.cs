@@ -214,19 +214,22 @@ public sealed class ListMobilizacoesUseCase
     private readonly IEmpresaRepository _empresas;
     private readonly ICatalogoRequisitoRepository _catalogo;
     private readonly CreateMobilizacaoUseCase _create;
+    private readonly RecalcularLiberacaoMobilizacaoUseCase _recalcular;
 
     public ListMobilizacoesUseCase(
         IMobilizacaoRepository mobilizacoes,
         IFuncionarioRepository funcionarios,
         IEmpresaRepository empresas,
         ICatalogoRequisitoRepository catalogo,
-        CreateMobilizacaoUseCase create)
+        CreateMobilizacaoUseCase create,
+        RecalcularLiberacaoMobilizacaoUseCase recalcular)
     {
         _mobilizacoes = mobilizacoes;
         _funcionarios = funcionarios;
         _empresas = empresas;
         _catalogo = catalogo;
         _create = create;
+        _recalcular = recalcular;
     }
 
     public async Task<IReadOnlyList<MobilizacaoResponse>> ExecuteAsync(
@@ -261,6 +264,12 @@ public sealed class ListMobilizacoesUseCase
                 continue;
             }
 
+            if (mobilizacao.Situacao is SituacaoMobilizacao.Aguardando or SituacaoMobilizacao.Liberado)
+            {
+                await _recalcular.ExecuteAsync(mobilizacao.Id, funcionario, cancellationToken);
+                mobilizacao = await _mobilizacoes.GetByIdAsync(mobilizacao.Id, cancellationToken) ?? mobilizacao;
+            }
+
             resultado.Add(await _create.MapAsync(mobilizacao, funcionario, empresa, catalogo, cancellationToken));
         }
 
@@ -276,6 +285,7 @@ public sealed class GetMobilizacaoUseCase
     private readonly ICatalogoRequisitoRepository _catalogo;
     private readonly CreateMobilizacaoUseCase _create;
     private readonly AccessScopeGuard _scopeGuard;
+    private readonly RecalcularLiberacaoMobilizacaoUseCase _recalcular;
 
     public GetMobilizacaoUseCase(
         IMobilizacaoRepository mobilizacoes,
@@ -283,7 +293,8 @@ public sealed class GetMobilizacaoUseCase
         IEmpresaRepository empresas,
         ICatalogoRequisitoRepository catalogo,
         CreateMobilizacaoUseCase create,
-        AccessScopeGuard scopeGuard)
+        AccessScopeGuard scopeGuard,
+        RecalcularLiberacaoMobilizacaoUseCase recalcular)
     {
         _mobilizacoes = mobilizacoes;
         _funcionarios = funcionarios;
@@ -291,6 +302,7 @@ public sealed class GetMobilizacaoUseCase
         _catalogo = catalogo;
         _create = create;
         _scopeGuard = scopeGuard;
+        _recalcular = recalcular;
     }
 
     public async Task<MobilizacaoResponse> ExecuteAsync(
@@ -315,6 +327,12 @@ public sealed class GetMobilizacaoUseCase
 
         var empresa = await _empresas.GetByIdAsync(funcionario.EmpresaId, cancellationToken)
             ?? throw new EmpresaException("Empresa não encontrada.");
+        if (mobilizacao.Situacao is SituacaoMobilizacao.Aguardando or SituacaoMobilizacao.Liberado)
+        {
+            await _recalcular.ExecuteAsync(mobilizacao.Id, funcionario, cancellationToken);
+            mobilizacao = await _mobilizacoes.GetByIdAsync(id, cancellationToken) ?? mobilizacao;
+        }
+
         var catalogo = await _catalogo.ListAsync(cancellationToken);
         return await _create.MapAsync(mobilizacao, funcionario, empresa, catalogo, cancellationToken);
     }

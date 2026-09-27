@@ -5,7 +5,7 @@
 **Última bateria E2E:** 25/09/2026  
 **Spec:** [`specs/002-fluxo-documentos/spec.md`](../specs/002-fluxo-documentos/spec.md)
 
-Este incremento cobre **US1–US3**: abrir processo e gerar checklist, qualificar a empresa com versões/análise, mobilizar trabalhador. **US4** (liberação) e **US5** (seis status de pagamento) **não** estão implementados.
+Este incremento cobre **US1–US3** e **US4 (checklist admissional / liberação)**: abrir processo, qualificar empresa, mobilizar trabalhador, consultar liberação, registrar EPI (MO) e integração (interno). **US5** (seis status de pagamento) permanece fora deste escopo.
 
 ---
 
@@ -198,7 +198,7 @@ POST /api/catalogo-requisitos
 
 | História | O que acontece hoje |
 |----------|---------------------|
-| **US4** Liberado para acesso | `GET /api/mobilizacoes/{id}/liberacao` → **404**. Integração da obra, EPI por movimento e regra de liberação não existem. |
+| **US4** Liberado para acesso | `GET /api/mobilizacoes/{id}/liberacao` retorna impedimentos; EPI (`/epi`) e integração (`/integracao`) disponíveis conforme papel. Validadores admissionais aplicam-se aos cinco códigos documentais. |
 | **US5** Seis status de pagamento | `/pagamentos` ainda é o RF13 (`No prazo`, atraso, etc.). Sem Regularizado com atraso / reuso 409 desta spec. |
 | S-2190 preliminar | Não implementado. |
 | OCR / campos extraídos | Metadados manuais; sem OCR. |
@@ -237,4 +237,13 @@ Cobre geração de checklist (A vs B, materiais, sócios) e recálculo de situa�
 - Spec e critérios: `specs/002-fluxo-documentos/spec.md`
 - Contrato HTTP: `specs/002-fluxo-documentos/contracts/api-fluxo-documentos.md`
 - Quickstart (inclui US4/US5 futuros): `specs/002-fluxo-documentos/quickstart.md`
+
+## US4 — evidência publicada (T083)
+
+| Cenário | Status | Evidência |
+|---------|--------|-----------|
+| Bloqueio sem integração | Pendente execução publicada | Registrar trace id, mobilização e códigos de impedimento após deploy |
+| Liberação completa | Pendente execução publicada | Registrar transição Aguardando → Liberado |
+| Reversão por ASO vencido | Pendente execução publicada | Registrar retorno a Aguardando |
+| Negação cross-tenant / Materials | Coberto localmente via testes de API | Ver `MobilizacaoLiberacaoAuthorizationTests` |
 - Entregas gerais: `docs/resumo-entregas.md`

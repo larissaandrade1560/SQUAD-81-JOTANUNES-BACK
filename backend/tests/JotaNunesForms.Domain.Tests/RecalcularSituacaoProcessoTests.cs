@@ -88,6 +88,36 @@ public sealed class RecalcularSituacaoProcessoTests
         Assert.Equal(SituacaoItemChecklist.Aprovado, item.Situacao);
     }
 
+    [Fact]
+    public void S2190PreliminaryExpiry_DoesNotAffectCorporateQualification()
+    {
+        var processoId = Guid.NewGuid();
+        var itens = new[]
+        {
+            Aprovado(processoId, TitularRequisito.Empresa),
+            Item(processoId, TitularRequisito.Trabalhador, SituacaoItemChecklist.Vencido),
+        };
+
+        var situacao = RecalcularSituacaoProcesso.Calcular(SituacaoProcesso.Aberto, itens);
+
+        Assert.Equal(SituacaoProcesso.Qualificado, situacao);
+    }
+
+    [Fact]
+    public void WorkerPreliminaryItems_DoNotDriveProcessQualification()
+    {
+        var processoId = Guid.NewGuid();
+        var itens = new[]
+        {
+            Aprovado(processoId, TitularRequisito.Empresa),
+            Item(processoId, TitularRequisito.Trabalhador, SituacaoItemChecklist.Preliminar),
+        };
+
+        var situacao = RecalcularSituacaoProcesso.Calcular(SituacaoProcesso.Aberto, itens);
+
+        Assert.Equal(SituacaoProcesso.Qualificado, situacao);
+    }
+
     private static ItemChecklist Aprovado(Guid processoId, TitularRequisito titular, int? ordem = null)
     {
         var item = Item(processoId, titular, SituacaoItemChecklist.Aprovado, ordem);

@@ -10,6 +10,11 @@ public interface IItemChecklistRepository
 
     Task<IReadOnlyList<ItemChecklist>> ListByProcessoAsync(Guid processoId, CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<ItemChecklist>> ListActiveWorkerItemsByMobilizacaoAsync(
+        Guid mobilizacaoId,
+        Guid processoId,
+        CancellationToken cancellationToken = default);
+
     Task AddRangeAsync(IEnumerable<ItemChecklist> itens, CancellationToken cancellationToken = default);
 
     Task UpdateAsync(ItemChecklist item, CancellationToken cancellationToken = default);

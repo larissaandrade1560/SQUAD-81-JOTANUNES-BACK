@@ -38,6 +38,9 @@ public sealed class TenantResourceIsolationTests(SecurityApiFactory factory)
             ($"/api/processos-contratacao/{data.ProcessB.Id}/checklist", $"/api/processos-contratacao/{Guid.NewGuid()}/checklist"),
             ($"/api/documentos-versoes/{data.VersionB.Id}/download", $"/api/documentos-versoes/{Guid.NewGuid()}/download"),
             ($"/api/mobilizacoes/{data.MobilizationB.Id}", $"/api/mobilizacoes/{Guid.NewGuid()}"),
+            ($"/api/mobilizacoes/{data.MobilizationB.Id}/liberacao", $"/api/mobilizacoes/{Guid.NewGuid()}/liberacao"),
+            ($"/api/mobilizacoes/{data.MobilizationB.Id}/epi", $"/api/mobilizacoes/{Guid.NewGuid()}/epi"),
+            ($"/api/mobilizacoes/{data.MobilizationB.Id}/integracao", $"/api/mobilizacoes/{Guid.NewGuid()}/integracao"),
             ($"/api/pagamentos/{data.PaymentB.Id}/comprovante/download", $"/api/pagamentos/{Guid.NewGuid()}/comprovante/download"),
         };
 

@@ -7,14 +7,25 @@ import { PageHeader } from '../components/ui/PageHeader'
 import type { ApiError } from '../types/api'
 import {
   createMobilizacao,
+  getLiberacaoMobilizacao,
   getMobilizacao,
+  listIntegracoesObra,
   listMobilizacoes,
+  listMovimentosEpi,
   situacaoMobilizacaoRotulo,
+  type IntegracaoObraApi,
   type MobilizacaoApi,
+  type MovimentoEpiApi,
+  type ResultadoLiberacaoApi,
 } from '../services/mobilizacoesService'
 import { listProcessos, situacaoItemRotulo, type ProcessoContratacaoApi } from '../services/processosContratacaoService'
 import { getSession } from '../store/authStorage'
+import { LiberacaoPanel } from '../components/mobilizacoes/LiberacaoPanel'
+import { EpiPanel } from '../components/mobilizacoes/EpiPanel'
+import { IntegracaoPanel } from '../components/mobilizacoes/IntegracaoPanel'
+import { DocumentoAdmissionalForm } from '../components/mobilizacoes/DocumentoAdmissionalForm'
 import './ProcessosContratacaoPage.css'
+import './MobilizacaoPage.css'
 
 function apiErrorMessage(err: unknown): string {
   if (
@@ -34,6 +45,21 @@ function situacaoTone(situacao: number): 'success' | 'warning' | 'neutral' | 'in
   return 'warning'
 }
 
+function itemSituacaoTone(situacao: number): 'success' | 'warning' | 'neutral' | 'info' {
+  if (situacao === 2) return 'success'
+  if (situacao === 3 || situacao === 4) return 'warning'
+  if (situacao === 5) return 'info'
+  return 'neutral'
+}
+
+const ADMISSION_DOC_CODES = new Set([
+  'DOC_OFICIAL_FOTO',
+  'ESOCIAL_VINCULO',
+  'ASO_ADMISSIONAL',
+  'NR18_BASICA',
+  'ORDEM_SERVICO',
+])
+
 const emptyForm = {
   processoId: '',
   nome: '',
@@ -45,7 +71,10 @@ const emptyForm = {
 
 export function MobilizacaoPage() {
   const { mobilizacaoId } = useParams()
-  const canWrite = getSession()?.role === 'terceirizado' || getSession()?.role === 'admin'
+  const session = getSession()
+  const canCreateMobilizacao = session?.role === 'terceirizado' && session.tipoEmpresa === 1
+  const canRegisterEpi = canCreateMobilizacao
+  const canIntegracao = session?.role === 'admin' || session?.role === 'analista'
   const [lista, setLista] = useState<MobilizacaoApi[]>([])
   const [processos, setProcessos] = useState<ProcessoContratacaoApi[]>([])
   const [detalhe, setDetalhe] = useState<MobilizacaoApi | null>(null)
@@ -55,6 +84,30 @@ export function MobilizacaoPage() {
   const [form, setForm] = useState(emptyForm)
   const [formError, setFormError] = useState<string | undefined>()
   const [saving, setSaving] = useState(false)
+  const [liberacao, setLiberacao] = useState<ResultadoLiberacaoApi | null>(null)
+  const [liberacaoLoading, setLiberacaoLoading] = useState(false)
+  const [liberacaoError, setLiberacaoError] = useState<string | undefined>()
+  const [movimentosEpi, setMovimentosEpi] = useState<MovimentoEpiApi[]>([])
+  const [integracoes, setIntegracoes] = useState<IntegracaoObraApi[]>([])
+
+  const loadAdmissionPanels = useCallback(async (mobilizacaoId: string) => {
+    setLiberacaoLoading(true)
+    setLiberacaoError(undefined)
+    try {
+      const [lib, epi, integracao] = await Promise.all([
+        getLiberacaoMobilizacao(mobilizacaoId),
+        listMovimentosEpi(mobilizacaoId),
+        listIntegracoesObra(mobilizacaoId),
+      ])
+      setLiberacao(lib)
+      setMovimentosEpi(epi)
+      setIntegracoes(integracao)
+    } catch (err) {
+      setLiberacaoError(apiErrorMessage(err))
+    } finally {
+      setLiberacaoLoading(false)
+    }
+  }, [])
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -65,15 +118,19 @@ export function MobilizacaoPage() {
       setProcessos(procs.filter((p) => p.mobilizaTrabalhadores))
       if (mobilizacaoId) {
         setDetalhe(await getMobilizacao(mobilizacaoId))
+        await loadAdmissionPanels(mobilizacaoId)
       } else {
         setDetalhe(null)
+        setLiberacao(null)
+        setMovimentosEpi([])
+        setIntegracoes([])
       }
     } catch (err) {
       setError(apiErrorMessage(err))
     } finally {
       setLoading(false)
     }
-  }, [mobilizacaoId])
+  }, [mobilizacaoId, loadAdmissionPanels])
 
   useEffect(() => {
     void load()
@@ -118,7 +175,7 @@ export function MobilizacaoPage() {
         action={
           detalhe ? (
             <Link to="/mobilizacoes">Voltar</Link>
-          ) : canWrite ? (
+          ) : canCreateMobilizacao ? (
             <Button type="button" variant="primary" onClick={() => setOpenForm(true)}>
               Nova mobilização
             </Button>
@@ -135,6 +192,25 @@ export function MobilizacaoPage() {
 
       {detalhe && (
         <>
+          <LiberacaoPanel liberacao={liberacao} loading={liberacaoLoading} error={liberacaoError} />
+          <EpiPanel
+            mobilizacaoId={detalhe.id}
+            movimentos={movimentosEpi}
+            saldoAtivo={null}
+            canRegister={canRegisterEpi}
+            onChanged={async () => {
+              await load()
+            }}
+          />
+          <IntegracaoPanel
+            mobilizacaoId={detalhe.id}
+            integracoes={integracoes}
+            canRegister={canIntegracao}
+            canRefazer={canIntegracao}
+            onChanged={async () => {
+              await load()
+            }}
+          />
           <p className="jn-processos__status">
             {detalhe.funcao} · CPF {detalhe.cpf} · {situacaoMobilizacaoRotulo(detalhe.situacao)}
             {detalhe.turnoJornada ? ` · ${detalhe.turnoJornada}` : ''}
@@ -174,7 +250,9 @@ export function MobilizacaoPage() {
                         {item.nome} <span className="jn-processos__codigo">{item.codigo}</span>
                       </td>
                       <td>
-                        <Badge tone="info">{situacaoItemRotulo(item.situacao)}</Badge>
+                        <Badge tone={itemSituacaoTone(item.situacao)}>
+                          {situacaoItemRotulo(item.situacao)}
+                        </Badge>
                       </td>
                     </tr>
                   ))
@@ -182,6 +260,16 @@ export function MobilizacaoPage() {
               </tbody>
             </table>
           </div>
+          {detalhe.checklistAdmissional
+            .filter((item) => ADMISSION_DOC_CODES.has(item.codigo))
+            .map((item) => (
+              <DocumentoAdmissionalForm
+                key={item.id}
+                itemId={item.id}
+                codigo={item.codigo}
+                onSubmitted={load}
+              />
+            ))}
         </>
       )}
 

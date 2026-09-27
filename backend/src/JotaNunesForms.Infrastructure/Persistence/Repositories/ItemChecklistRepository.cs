@@ -34,6 +34,18 @@ public sealed class ItemChecklistRepository : IItemChecklistRepository
             .Where(i => i.ProcessoId == processoId)
             .ToListAsync(cancellationToken);
 
+    public async Task<IReadOnlyList<ItemChecklist>> ListActiveWorkerItemsByMobilizacaoAsync(
+        Guid mobilizacaoId,
+        Guid processoId,
+        CancellationToken cancellationToken = default) =>
+        await _db.ItensChecklist
+            .Where(i =>
+                i.ProcessoId == processoId
+                && i.TitularTipo == TitularRequisito.Trabalhador
+                && i.TitularId == mobilizacaoId
+                && i.Ativo)
+            .ToListAsync(cancellationToken);
+
     public async Task AddRangeAsync(IEnumerable<ItemChecklist> itens, CancellationToken cancellationToken = default)
     {
         await _db.ItensChecklist.AddRangeAsync(itens, cancellationToken);

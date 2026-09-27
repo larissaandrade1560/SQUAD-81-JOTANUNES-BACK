@@ -656,6 +656,191 @@ namespace JotaNunesForms.Infrastructure.Persistence.Migrations
                         .HasForeignKey("EnviadoPorUsuarioId")
                         .OnDelete(DeleteBehavior.Restrict);
                 });
+
+            modelBuilder.Entity("JotaNunesForms.Domain.Entities.IntegracaoObra", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+                    b.Property<bool>("AceiteTrabalhador")
+                        .HasColumnType("boolean")
+                        .HasColumnName("aceite_trabalhador");
+                    b.Property<string>("Avaliacao")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("avaliacao");
+                    b.Property<string>("Conteudo")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("conteudo");
+                    b.Property<DateTime>("CriadoEm")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("criado_em");
+                    b.Property<Guid>("CriadoPorUsuarioId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("criado_por_usuario_id");
+                    b.Property<DateTimeOffset>("DataHora")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("data_hora");
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("idempotency_key");
+                    b.Property<string>("Instrutor")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("instrutor");
+                    b.Property<Guid>("ItemChecklistId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("item_checklist_id");
+                    b.Property<Guid>("MobilizacaoId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("mobilizacao_id");
+                    b.Property<string>("MotivoRefazer")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("motivo_refazer");
+                    b.Property<Guid>("ObraId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("obra_id");
+                    b.Property<string>("PayloadHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .IsFixedLength()
+                        .HasColumnName("payload_hash");
+                    b.Property<bool>("Refazer")
+                        .HasColumnType("boolean")
+                        .HasColumnName("refazer");
+                    b.Property<DateTime?>("RefazerEm")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("refazer_em");
+                    b.Property<Guid?>("RefazerPorUsuarioId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("refazer_por_usuario_id");
+                    b.Property<DateTime?>("ValidoAte")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("valido_ate");
+                    b.HasKey("Id");
+                    b.HasIndex("ItemChecklistId");
+                    b.HasIndex("ObraId");
+                    b.HasIndex("MobilizacaoId", "DataHora", "Id");
+                    b.HasIndex("MobilizacaoId", "IdempotencyKey")
+                        .IsUnique();
+                    b.ToTable("integracoes_obra", (string)null);
+                });
+
+            modelBuilder.Entity("JotaNunesForms.Domain.Entities.MovimentoEpi", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+                    b.Property<bool>("AceiteTrabalhador")
+                        .HasColumnType("boolean")
+                        .HasColumnName("aceite_trabalhador");
+                    b.Property<DateTime>("CriadoEm")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("criado_em");
+                    b.Property<DateOnly>("Data")
+                        .HasColumnType("date")
+                        .HasColumnName("data");
+                    b.Property<string>("Epi")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("epi");
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("idempotency_key");
+                    b.Property<Guid>("ItemChecklistId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("item_checklist_id");
+                    b.Property<Guid>("MobilizacaoId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("mobilizacao_id");
+                    b.Property<Guid?>("MovimentoOrigemId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("movimento_origem_id");
+                    b.Property<string>("NumeroCa")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("numero_ca");
+                    b.Property<bool>("OrientacaoUso")
+                        .HasColumnType("boolean")
+                        .HasColumnName("orientacao_uso");
+                    b.Property<string>("PayloadHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .IsFixedLength()
+                        .HasColumnName("payload_hash");
+                    b.Property<int>("Quantidade")
+                        .HasColumnType("integer")
+                        .HasColumnName("quantidade");
+                    b.Property<Guid>("RegistradoPorUsuarioId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("registrado_por_usuario_id");
+                    b.Property<bool>("ResponsabilidadeGuarda")
+                        .HasColumnType("boolean")
+                        .HasColumnName("responsabilidade_guarda");
+                    b.Property<string>("Tipo")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("tipo");
+                    b.HasKey("Id");
+                    b.HasIndex("ItemChecklistId");
+                    b.HasIndex("MovimentoOrigemId");
+                    b.HasIndex("MobilizacaoId", "CriadoEm", "Id");
+                    b.HasIndex("MobilizacaoId", "IdempotencyKey")
+                        .IsUnique();
+                    b.ToTable("movimentos_epi", (string)null);
+                });
+
+            modelBuilder.Entity("JotaNunesForms.Domain.Entities.IntegracaoObra", b =>
+                {
+                    b.HasOne("JotaNunesForms.Domain.Entities.ItemChecklist", null)
+                        .WithMany()
+                        .HasForeignKey("ItemChecklistId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                    b.HasOne("JotaNunesForms.Domain.Entities.Mobilizacao", null)
+                        .WithMany()
+                        .HasForeignKey("MobilizacaoId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                    b.HasOne("JotaNunesForms.Domain.Entities.Obra", null)
+                        .WithMany()
+                        .HasForeignKey("ObraId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("JotaNunesForms.Domain.Entities.MovimentoEpi", b =>
+                {
+                    b.HasOne("JotaNunesForms.Domain.Entities.ItemChecklist", null)
+                        .WithMany()
+                        .HasForeignKey("ItemChecklistId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                    b.HasOne("JotaNunesForms.Domain.Entities.Mobilizacao", null)
+                        .WithMany()
+                        .HasForeignKey("MobilizacaoId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                    b.HasOne("JotaNunesForms.Domain.Entities.MovimentoEpi", null)
+                        .WithMany()
+                        .HasForeignKey("MovimentoOrigemId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
 #pragma warning restore 612, 618
         }
     }

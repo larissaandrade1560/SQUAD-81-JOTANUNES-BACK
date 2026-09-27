@@ -6,6 +6,8 @@ public interface IMobilizacaoRepository
 {
     Task<Mobilizacao?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
+    Task<Mobilizacao?> GetByIdForUpdateAsync(Guid id, CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<Mobilizacao>> ListAsync(
         Guid? empresaId = null,
         Guid? obraId = null,

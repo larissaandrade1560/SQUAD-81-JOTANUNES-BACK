@@ -1,0 +1,319 @@
+openapi: 3.0.3
+info:
+  title: JotaNunesForms - Checklist admissional
+  version: 1.0.0
+  description: Contrato da US4 para resultado de liberação, movimentos de EPI e integração da obra.
+servers:
+  - url: /api
+security:
+  - bearerAuth: []
+paths:
+  /mobilizacoes/{id}/liberacao:
+    get:
+      operationId: getLiberacaoMobilizacao
+      summary: Reavalia e consulta a liberação da mobilização
+      parameters:
+        - $ref: '#/components/parameters/MobilizacaoId'
+      responses:
+        '200':
+          description: Resultado atual e todos os impedimentos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultadoLiberacao'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /mobilizacoes/{id}/epi:
+    get:
+      operationId: listMovimentosEpi
+      summary: Lista o histórico de EPI da mobilização
+      parameters:
+        - $ref: '#/components/parameters/MobilizacaoId'
+      responses:
+        '200':
+          description: Histórico em ordem cronológica decrescente
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/MovimentoEpi' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    post:
+      operationId: registrarMovimentoEpi
+      summary: Registra entrega, substituição ou devolução de EPI
+      parameters:
+        - $ref: '#/components/parameters/MobilizacaoId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RegistrarMovimentoEpiRequest' }
+      responses:
+        '201':
+          description: Movimento criado e liberação reavaliada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MovimentoEpiResult' }
+        '200':
+          description: Retry idempotente devolve o movimento original
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MovimentoEpiResult' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /mobilizacoes/{id}/integracao:
+    get:
+      operationId: listIntegracoesObra
+      summary: Lista o histórico operacional de integração
+      parameters:
+        - $ref: '#/components/parameters/MobilizacaoId'
+      responses:
+        '200':
+          description: Histórico em ordem cronológica decrescente
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/IntegracaoObra' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    post:
+      operationId: registrarIntegracaoObra
+      summary: Registra integração realizada pela equipe interna
+      parameters:
+        - $ref: '#/components/parameters/MobilizacaoId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RegistrarIntegracaoRequest' }
+      responses:
+        '201':
+          description: Integração criada e liberação reavaliada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IntegracaoResult' }
+        '200':
+          description: Retry idempotente devolve a integração original
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IntegracaoResult' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /mobilizacoes/{id}/integracao/refazer:
+    post:
+      operationId: marcarIntegracaoParaRefazer
+      summary: Invalida a integração vigente e solicita nova realização
+      parameters:
+        - $ref: '#/components/parameters/MobilizacaoId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [motivo]
+              additionalProperties: false
+              properties:
+                motivo:
+                  type: string
+                  minLength: 1
+                  maxLength: 1000
+      responses:
+        '200':
+          description: Integração marcada e liberação reavaliada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IntegracaoResult' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    MobilizacaoId:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema: { type: string, minLength: 1, maxLength: 100 }
+  schemas:
+    SituacaoMobilizacao:
+      type: string
+      enum: [Aguardando, Liberado, Afastado, Desmobilizado]
+    ImpedimentoLiberacao:
+      type: object
+      required: [codigo, requisitoCodigo, motivo]
+      additionalProperties: false
+      properties:
+        codigo:
+          type: string
+          enum:
+            - CADASTRO_INCOMPLETO
+            - IDENTIDADE_PENDENTE
+            - VINCULO_PENDENTE
+            - VINCULO_PRELIMINAR_VENCIDO
+            - ASO_PENDENTE
+            - ASO_INAPTO
+            - ASO_VENCIDO
+            - NR18_PENDENTE
+            - NR18_VENCIDA
+            - ORDEM_SERVICO_PENDENTE
+            - EPI_SEM_ENTREGA_ATIVA
+            - INTEGRACAO_PENDENTE
+            - INTEGRACAO_VENCIDA
+            - INTEGRACAO_REFAZER
+            - REQUISITO_ADICIONAL_PENDENTE
+        requisitoCodigo: { type: string }
+        motivo: { type: string }
+        itemChecklistId: { type: string, format: uuid, nullable: true }
+    ResultadoLiberacao:
+      type: object
+      required: [mobilizacaoId, situacao, liberado, avaliadoEm, impedimentos]
+      additionalProperties: false
+      properties:
+        mobilizacaoId: { type: string, format: uuid }
+        situacao: { $ref: '#/components/schemas/SituacaoMobilizacao' }
+        liberado: { type: boolean }
+        avaliadoEm: { type: string, format: date-time }
+        impedimentos:
+          type: array
+          items: { $ref: '#/components/schemas/ImpedimentoLiberacao' }
+    TipoMovimentoEpi:
+      type: string
+      enum: [Entrega, Substituicao, Devolucao]
+    RegistrarMovimentoEpiRequest:
+      type: object
+      required:
+        - tipo
+        - epi
+        - quantidade
+        - numeroCa
+        - data
+        - orientacaoUso
+        - responsabilidadeGuarda
+        - aceiteTrabalhador
+      additionalProperties: false
+      properties:
+        tipo: { $ref: '#/components/schemas/TipoMovimentoEpi' }
+        movimentoOrigemId: { type: string, format: uuid, nullable: true }
+        epi: { type: string, minLength: 1, maxLength: 200 }
+        quantidade: { type: integer, minimum: 1 }
+        numeroCa: { type: string, minLength: 1, maxLength: 50 }
+        data: { type: string, format: date }
+        orientacaoUso: { type: boolean }
+        responsabilidadeGuarda: { type: boolean }
+        aceiteTrabalhador: { type: boolean }
+    MovimentoEpi:
+      allOf:
+        - $ref: '#/components/schemas/RegistrarMovimentoEpiRequest'
+        - type: object
+          required: [id, mobilizacaoId, registradoEm]
+          properties:
+            id: { type: string, format: uuid }
+            mobilizacaoId: { type: string, format: uuid }
+            registradoEm: { type: string, format: date-time }
+    MovimentoEpiResult:
+      type: object
+      required: [movimento, saldoAtivo, liberacao]
+      properties:
+        movimento: { $ref: '#/components/schemas/MovimentoEpi' }
+        saldoAtivo: { type: integer, minimum: 0 }
+        liberacao: { $ref: '#/components/schemas/ResultadoLiberacao' }
+    RegistrarIntegracaoRequest:
+      type: object
+      required: [dataHora, conteudo, instrutor, aceiteTrabalhador]
+      additionalProperties: false
+      properties:
+        dataHora: { type: string, format: date-time }
+        conteudo: { type: string, minLength: 1, maxLength: 4000 }
+        instrutor: { type: string, minLength: 1, maxLength: 200 }
+        avaliacao: { type: string, maxLength: 1000, nullable: true }
+        aceiteTrabalhador: { type: boolean }
+        validoAte: { type: string, format: date-time, nullable: true }
+    IntegracaoObra:
+      allOf:
+        - $ref: '#/components/schemas/RegistrarIntegracaoRequest'
+        - type: object
+          required: [id, mobilizacaoId, obraId, refazer, criadoEm]
+          properties:
+            id: { type: string, format: uuid }
+            mobilizacaoId: { type: string, format: uuid }
+            obraId: { type: string, format: uuid }
+            refazer: { type: boolean }
+            motivoRefazer: { type: string, nullable: true }
+            criadoEm: { type: string, format: date-time }
+    IntegracaoResult:
+      type: object
+      required: [integracao, liberacao]
+      properties:
+        integracao: { $ref: '#/components/schemas/IntegracaoObra' }
+        liberacao: { $ref: '#/components/schemas/ResultadoLiberacao' }
+    Error:
+      type: object
+      required: [message]
+      additionalProperties: false
+      properties:
+        message: { type: string }
+        code: { type: string, nullable: true }
+        errors:
+          type: object
+          nullable: true
+          additionalProperties:
+            type: array
+            items: { type: string }
+  responses:
+    ValidationError:
+      description: Dados inválidos
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Unauthorized:
+      description: Identidade ausente ou inválida
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Forbidden:
+      description: Papel ou tipo de empresa não possui capacidade
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    NotFound:
+      description: Recurso ausente ou fora do tenant
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [message]
+            properties:
+              message:
+                type: string
+                enum: [Recurso não encontrado.]
+    Conflict:
+      description: Conflito concorrente ou chave idempotente reutilizada com outro conteúdo
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }

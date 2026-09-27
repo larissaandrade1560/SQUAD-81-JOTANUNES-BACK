@@ -71,6 +71,20 @@ public sealed class TenantMutationSafetyTests(SecurityApiFactory factory)
         Assert.Equal(await documentResponse.Content.ReadAsStringAsync(), await missingDocumentResponse.Content.ReadAsStringAsync());
         Assert.Equal(0, factory.Storage.UploadCount);
 
+        var epiPayload = new StringContent(
+            """
+            {"tipo":1,"epi":"Capacete","quantidade":1,"numeroCa":"12345","data":"2026-09-27","orientacaoUso":true,"responsabilidadeGuarda":true,"aceiteTrabalhador":true}
+            """,
+            Encoding.UTF8,
+            "application/json");
+        using var epiRequest = new HttpRequestMessage(HttpMethod.Post, $"/api/mobilizacoes/{data.MobilizationB.Id}/epi")
+        {
+            Content = epiPayload,
+        };
+        epiRequest.Headers.TryAddWithoutValidation("Idempotency-Key", Guid.NewGuid().ToString("N"));
+        var crossTenantEpi = await client.SendAsync(epiRequest);
+        Assert.Equal(HttpStatusCode.NotFound, crossTenantEpi.StatusCode);
+
         await using var scope = factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<JotaNunesFormsDbContext>();
         var unchangedEmployee = await db.Funcionarios.AsNoTracking()

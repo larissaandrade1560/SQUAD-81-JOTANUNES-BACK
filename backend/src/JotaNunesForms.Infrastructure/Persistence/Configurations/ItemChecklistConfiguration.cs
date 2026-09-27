@@ -20,6 +20,7 @@ public sealed class ItemChecklistConfiguration : IEntityTypeConfiguration<ItemCh
         builder.Property(i => i.Ativo).HasColumnName("ativo").IsRequired();
         builder.Property(i => i.Situacao).HasColumnName("situacao").HasConversion<string>().HasMaxLength(32).IsRequired();
         builder.HasIndex(i => i.ProcessoId);
+        builder.HasIndex(i => new { i.TitularTipo, i.TitularId, i.Ativo });
         builder.HasOne<ProcessoContratacao>().WithMany().HasForeignKey(i => i.ProcessoId).OnDelete(DeleteBehavior.Cascade);
         builder.HasOne<CatalogoRequisito>().WithMany().HasForeignKey(i => i.CatalogoRequisitoId).OnDelete(DeleteBehavior.Restrict);
     }

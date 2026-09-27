@@ -42,6 +42,7 @@ public sealed class AuditoriaDocumentoService
     private readonly IProcessoContratacaoRepository _processos;
     private readonly IContratoRepository _contratos;
     private readonly ICatalogoRequisitoRepository _catalogo;
+    private readonly IMobilizacaoRepository _mobilizacoes;
 
     public AuditoriaDocumentoService(
         IEventoAuditoriaDocumentoRepository eventos,
@@ -53,7 +54,8 @@ public sealed class AuditoriaDocumentoService
         IItemChecklistRepository itens,
         IProcessoContratacaoRepository processos,
         IContratoRepository contratos,
-        ICatalogoRequisitoRepository catalogo)
+        ICatalogoRequisitoRepository catalogo,
+        IMobilizacaoRepository mobilizacoes)
     {
         _eventos = eventos;
         _usuarios = usuarios;
@@ -65,6 +67,7 @@ public sealed class AuditoriaDocumentoService
         _processos = processos;
         _contratos = contratos;
         _catalogo = catalogo;
+        _mobilizacoes = mobilizacoes;
     }
 
     public async Task<AuditoriaRegistroResult> RegisterAsync(
@@ -189,12 +192,16 @@ public sealed class AuditoriaDocumentoService
                 var company = await _empresas.GetByIdAsync(contrato.EmpresaId, cancellationToken)
                     ?? throw new InvalidOperationException("Empresa não encontrada para auditoria.");
                 var requirement = await _catalogo.GetByIdAsync(item.CatalogoRequisitoId, cancellationToken);
-                var employee = item.TitularTipo == TitularRequisito.Trabalhador && item.TitularId is Guid titularId
-                    ? await _funcionarios.GetByIdAsync(titularId, cancellationToken)
-                    : null;
-                if (item.TitularTipo == TitularRequisito.Trabalhador && employee is null)
+                Funcionario? employee = null;
+                if (item.TitularTipo == TitularRequisito.Trabalhador && item.TitularId is Guid titularId)
                 {
-                    throw new InvalidOperationException("Funcionário titular do requisito não encontrado para auditoria.");
+                    var mobilizacao = await _mobilizacoes.GetByIdAsync(titularId, cancellationToken)
+                        ?? throw new InvalidOperationException("Mobilização titular do requisito não encontrada para auditoria.");
+                    employee = await _funcionarios.GetByIdAsync(mobilizacao.FuncionarioId, cancellationToken);
+                    if (employee is null)
+                    {
+                        throw new InvalidOperationException("Funcionário titular do requisito não encontrado para auditoria.");
+                    }
                 }
 
                 return new AuditContext(

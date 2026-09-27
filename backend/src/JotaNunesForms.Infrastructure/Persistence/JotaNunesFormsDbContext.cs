@@ -56,6 +56,10 @@ public sealed class JotaNunesFormsDbContext : DbContext
 
     public DbSet<HistoricoLotacao> HistoricoLotacoes => Set<HistoricoLotacao>();
 
+    public DbSet<MovimentoEpi> MovimentosEpi => Set<MovimentoEpi>();
+
+    public DbSet<IntegracaoObra> IntegracoesObra => Set<IntegracaoObra>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(JotaNunesFormsDbContext).Assembly);
