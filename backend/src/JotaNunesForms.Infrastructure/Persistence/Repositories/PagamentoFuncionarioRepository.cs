@@ -29,6 +29,21 @@ public sealed class PagamentoFuncionarioRepository : IPagamentoFuncionarioReposi
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyList<PagamentoFuncionario>> ListByFuncionarioIdsAsync(
+        IReadOnlyCollection<Guid> funcionarioIds,
+        CancellationToken cancellationToken = default)
+    {
+        if (funcionarioIds.Count == 0)
+        {
+            return [];
+        }
+
+        return await _dbContext.PagamentosFuncionario
+            .AsNoTracking()
+            .Where(p => funcionarioIds.Contains(p.FuncionarioId))
+            .ToListAsync(cancellationToken);
+    }
+
     public Task<bool> ExistsCompetenciaAsync(
         Guid funcionarioId,
         DateOnly competencia,

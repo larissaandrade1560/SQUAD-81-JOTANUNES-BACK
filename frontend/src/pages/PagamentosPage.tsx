@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Link, useLocation, useSearchParams } from 'react-router'
 import { Badge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
 import { Label } from '../components/ui/Label'
@@ -34,9 +35,15 @@ function apiErrorMessage(err: unknown): string {
   return 'Não foi possível concluir a operação.'
 }
 
-/** RF13 + RF14 + RF15 + RF16 — Pagamentos, comprovante, prazo e alertas. */
+type VoltarState = { from?: string; fromLabel?: string } | null
+
+/** RF13 + RF14 + RF15 + RF16 — Pagamentos, comprovante, prazo e alertas. RF19: filtro ?funcionarioId. */
 export function PagamentosPage() {
   const session = getSession()
+  const location = useLocation()
+  const voltar = location.state as VoltarState
+  const [searchParams, setSearchParams] = useSearchParams()
+  const filtroFuncionarioId = searchParams.get('funcionarioId')
   const canRegister = session?.role === 'terceirizado'
   const canUploadComprovante = session?.role === 'terceirizado'
   const showEmpresaColumn = session?.role !== 'terceirizado'
@@ -67,7 +74,24 @@ export function PagamentosPage() {
     [funcionarios],
   )
 
-  const resumoComprovantes = useMemo(() => resumirComprovantes(pagamentos), [pagamentos])
+  const pagamentosVisiveis = useMemo(
+    () =>
+      filtroFuncionarioId
+        ? pagamentos.filter((p) => p.funcionarioId === filtroFuncionarioId)
+        : pagamentos,
+    [pagamentos, filtroFuncionarioId],
+  )
+
+  const resumoComprovantes = useMemo(
+    () => resumirComprovantes(pagamentosVisiveis),
+    [pagamentosVisiveis],
+  )
+
+  function limparFiltroFuncionario() {
+    const next = new URLSearchParams(searchParams)
+    next.delete('funcionarioId')
+    setSearchParams(next, { replace: true, state: location.state })
+  }
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -182,6 +206,11 @@ export function PagamentosPage() {
 
   return (
     <section className="jn-pagamentos">
+      {voltar?.from ? (
+        <p className="jn-pagamentos__back">
+          <Link to={voltar.from}>← Voltar para {voltar.fromLabel ?? 'a página anterior'}</Link>
+        </p>
+      ) : null}
       <PageHeader
         title="Pagamentos e comprovantes"
         subtitle={
@@ -205,8 +234,24 @@ export function PagamentosPage() {
         </p>
       )}
 
-      {!loading && !error && pagamentos.length === 0 && (
-        <p className="jn-pagamentos__status">Nenhum pagamento registrado.</p>
+      {filtroFuncionarioId ? (
+        <div className="jn-pagamentos__filtro">
+          <span>
+            Filtrado por funcionário:{' '}
+            <strong>{pagamentosVisiveis[0]?.funcionarioNome ?? 'selecionado'}</strong>
+          </span>
+          <Button type="button" size="app" variant="secondary" onClick={limparFiltroFuncionario}>
+            Limpar filtro
+          </Button>
+        </div>
+      ) : null}
+
+      {!loading && !error && pagamentosVisiveis.length === 0 && (
+        <p className="jn-pagamentos__status">
+          {filtroFuncionarioId
+            ? 'Nenhum pagamento para este funcionário.'
+            : 'Nenhum pagamento registrado.'}
+        </p>
       )}
 
       {uploadError && (
@@ -255,7 +300,7 @@ export function PagamentosPage() {
         </div>
       )}
 
-      {!loading && !error && pagamentos.length > 0 && (
+      {!loading && !error && pagamentosVisiveis.length > 0 && (
         <div className="jn-pagamentos__table-wrap">
           <table className="jn-pagamentos__table">
             <thead>
@@ -271,7 +316,7 @@ export function PagamentosPage() {
               </tr>
             </thead>
             <tbody>
-              {pagamentos.map((p) => (
+              {pagamentosVisiveis.map((p) => (
                 <tr key={p.id}>
                   {showEmpresaColumn ? <td>{p.empresaRazaoSocial}</td> : null}
                   <td>{p.funcionarioNome}</td>

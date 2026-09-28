@@ -8,6 +8,10 @@ public interface IPagamentoFuncionarioRepository
         Guid? empresaId = null,
         CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<PagamentoFuncionario>> ListByFuncionarioIdsAsync(
+        IReadOnlyCollection<Guid> funcionarioIds,
+        CancellationToken cancellationToken = default);
+
     Task<bool> ExistsCompetenciaAsync(
         Guid funcionarioId,
         DateOnly competencia,

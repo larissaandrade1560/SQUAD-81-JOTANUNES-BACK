@@ -54,6 +54,7 @@ public static class DependencyInjection
         services.AddScoped<CreateFuncionarioUseCase>();
         services.AddScoped<UpdateFuncionarioUseCase>();
         services.AddScoped<ListObraFuncionariosUseCase>();
+        services.AddScoped<GetObraVisaoConformidadeUseCase>();
         services.AddScoped<GetDashboardResumoUseCase>();
         services.AddScoped<ListDocumentosEmpresaUseCase>();
         services.AddScoped<UploadDocumentoEmpresaUseCase>();

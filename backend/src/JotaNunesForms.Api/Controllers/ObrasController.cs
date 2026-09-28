@@ -16,19 +16,22 @@ public sealed class ObrasController : ControllerBase
     private readonly CreateObraUseCase _create;
     private readonly UpdateObraUseCase _update;
     private readonly ListObraFuncionariosUseCase _listFuncionarios;
+    private readonly GetObraVisaoConformidadeUseCase _visaoConformidade;
 
     public ObrasController(
         ListObrasUseCase list,
         GetObraUseCase get,
         CreateObraUseCase create,
         UpdateObraUseCase update,
-        ListObraFuncionariosUseCase listFuncionarios)
+        ListObraFuncionariosUseCase listFuncionarios,
+        GetObraVisaoConformidadeUseCase visaoConformidade)
     {
         _list = list;
         _get = get;
         _create = create;
         _update = update;
         _listFuncionarios = listFuncionarios;
+        _visaoConformidade = visaoConformidade;
     }
 
     [HttpGet]
@@ -78,6 +81,23 @@ public sealed class ObrasController : ControllerBase
         try
         {
             return Ok(await _listFuncionarios.ExecuteAsync(id, cancellationToken));
+        }
+        catch (ObraException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>RF19 — terceirizadas e trabalhadores alocados, com resumo de conformidade.</summary>
+    [HttpGet("{id:guid}/visao-conformidade")]
+    [Authorize(Policy = "Interno")]
+    public async Task<ActionResult<ObraVisaoConformidadeResponse>> GetVisaoConformidade(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return Ok(await _visaoConformidade.ExecuteAsync(id, DateTime.UtcNow, cancellationToken));
         }
         catch (ObraException ex)
         {

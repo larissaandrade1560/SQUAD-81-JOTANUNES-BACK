@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useParams } from 'react-router'
+import { Link, useLocation, useParams } from 'react-router'
 import { Badge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
 import { PageHeader } from '../components/ui/PageHeader'
@@ -57,6 +57,7 @@ function formatValidoAte(value?: string | null): string {
 /** RF08 / RF11 / RF12 — Documentos do funcionário com reenvio e vencimento. */
 export function FuncionarioDocumentosPage() {
   const { funcionarioId } = useParams<{ funcionarioId: string }>()
+  const voltar = useLocation().state as { from?: string; fromLabel?: string } | null
   const session = getSession()
   const canUpload = session?.role === 'terceirizado'
   const showEmpresaColumn = session?.role !== 'terceirizado'
@@ -161,7 +162,11 @@ export function FuncionarioDocumentosPage() {
   return (
     <section className="jn-docs-empresa">
       <p className="jn-docs-funcionario__back">
-        <Link to="/funcionarios">← Voltar para funcionários</Link>
+        {voltar?.from ? (
+          <Link to={voltar.from}>← Voltar para {voltar.fromLabel ?? 'a página anterior'}</Link>
+        ) : (
+          <Link to="/funcionarios">← Voltar para funcionários</Link>
+        )}
       </p>
       <PageHeader
         title="Documentos do funcionário"
