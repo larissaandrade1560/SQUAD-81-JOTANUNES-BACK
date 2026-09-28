@@ -12,6 +12,10 @@ public interface IDocumentoFuncionarioRepository
         Guid funcionarioId,
         CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<DocumentoFuncionario>> ListByFuncionarioIdsAsync(
+        IReadOnlyCollection<Guid> funcionarioIds,
+        CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<DocumentoFuncionario>> ListAsync(
         CancellationToken cancellationToken = default);
 

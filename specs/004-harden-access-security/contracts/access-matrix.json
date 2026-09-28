@@ -31,6 +31,7 @@
     {"method": "POST", "route": "/api/obras", "access": "Admin", "scope": "global", "tenantBoundaryOutcome": {"status": null, "behavior": "not-applicable"}},
     {"method": "PUT", "route": "/api/obras/{id}", "access": "Admin", "scope": "global", "tenantBoundaryOutcome": {"status": null, "behavior": "not-applicable"}},
     {"method": "GET", "route": "/api/obras/{id}/funcionarios", "access": "Internal", "scope": "global", "tenantBoundaryOutcome": {"status": null, "behavior": "not-applicable"}},
+    {"method": "GET", "route": "/api/obras/{id}/visao-conformidade", "access": "Internal", "scope": "global", "tenantBoundaryOutcome": {"status": null, "behavior": "not-applicable"}},
     {"method": "GET", "route": "/api/catalogo-requisitos", "access": "Internal", "scope": "global", "tenantBoundaryOutcome": {"status": null, "behavior": "not-applicable"}},
     {"method": "GET", "route": "/api/catalogo-requisitos/escopos-art", "access": "Internal", "scope": "global", "tenantBoundaryOutcome": {"status": null, "behavior": "not-applicable"}},
     {"method": "POST", "route": "/api/catalogo-requisitos", "access": "Admin", "scope": "global", "tenantBoundaryOutcome": {"status": null, "behavior": "not-applicable"}},

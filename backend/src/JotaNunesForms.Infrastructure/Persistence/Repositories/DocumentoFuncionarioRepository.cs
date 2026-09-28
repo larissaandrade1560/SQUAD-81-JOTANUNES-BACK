@@ -38,6 +38,21 @@ public sealed class DocumentoFuncionarioRepository : IDocumentoFuncionarioReposi
             .OrderByDescending(d => d.EnviadoEm)
             .ToListAsync(cancellationToken);
 
+    public async Task<IReadOnlyList<DocumentoFuncionario>> ListByFuncionarioIdsAsync(
+        IReadOnlyCollection<Guid> funcionarioIds,
+        CancellationToken cancellationToken = default)
+    {
+        if (funcionarioIds.Count == 0)
+        {
+            return [];
+        }
+
+        return await _dbContext.DocumentosFuncionario
+            .AsNoTracking()
+            .Where(d => funcionarioIds.Contains(d.FuncionarioId))
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<IReadOnlyList<DocumentoFuncionario>> ListAsync(
         CancellationToken cancellationToken = default) =>
         await _dbContext.DocumentosFuncionario

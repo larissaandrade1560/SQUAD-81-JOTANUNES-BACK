@@ -45,6 +45,7 @@ public sealed class RoleAccessMatrixTests(SecurityApiFactory factory)
             ("/api/processos-contratacao", HttpStatusCode.OK, HttpStatusCode.OK, HttpStatusCode.OK, HttpStatusCode.OK),
             ("/api/mobilizacoes", HttpStatusCode.OK, HttpStatusCode.OK, HttpStatusCode.OK, HttpStatusCode.Forbidden),
             ("/api/pagamentos", HttpStatusCode.OK, HttpStatusCode.OK, HttpStatusCode.OK, HttpStatusCode.Forbidden),
+            ($"/api/obras/{data.ResourceA.Id}/visao-conformidade", HttpStatusCode.OK, HttpStatusCode.OK, HttpStatusCode.Forbidden, HttpStatusCode.Forbidden),
         };
 
         foreach (var operation in operations)

@@ -14,6 +14,7 @@ import { ValidacaoPage } from '../pages/ValidacaoPage'
 import { ProcessosContratacaoPage } from '../pages/ProcessosContratacaoPage'
 import { ProcessoChecklistPage } from '../pages/ProcessoChecklistPage'
 import { MobilizacaoPage } from '../pages/MobilizacaoPage'
+import { ObraDetalhePage } from '../pages/ObraDetalhePage'
 import { ObrasPage } from '../pages/ObrasPage'
 import { UsuariosPage } from '../pages/UsuariosPage'
 import { AdminRoute } from './AdminRoute'
@@ -62,6 +63,7 @@ export const router = createBrowserRouter([
             children: [
               { path: 'empresas', element: <EmpresasPage /> },
               { path: 'obras', element: <ObrasPage /> },
+              { path: 'obras/:obraId', element: <ObraDetalhePage /> },
               { path: 'validacao', element: <ValidacaoPage /> },
               { path: 'pendencias', element: <PendenciasPage /> },
               { path: 'auditoria', element: <AuditoriaPage /> },
