@@ -113,15 +113,30 @@
 
 .jn-obra-detalhe__table {
   width: 100%;
+  min-width: 860px;
+  table-layout: fixed;
   border-collapse: collapse;
   font-size: var(--font-size-tab);
 }
 
+/* Mesmas larguras em todas as empresas para as colunas alinharem entre tabelas. */
+.jn-obra-detalhe__table th:nth-child(1) { width: 20%; }
+.jn-obra-detalhe__table th:nth-child(2) { width: 15%; }
+.jn-obra-detalhe__table th:nth-child(3) { width: 11%; }
+.jn-obra-detalhe__table th:nth-child(4) { width: 9%; }
+.jn-obra-detalhe__table th:nth-child(5) { width: 15%; }
+.jn-obra-detalhe__table th:nth-child(6) { width: 17%; }
+.jn-obra-detalhe__table th:nth-child(7) { width: 13%; }
+
 .jn-obra-detalhe__table th,
 .jn-obra-detalhe__table td {
-  padding: var(--space-3) var(--space-4);
+  padding: var(--space-3);
   text-align: left;
   border-bottom: 1px solid var(--color-border-default);
+  vertical-align: middle;
+}
+
+.jn-obra-detalhe__table td:nth-child(2) {
   white-space: nowrap;
 }
 
@@ -141,7 +156,7 @@
   color: var(--color-text-secondary);
 }
 
-.jn-obra-detalhe__actions {
-  display: flex;
-  gap: var(--space-3);
+.jn-obra-detalhe__actions a {
+  display: inline-block;
+  margin: 0 var(--space-3) var(--space-1) 0;
 }
